@@ -1,12 +1,13 @@
 /* The look of the game: colors, layout, and the thin lock-screen style buttons. */
 :root {
-  --void: #07070d;
-  --wall: #141a2e;
-  --furniture: #232a45;
-  --accent: #3b3560;
-  --glow: #e8c27a;
-  --danger: #7a0d18;
-  --skin: #b9c4b0;
+  /* ✏️ The colors every room uses. Change one and the whole game changes! */
+  --void: #07070d;       /* almost black */
+  --wall: #141a2e;       /* the walls */
+  --furniture: #232a45;  /* furniture */
+  --accent: #3b3560;     /* edges and handles */
+  --glow: #e8c27a;       /* lamp light */
+  --danger: #7a0d18;     /* the red when something is wrong */
+  --skin: #b9c4b0;       /* faces and creatures */
   --ui: rgba(232, 236, 255, 0.82);
   --ui-bg: rgba(7, 7, 13, 0.55);
   --ui-line: rgba(232, 236, 255, 0.22);
