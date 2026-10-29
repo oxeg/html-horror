@@ -113,14 +113,20 @@ test("check: hotspot note that does not exist", function () {
   } finally { ROOM_INFO.b.hotspots.note.note = old; }
 });
 
-test("check: fake note naming the cat or sister gives a warning", function () {
+test("check: fake note signed Love you gives a warning", function () {
   var old = NOTES.fake.text;
   try {
-    NOTES.fake.text = old + " " + CAT_NAME;
-    checked(function (r) { ok(mentions(r.warnings, ["fake", CAT_NAME]), r.warnings.join("|")); });
-    NOTES.fake.text = old + " " + SISTER_NAME;
-    checked(function (r) { ok(mentions(r.warnings, ["fake", SISTER_NAME]), r.warnings.join("|")); });
+    NOTES.fake.text = old + " Love you!";
+    checked(function (r) { ok(mentions(r.warnings, ["fake", "Love you"]), r.warnings.join("|")); });
   } finally { NOTES.fake.text = old; }
+});
+
+test("check: real note without Love you gives a warning", function () {
+  var old = NOTES.n1.text;
+  try {
+    NOTES.n1.text = "Rule one.";
+    checked(function (r) { ok(mentions(r.warnings, ["n1", "Love you"]), r.warnings.join("|")); });
+  } finally { NOTES.n1.text = old; }
 });
 
 test("check: shortest counts nav, goTo and clicks", function () {

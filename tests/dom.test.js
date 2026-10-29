@@ -34,6 +34,13 @@ if (typeof document !== "undefined") {
       ok(hidden(p.g), "hidden without a");
     });
 
+    test("capitalize starts a sentence with a capital letter", function () {
+      eq(View.capitalize("your sister?"), "Your sister?");
+      eq(View.capitalize("the cat's tree house"), "The cat's tree house");
+      eq(View.capitalize("Hallway"), "Hallway");
+      eq(View.capitalize(""), "");
+    });
+
     var box100 = { left: 0, top: 0, right: 100, bottom: 100 };
 
     test("circleHitsRect inside", function () {

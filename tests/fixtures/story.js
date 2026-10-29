@@ -12,7 +12,7 @@ const SETTINGS = {
 };
 
 const NOTES = {
-  n1: { title: "Rules", text: "Rule one.", look: "mom" },
+  n1: { title: "Rules", text: "Rule one. Love you!", look: "mom" },
   fake: { title: "", text: "Let us in.", look: "fake" },
 };
 

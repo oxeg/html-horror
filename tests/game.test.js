@@ -26,11 +26,20 @@ test("no unfilled template text", function () {
   var all = JSON.stringify([NOTES, ROOM_INFO, EVENTS, ENDINGS]);
   ok(all.indexOf("${") < 0, "a ${...} was left unfilled");
   ok(all.indexOf("SISTER_NAME") < 0 && all.indexOf("CAT_NAME") < 0, "placeholder name in text");
-  ok(all.indexOf("Mia") >= 0 && all.indexOf("Whiskers") >= 0, "names are used");
+  ok(all.indexOf(SISTER_NAME) >= 0 && all.indexOf(CAT_NAME) >= 0, "the name settings are used");
 });
 
-test("fake note never names them", function () {
-  ok(NOTES.fake.text.indexOf("Mia") < 0 && NOTES.fake.text.indexOf("Whiskers") < 0, "fake note names someone");
+test("no real names: the game says your sister and the cat", function () {
+  eq(SISTER_NAME, "your sister");
+  eq(CAT_NAME, "the cat");
+  var all = JSON.stringify([NOTES, ROOM_INFO, EVENTS, ENDINGS]);
+  ok(all.indexOf("Mia") < 0 && all.indexOf("Whiskers") < 0, "a real name is still in the story");
+});
+
+test("the fake note gives itself away: no Love you", function () {
+  ok(NOTES.fridge.text.indexOf("Love you!") >= 0, "the real note is signed Love you");
+  ok(NOTES.fake.text.indexOf("Love you") < 0, "the fake note must not say Love you");
+  ok(ENDINGS.E8.text.indexOf("Love you") >= 0, "E8 explains the giveaway");
 });
 
 PLAYTHROUGHS.forEach(function (pt) {

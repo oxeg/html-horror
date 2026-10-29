@@ -7,7 +7,7 @@
 //
 //  A few tips:
 //  - Text goes between quotes "like this" or backticks `like this`.
-//    Backticks let you use the names: `${SISTER_NAME} is asleep.`
+//    Backticks let you use the names: `You tuck ${SISTER_NAME} in.`
 //  - Every line inside a list ends with a comma.
 //  - <br> starts a new line. <b>words</b> makes words bold.
 //  - If you make a typo, the game shows a message telling you which
@@ -15,9 +15,11 @@
 //  - Press E in the game to see every clickable thing and its name.
 // =====================================================================
 
-// ✏️ The names used everywhere in the game. Change them and the whole story changes!
-const SISTER_NAME = "Mia";
-const CAT_NAME = "Whiskers";
+// ✏️ How the game talks about your sister and the cat.
+// Put their real names here, like "Mia" and "Whiskers", and the whole story uses them!
+// (The game makes the first letter big by itself when a sentence starts with one.)
+const SISTER_NAME = "your sister";
+const CAT_NAME = "the cat";
 
 // ---------------------------------------------------------------------
 //  SETTINGS: how the night works
@@ -39,7 +41,7 @@ const NOTES = {
     title: "Rules for tonight",
     look: "mom",
     text: `<b>Rules for tonight</b>, Mom & Dad<br><br>
-1. ${SISTER_NAME} is asleep by 8:30 and doesn't wake up until morning. If she's standing in a doorway after 9, it isn't her. Don't answer when it calls your name. Go to our walk-in closet and wait until it stops.<br>
+1. By 8:30 ${SISTER_NAME} is asleep, and she doesn't wake up until morning. If she's standing in a doorway after 9, it isn't her. Don't answer when it calls your name. Go to our walk-in closet and wait until it stops.<br>
 2. After dark, the balcony door is a mirror. If your reflection moves when you don't, walk away slowly and don't look back until you're in another room.<br>
 3. If you see a face in the window, lock yourself in the bathroom <b>without</b> the washing machine and count to 100. Don't open the door for anyone, even if they sound like us.<br>
 4. If the doorbell rings, check the camera first. If no one is there, don't answer. If the camera shows the inside of our apartment, take ${SISTER_NAME} and hide.<br>
@@ -375,7 +377,7 @@ const EVENTS = [
 const ENDINGS = {
   E1: {
     title: "It wasn't her",
-    text: `You walk to the doorway. "${SISTER_NAME}" smiles. Her smile is too wide.<br>In her room, the real ${SISTER_NAME} is still asleep.`,
+    text: `You walk to the doorway. It smiles at you. Its smile is too wide.<br>In her room, ${SISTER_NAME} is still fast asleep.`,
   },
   E2: {
     title: "Mirror",
@@ -404,7 +406,7 @@ const ENDINGS = {
   },
   E8: {
     title: "We lost our keys",
-    text: `You let them in. Footsteps climb the stairs. Many more than two.<br>Real Mom would never call ${SISTER_NAME} "your sister"…`,
+    text: `You let them in. Footsteps climb the stairs. Many more than two.<br>Real Mom always signs her notes "Love you!"…`,
   },
   E9: {
     title: "You forgot her",

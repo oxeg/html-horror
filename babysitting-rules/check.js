@@ -131,15 +131,16 @@ var Check = (function () {
     });
     if (!hasDrawing("title")) errors.push("rooms/title.js is missing: the title screen needs its drawing. Make rooms/title.js and add it to index.html.");
 
-    // fake notes must not know the real names
+    // the giveaway: the real note is always signed "Love you!", a fake never is
     ids(NOTES).forEach(function (id) {
-      var note = NOTES[id];
-      if (note.look !== "fake") return;
-      [SISTER_NAME, CAT_NAME].forEach(function (name) {
-        if (name && String(note.text).toLowerCase().indexOf(name.toLowerCase()) >= 0) {
-          warnings.push('story.js: the fake note "' + id + '" mentions "' + name + '". A fake would not know that name, so the player cannot tell it is fake. Take it out.');
-        }
-      });
+      var text = String(NOTES[id].text);
+      var signed = text.indexOf("Love you") >= 0;
+      if (NOTES[id].look === "fake" && signed) {
+        warnings.push('story.js: the fake note "' + id + '" says "Love you". The real note is signed "Love you!" and a fake never is: that\'s how you can tell. Take it out.');
+      }
+      if (NOTES[id].look === "mom" && !signed) {
+        warnings.push('story.js: the note "' + id + '" isn\'t signed "Love you!". That\'s how you tell the real note from the fake one, so keep it.');
+      }
     });
 
     // events

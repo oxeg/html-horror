@@ -1,0 +1,200 @@
+# The Babysitting Rules 🕯️
+
+**Play it first!** Double-click `index.html`. It opens in your browser, and that's it.
+No internet needed.
+
+Done playing? (Did you find all 10 endings?) Then read on: this whole game is made of
+code, and **you can change all of it.**
+
+---
+
+## What's in this folder
+
+| File | What it is |
+|---|---|
+| `index.html` | The page you open. It loads everything else. |
+| `story.js` | ✏️ **The story.** Every text, every room, every scary event, every ending. Start here! |
+| `style.css` | ✏️ The colors and the look of the buttons. |
+| `rooms/` | ✏️ One drawing per room. They're made of shapes (SVG), not pictures. |
+| `sounds/` | ✏️ Put your own sound files here (see below). |
+| `engine.js`, `view.js`, `check.js`, `sound.js`, `editmode.js` | The machinery. You don't need to touch these. |
+
+**Golden rule:** change one small thing, save, and reload the page (press F5) to see it.
+If something breaks, undo your last change (Ctrl+Z) and save again.
+
+---
+
+## Change a text
+
+Open `story.js` and find the text you want to change. For example, the fridge in the
+living room:
+
+```js
+"fridge": { label: "Fridge", text: "Milk, leftover pizza, and way too much yogurt." },
+```
+
+`label` is what you see when your light is on it. `text` is what pops up when you click it.
+Change the words between the quotes:
+
+```js
+"fridge": { label: "Fridge", text: "Nothing but ketchup. Gross." },
+```
+
+Save, reload, click the fridge. 🎉
+
+Tips:
+- Keep the quotes and the comma at the end.
+- Text between backticks (`` ` ``) can use the names: `` `You tuck ${SISTER_NAME} in.` ``
+- `<br>` starts a new line. `<b>bold</b>` makes words bold.
+
+## Change the names
+
+At the very top of `story.js`:
+
+```js
+const SISTER_NAME = "your sister";
+const CAT_NAME = "the cat";
+```
+
+Put real names in instead, like `"Mia"` and `"Whiskers"` (keep the quotes!), save, reload,
+and the whole story uses them. Don't worry about capital letters: the game makes the
+first letter big by itself when a sentence starts with a name.
+
+## Change when something happens
+
+Everything scary is in the `EVENTS` list in `story.js`. Each event has a `time`:
+
+```js
+id: "lightsOut", time: "21:00", trigger: "now", setFlags: ["dark"], sound: "click",
+```
+
+Change `"21:00"` to `"20:45"` and the lights go out earlier! (Times use the 24-hour
+clock: `"21:00"` is 9 in the evening.) The events must stay in time order, from earliest
+to latest. If you want an event to happen much earlier, move it up the list too, or the
+game will tell you they're out of order.
+
+You can also make the night faster or slower at the top, in `SETTINGS`:
+
+```js
+moveMinutes: 10,        // minutes it takes to walk to another room
+waitMinutes: 15,        // minutes the Wait button skips
+flashlightSize: 22,     // how big your phone light is
+```
+
+## Recolor the whole game
+
+Open `style.css`. At the top are the colors every room uses:
+
+```css
+--void: #07070d;       /* almost black */
+--wall: #141a2e;       /* the walls */
+--furniture: #232a45;  /* furniture */
+--accent: #3b3560;     /* edges and handles */
+--glow: #e8c27a;       /* lamp light */
+--danger: #7a0d18;     /* the red when something is wrong */
+--skin: #b9c4b0;       /* faces and creatures */
+```
+
+Change one, like `--wall: #3a1430;` for purple walls, save and reload. Every room changes
+at once. (Look up "color picker" to find the code for any color.)
+
+## Press E: edit mode
+
+While you're playing, press **E**. The lights come on, every clickable thing gets a green
+box with its name, and a panel lets you:
+
+- jump to any room and any time (type a time like `22:05`, then press Go)
+- switch flags on and off. Flags are the switches that show or hide things: tick
+  `catOutside` and the cat appears on the balcony, tick `masterOpen` and the bedroom door
+  opens.
+
+Press **E** again to go back to playing.
+
+## Add something you can click
+
+Say you want a poster in your room that you can click.
+
+**1. Draw it.** Open `rooms/my-room.js`. Find a good spot (inside the `<svg ...>` and
+before the last `</svg>`), and add a shape with a `data-hotspot` name:
+
+```html
+<!-- my new poster -->
+<g data-hotspot="poster">
+  <rect x="600" y="250" width="120" height="160" fill="var(--accent)"/>
+</g>
+```
+
+The picture is 1600 wide and 900 tall. `x` and `y` say where the top-left corner goes,
+`width` and `height` how big it is. Use the color names from `style.css`.
+
+**2. Tell the story about it.** In `story.js`, find `"my-room"` and add your poster to
+its `hotspots`:
+
+```js
+"poster": { label: "My new poster", text: "A giant spider. You love it." },
+```
+
+Save both files and reload. Press E to check that your poster has a green box.
+
+## Add a new room
+
+**1.** Make a new file `rooms/attic.js` (copy another room file and change it):
+
+```js
+ROOMS["attic"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="var(--wall)"/>
+  <g data-hotspot="old-box">
+    <rect x="700" y="500" width="200" height="140" fill="var(--furniture)"/>
+  </g>
+</svg>`;
+```
+
+**2.** In `index.html`, add a line next to the other rooms:
+
+```html
+<script src="rooms/attic.js"></script>
+```
+
+**3.** In `story.js`, add the room to `ROOM_INFO`:
+
+```js
+attic: {
+  name: "Attic",
+  exits: ["entrance"],
+  hotspots: {
+    "old-box": { label: "Old box", text: "It's full of old photos. Who are these people?" },
+  },
+},
+```
+
+**4.** Add `"attic"` to the `exits` of a room you want to reach it from, for example
+the hallway's (`entrance`). Save, reload, and there's a new button at the bottom!
+
+## When something goes wrong
+
+If you see a black screen with a message instead of the game, the game is telling you
+which file has a mistake, and often the line number. Most mistakes are:
+
+- a missing quote `"` or backtick `` ` ``
+- a missing comma `,` at the end of a line inside a list
+- a name in `story.js` that doesn't match a `data-hotspot="..."` in the drawing
+
+Undo your last change, or press **Ctrl+Shift+J** to see the exact line.
+
+## Add your own sounds
+
+The game makes its own sounds, but you can replace any of them. Put an `.mp3` file in the
+`sounds/` folder with one of these names:
+
+`ambient.mp3` (the background hum), `doorbell.mp3`, `knock.mp3`, `sting.mp3` (jump scares),
+`heartbeat.mp3`, `meow.mp3`, `washer.mp3`, `keys.mp3`, `click.mp3` (the light switch)
+
+[freesound.org](https://freesound.org) has lots of free sounds. Choose the "Creative
+Commons 0" license so you're allowed to use them.
+
+---
+
+**Ideas to try:** a new rule on the fridge note · a ghost in the bathroom mirror ·
+an 11th ending · a whole new room · a different color for every room
+
+Have fun, and don't open the door for anyone. 👀

@@ -20,6 +20,11 @@ var View = (function () {
 
   function words(text) { return text ? text.split(/\s+/).filter(Boolean) : []; }
 
+  // story.js may start a sentence with a name like "your sister": show it as "Your sister".
+  V.capitalize = function (text) {
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+  };
+
   function play(name) {
     if (typeof Sound !== "undefined" && Sound.play) Sound.play(name);
   }
@@ -57,7 +62,7 @@ var View = (function () {
   function showLabel(spot, x, y) {
     var text = Game.label(spot.getAttribute("data-hotspot"));
     if (!text) return hideLabel();
-    el.label.textContent = text;
+    el.label.textContent = V.capitalize(text);
     el.label.style.left = x + "px";
     el.label.style.top = y + "px";
     el.label.className = "on";
@@ -207,7 +212,7 @@ var View = (function () {
       return;
     }
     var text = popups.shift();
-    el.popup.innerHTML = text;
+    el.popup.innerHTML = V.capitalize(text);
     el.popup.className = "on";
     popupTimer = setTimeout(nextPopup, 3500 + text.length * 40);
   }
@@ -316,7 +321,7 @@ var View = (function () {
     el.nav.innerHTML = "";
     Game.exits().forEach(function (to) {
       var b = document.createElement("button");
-      b.textContent = ROOM_INFO[to].name;
+      b.textContent = V.capitalize(ROOM_INFO[to].name);
       b.addEventListener("click", function () { V.show(Game.go(to)); });
       el.nav.appendChild(b);
     });

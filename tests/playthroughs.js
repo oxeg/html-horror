@@ -26,7 +26,7 @@ var PLAYTHROUGHS = [
       "wait", "wait", "wait",
       // 23:00 rule 7: "Mom" at the door, and the fake note.
       "wait", "go entrance", "click doorbell", "click talk", "close", "click fake-note",
-      // 23:10 rule 4b: take Mia and hide.
+      // 23:10 rule 4b: take your sister and hide.
       "wait", "go sister-room", "click sister-asleep", "go entrance", "go bath", "click lock",
       "wait", "wait",
       // 23:30: home.
@@ -91,7 +91,7 @@ var PLAYTHROUGHS = [
     steps: ["jump 22:55 entrance", "wait", "click doorbell", "click open"],
   },
   {
-    name: "E9: hiding without Mia",
+    name: "E9: hiding without your sister",
     ending: "E9",
     retry: { danger: "rule4b" },
     steps: ["jump 23:05 entrance", "wait", "go bath", "click lock"],
