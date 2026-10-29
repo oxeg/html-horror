@@ -196,17 +196,17 @@ var Sound = (function () {
       shape(g.gain, t, [[0, 0], [0.08, 0.09], [0.5, 0.08]]);
       g.gain.setTargetAtTime(0, t + 0.5, 0.5);
     },
-    // the cat, out on the balcony: a short, high "mee-ow" (cats meow much higher than babies cry)
+    // the cat, out on the balcony: a short "mee-ow" that rises and falls (not a baby's long "waa")
     meow: function (t) {
       var g = gain(master);
-      var ee = filter("bandpass", 900, 5, gain(g, 1));      // the bright, nasal "ee"
-      var ow = filter("bandpass", 2400, 7, gain(g, 0.7));   // ...that rounds into "ow"
-      var o = osc("sawtooth", 650, ee);
+      var ee = filter("bandpass", 750, 5, gain(g, 1));      // the bright, nasal "ee"
+      var ow = filter("bandpass", 2000, 7, gain(g, 0.7));   // ...that rounds into "ow"
+      var o = osc("sawtooth", 520, ee);
       o.connect(ow);
       run(osc("sine", 6, gain(o.frequency, 8)), t, 0.65);   // a little wobble
-      shape(o.frequency, t, [[0, 650], [0.12, 950], [0.3, 900], [0.55, 600]]);
-      shape(ee.frequency, t, [[0, 700], [0.15, 1300], [0.55, 800]]);   // "m" opens to "ee", then "ow"
-      shape(ow.frequency, t, [[0, 2000], [0.15, 3200], [0.55, 1500]]);
+      shape(o.frequency, t, [[0, 520], [0.12, 760], [0.3, 720], [0.55, 480]]);
+      shape(ee.frequency, t, [[0, 580], [0.15, 1050], [0.55, 650]]);   // "m" opens to "ee", then "ow"
+      shape(ow.frequency, t, [[0, 1650], [0.15, 2600], [0.55, 1250]]);
       shape(g.gain, t, [[0, 0], [0.06, 0.5], [0.35, 0.45], [0.6, 0]]);
       run(o, t, 0.65);
     },
