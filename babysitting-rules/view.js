@@ -25,8 +25,18 @@ var View = (function () {
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
   };
 
-  function play(name) {
-    if (typeof Sound !== "undefined" && Sound.play) Sound.play(name);
+  // sound.js may be missing from a test page: then the game just stays quiet.
+  function sound(what, arg) {
+    if (typeof Sound !== "undefined" && Sound[what]) return Sound[what](arg);
+  }
+
+  function play(name) { sound("play", name); }
+
+  function showMuted() {
+    var m = !!sound("muted");
+    el.mute.classList.toggle("muted", m);
+    el.mute.setAttribute("aria-pressed", String(m));
+    el.mute.title = m ? "Sound is off" : "Sound is on";
   }
 
   // ---- flags: show or hide parts of a drawing ----
@@ -257,7 +267,10 @@ var View = (function () {
     document.body.classList.remove("playing");
   }
 
+  // Called by the Start and Continue clicks: browsers only allow sound after a click.
   function startPlaying(result) {
+    sound("unlock");
+    sound("loop", "ambient");
     playing = true;
     scared = {};
     el.title.className = "";
@@ -332,6 +345,14 @@ var View = (function () {
     if (s.camera) scares(el.cameraArt, "camera");
     beamMoved();
 
+    // the heartbeat: on while something is wrong, faster as the danger runs out of time
+    if (s.danger && !s.ending) {
+      sound("loop", "heartbeat");
+      sound("setHeartRate", Game.dangerLevel());
+    } else {
+      sound("stop", "heartbeat");
+    }
+
     if (s.ending) showEnding(s.ending); else el.ending.className = "";
     if (typeof EditMode !== "undefined") EditMode.afterRender();
   };
@@ -352,6 +373,7 @@ var View = (function () {
     ["scene", "overlay", "camera", "title", "ending", "notes"].forEach(function (id) { el[id] = $(id); });
     el.clock = $("ui-clock");
     el.notesBtn = $("ui-notes-btn");
+    el.mute = $("ui-mute");
     el.wait = $("ui-wait");
     el.nav = $("ui-nav");
     el.popup = $("ui-popup");
@@ -382,6 +404,11 @@ var View = (function () {
     });
     el.wait.addEventListener("click", function () { V.show(Game.wait()); });
     el.notesBtn.addEventListener("click", openNotes);
+    el.mute.addEventListener("click", function () {
+      sound("setMuted", !sound("muted"));
+      showMuted();
+    });
+    showMuted();
     $("notes-close").addEventListener("click", closeNotes);
     el.notes.addEventListener("click", function (e) { if (e.target === el.notes) closeNotes(); });
     el.popup.addEventListener("click", nextPopup);

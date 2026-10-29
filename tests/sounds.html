@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>sound check</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; background: #111; color: #eee; padding: 24px 32px; }
+    button { font: inherit; margin: 4px 6px 4px 0; padding: 6px 16px; }
+    table { border-collapse: collapse; margin-top: 8px; }
+    td { padding: 2px 16px 2px 0; font-family: ui-monospace, monospace; }
+    .hint { color: #aaa; max-width: 760px; }
+  </style>
+</head>
+<body>
+  <!-- Builder-only page: listen to every sound of the game. Loads only sound.js. -->
+  <h1>The Babysitting Rules: sound check</h1>
+  <p class="hint">Click each sound and listen. Nothing should be loud, nothing should scream, and the
+    doorbell should be a two-note "ding-dong". If <code>babysitting-rules/sounds/&lt;name&gt;.mp3</code>
+    exists, that file plays instead (the meter below can't hear mp3 files).</p>
+
+  <p id="once"></p>
+  <p>Loops:
+    <button id="loop-ambient">ambient: start</button>
+    <button id="loop-heartbeat">heartbeat: start</button>
+  </p>
+  <p><label>Heartbeat speed (danger level 0 to 1):
+    <input id="rate" type="range" min="0" max="1" step="0.05" value="0"> <span id="rate-out">0</span></label></p>
+  <p><label><input id="mute" type="checkbox"> Mute (saved, the same switch as the game's button)</label></p>
+  <p>Audio: <span id="state">not started (click a sound)</span></p>
+  <p>Loudest moment of each sound (after the compressor; 1.00 would be the very top):</p>
+  <table id="peaks"></table>
+
+  <script src="../babysitting-rules/sound.js"></script>
+  <script>
+    // The level meter listens in on whatever sound.js connects to the speakers.
+    var ctx = null, meter = null, current = null, peaks = {};
+    var connect = AudioNode.prototype.connect;
+    AudioNode.prototype.connect = function (to) {
+      if (to instanceof AudioDestinationNode && !meter) {
+        ctx = this.context;
+        meter = ctx.createAnalyser();
+        meter.fftSize = 4096;
+        connect.call(this, meter);
+      }
+      return connect.apply(this, arguments);
+    };
+
+    var samples = new Float32Array(4096);
+    setInterval(function () {
+      if (ctx) document.getElementById("state").textContent = ctx.state;
+      if (!meter || !current) return;
+      meter.getFloatTimeDomainData(samples);
+      var max = 0;
+      for (var i = 0; i < samples.length; i++) max = Math.max(max, Math.abs(samples[i]));
+      if (max > peaks[current]) {
+        peaks[current] = max;
+        showPeaks();
+      }
+    }, 30);
+
+    function showPeaks() {
+      var html = "";
+      Object.keys(peaks).forEach(function (n) {
+        var p = peaks[n];
+        var db = p > 0 ? (20 * Math.log10(p)).toFixed(1) + " dB" : "silent";
+        html += "<tr><td>" + n + "</td><td>" + p.toFixed(3) + "</td><td>" + db + "</td></tr>";
+      });
+      document.getElementById("peaks").innerHTML = html;
+    }
+
+    function measure(name) {
+      current = name;
+      peaks[name] = 0;
+      showPeaks();
+    }
+
+    Sound.names.forEach(function (name) {
+      var b = document.createElement("button");
+      b.textContent = name;
+      b.addEventListener("click", function () {
+        Sound.unlock();
+        measure(name);
+        Sound.play(name);
+      });
+      document.getElementById("once").appendChild(b);
+    });
+
+    ["ambient", "heartbeat"].forEach(function (name) {
+      var b = document.getElementById("loop-" + name);
+      var on = false;
+      b.addEventListener("click", function () {
+        Sound.unlock();
+        on = !on;
+        if (on) {
+          measure(name + " (loop)");
+          Sound.loop(name);
+        } else {
+          Sound.stop(name);
+        }
+        b.textContent = name + ": " + (on ? "stop" : "start");
+      });
+    });
+
+    var rate = document.getElementById("rate");
+    rate.addEventListener("input", function () {
+      Sound.setHeartRate(Number(rate.value));
+      document.getElementById("rate-out").textContent = rate.value;
+    });
+
+    var mute = document.getElementById("mute");
+    mute.checked = Sound.muted();
+    mute.addEventListener("change", function () {
+      Sound.unlock();
+      Sound.setMuted(mute.checked);
+    });
+  </script>
+</body>
+</html>

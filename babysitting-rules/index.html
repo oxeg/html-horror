@@ -15,6 +15,7 @@
   <div id="grain"><svg width="100%" height="100%"><filter id="grain-noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#grain-noise)"/></svg></div>
 
   <div id="ui-clock"></div>
+  <button id="ui-mute" aria-label="Mute" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="on" d="M15.5 9.5a3.5 3.5 0 0 1 0 5M18 7a7 7 0 0 1 0 10"/><path class="off" d="M16 9.5l5 5m0-5l-5 5"/></svg></button>
   <button id="ui-notes-btn">Notes</button>
   <div id="ui-popup"></div>
   <div id="ui-bar"><div id="ui-nav"></div><button id="ui-wait">Wait</button></div>

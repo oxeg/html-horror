@@ -96,11 +96,16 @@ button {
 button:hover, button:focus-visible { background: rgba(232, 236, 255, 0.16); outline: none; }
 
 /* in-game UI: only while playing */
-#ui-clock, #ui-notes-btn, #ui-bar, #ui-popup { display: none; position: fixed; z-index: 10; }
-body.playing #ui-clock, body.playing #ui-notes-btn, body.playing #ui-bar { display: flex; }
+#ui-clock, #ui-mute, #ui-notes-btn, #ui-bar, #ui-popup { display: none; position: fixed; z-index: 10; }
+body.playing #ui-clock, body.playing #ui-mute, body.playing #ui-notes-btn, body.playing #ui-bar { display: flex; }
 
 #ui-clock { top: 16px; left: 20px; font-size: 22px; letter-spacing: 0.08em; text-shadow: 0 1px 6px #000; }
 #ui-notes-btn { top: 12px; right: 16px; }
+/* the sound button, next to the clock: a speaker, crossed out when muted */
+#ui-mute { top: 12px; left: 104px; padding: 6px 12px; }
+#ui-mute svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+#ui-mute .off, #ui-mute.muted .on { display: none; }
+#ui-mute.muted .off { display: inline; }
 
 #ui-bar { bottom: 16px; left: 50%; transform: translateX(-50%); gap: 12px; width: max-content; align-items: center; max-width: 96vw; }
 #ui-nav { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
