@@ -174,3 +174,11 @@ body.playing #ui-popup.on { display: block; }
 #problem.on { display: block; }
 #problem h2 { color: #ffb4b4; font-weight: 400; }
 #warnings { position: fixed; z-index: 90; bottom: 8px; left: 8px; padding: 8px 12px; font-size: 13px; background: var(--ui-bg); border: 1px solid var(--ui-line); border-radius: 8px; }
+
+/* your reflection sways slowly while you stand still (living room, rule 2) */
+[data-hotspot="reflection"] { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 5s ease-in-out infinite; }
+@keyframes sway {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  30% { transform: rotate(-2deg) translateX(-6px); }
+  70% { transform: rotate(2.5deg) translateX(8px); }
+}
