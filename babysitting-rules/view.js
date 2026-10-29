@@ -10,6 +10,11 @@ var View = (function () {
   var playing = false;  // false while the title screen is up
   var popups = [];
   var popupTimer = null;
+  var beam = { x: 0, y: 0 };  // where the phone light points (screen pixels)
+  var beamQueued = false;
+  var lastPointer = "mouse";
+  var armedSpot = null;       // touch: the first tap shows the label, the second tap uses it
+  var scared = {};            // data-scare parts that already jumped out
 
   function $(id) { return document.getElementById(id); }
 
@@ -63,23 +68,33 @@ var View = (function () {
   function bindHotspots(box) {
     box.addEventListener("mousemove", function (e) {
       var spot = hotspotOf(e.target);
-      if (spot) showLabel(spot, e.clientX, e.clientY); else hideLabel();
+      if (spot && inBeam(spot)) showLabel(spot, e.clientX, e.clientY); else hideLabel();
     });
     box.addEventListener("mouseleave", hideLabel);
     box.addEventListener("focusin", function (e) {
       var spot = hotspotOf(e.target);
-      if (!spot) return;
+      if (!spot || !inBeam(spot)) return;
       var r = spot.getBoundingClientRect();
       showLabel(spot, r.left + r.width / 2, r.top + r.height / 2);
     });
     box.addEventListener("focusout", hideLabel);
     box.addEventListener("click", function (e) {
       var spot = hotspotOf(e.target);
-      if (spot) clickHotspot(spot.getAttribute("data-hotspot"));
+      if (!spot || !inBeam(spot)) {
+        armedSpot = null;
+        return hideLabel();
+      }
+      if (lastPointer === "touch" && armedSpot !== spot) {
+        armedSpot = spot;
+        var r = spot.getBoundingClientRect();
+        return showLabel(spot, e.clientX || r.left + r.width / 2, e.clientY || r.top);
+      }
+      armedSpot = null;
+      clickHotspot(spot.getAttribute("data-hotspot"));
     });
     box.addEventListener("keydown", function (e) {
       var spot = hotspotOf(e.target);
-      if (spot && (e.key === "Enter" || e.key === " ")) {
+      if (spot && inBeam(spot) && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
         clickHotspot(spot.getAttribute("data-hotspot"));
       }
@@ -92,6 +107,93 @@ var View = (function () {
     hideLabel();
     V.show(Game.click(id));
     if (def && def.note && !Game.state.ending) openNotes();
+  }
+
+  // ---- the flashlight (after 21:00 the lights don't work) ----
+
+  V.circleHitsRect = function (cx, cy, r, rect) {
+    var nx = Math.max(rect.left, Math.min(cx, rect.right));
+    var ny = Math.max(rect.top, Math.min(cy, rect.bottom));
+    return (cx - nx) * (cx - nx) + (cy - ny) * (cy - ny) <= r * r;
+  };
+
+  function isDark() { return playing && !!Game.state.flags.dark; }
+
+  function beamRadius() { return window.innerWidth * SETTINGS.flashlightSize / 100; }
+
+  // Is this part of the drawing showing? (applyFlags hides parts with display: none)
+  function isShown(node) {
+    for (var n = node; n && n.nodeType === 1; n = n.parentNode) if (n.style && n.style.display === "none") return false;
+    return true;
+  }
+
+  // In the dark you can only see (and use) what your light is on. The camera screen glows by itself.
+  function inBeam(node) {
+    if (!isDark() || el.cameraArt.contains(node)) return true;
+    // 0.8: the edge of the light is too dim to see by, so it doesn't count
+    return isShown(node) && V.circleHitsRect(beam.x, beam.y, beamRadius() * 0.8, node.getBoundingClientRect());
+  }
+
+  function moveBeam(x, y) {
+    beam.x = x;
+    beam.y = y;
+    el.overlay.style.setProperty("--fx", x + "px");
+    el.overlay.style.setProperty("--fy", y + "px");
+    if (beamQueued) return;
+    beamQueued = true;
+    requestAnimationFrame(function () {
+      beamQueued = false;
+      beamMoved();
+    });
+  }
+
+  // Keep the keyboard out of the dark, and tell the engine what the light found.
+  function beamMoved() {
+    if (!playing) return;
+    var spots = el.scene.querySelectorAll("[data-hotspot]");
+    for (var i = 0; i < spots.length; i++) spots[i].setAttribute("tabindex", inBeam(spots[i]) ? "0" : "-1");
+    if (!isDark() || Game.state.danger || Game.state.ending) return;
+    EVENTS.forEach(function (ev) {
+      if (ev.trigger !== "beam" || !Game.state.armed[ev.id] || Game.state.fired[ev.id]) return;
+      var parts = el.scene.querySelectorAll('[data-name="' + ev.group + '"], [data-hotspot="' + ev.group + '"]');
+      for (var j = 0; j < parts.length; j++) {
+        if (inBeam(parts[j])) return V.show(Game.beamTouched(ev.group));
+      }
+    });
+  }
+
+  // The light flickers a little, and a lot when something is wrong.
+  function flicker() {
+    var danger = playing && Game.state.danger;
+    var wobble = danger ? 0.12 : 0.03;
+    var dip = Math.random() < (danger ? 0.08 : 0.015) ? 0.7 : 1;
+    var r = beamRadius() * dip * (1 + (Math.random() - 0.5) * wobble);
+    el.overlay.style.setProperty("--fr", Math.round(r) + "px");
+  }
+
+  // Parts marked data-scare jump out (with the sting sound) the moment they appear.
+  function scares(box, prefix) {
+    var parts = box.querySelectorAll("[data-scare]");
+    for (var i = 0; i < parts.length; i++) {
+      var key = prefix + ":" + (parts[i].getAttribute("data-name") || parts[i].getAttribute("data-hotspot") || i);
+      if (!isShown(parts[i])) {
+        delete scared[key];
+      } else if (!scared[key]) {
+        scared[key] = true;
+        parts[i].classList.remove("scare-in");
+        parts[i].getBoundingClientRect(); // restart the animation
+        parts[i].classList.add("scare-in");
+        play("sting");
+      }
+    }
+  }
+
+  function shake() {
+    [el.scene, el.cameraArt].forEach(function (box) {
+      box.classList.remove("shake");
+      box.getBoundingClientRect();
+      box.classList.add("shake");
+    });
   }
 
   // ---- popups: short texts at the bottom of the scene ----
@@ -108,11 +210,11 @@ var View = (function () {
     popupTimer = setTimeout(nextPopup, 3500 + text.length * 40);
   }
 
+  // A new action's texts replace whatever was still showing: what just happened matters most.
   function queuePopups(texts) {
     if (!texts.length) return;
-    var idle = !popups.length && el.popup.className !== "on";
-    popups = popups.concat(texts);
-    if (idle) nextPopup();
+    popups = texts.slice();
+    nextPopup();
   }
 
   // ---- notes ----
@@ -150,6 +252,7 @@ var View = (function () {
 
   function startPlaying(result) {
     playing = true;
+    scared = {};
     el.title.className = "";
     document.body.classList.add("playing");
     popups = [];
@@ -174,8 +277,8 @@ var View = (function () {
     if (end.win) {
       button("Back to title", showTitle);
     } else {
-      button("Try again", function () { V.show(Game.tryAgain()); });
-      button("Start over", function () { V.show(Game.startOver()); });
+      button("Try again", function () { scared = {}; V.show(Game.tryAgain()); });
+      button("Start over", function () { scared = {}; V.show(Game.startOver()); });
     }
     el.ending.className = "on";
   }
@@ -216,12 +319,19 @@ var View = (function () {
       el.nav.appendChild(b);
     });
 
+    document.body.classList.toggle("dark", isDark());
+    document.body.classList.toggle("danger", !!s.danger);
+    scares(el.scene, room);
+    if (s.camera) scares(el.cameraArt, "camera");
+    beamMoved();
+
     if (s.ending) showEnding(s.ending); else el.ending.className = "";
   };
 
   // Take what the engine returned: queue its texts, play its sounds, then redraw.
   V.show = function (result) {
     (result.sounds || []).forEach(play);
+    if (result.shake) shake();
     if (result.ending) {
       V.render();
       return;
@@ -249,6 +359,15 @@ var View = (function () {
 
     bindHotspots(el.scene);
     bindHotspots(el.cameraArt);
+    document.addEventListener("pointerdown", function (e) {
+      lastPointer = e.pointerType || "mouse";
+      if (lastPointer === "touch") moveBeam(e.clientX, e.clientY);
+    });
+    document.addEventListener("pointermove", function (e) {
+      if (e.pointerType !== "touch" || e.buttons) moveBeam(e.clientX, e.clientY);
+    });
+    moveBeam(window.innerWidth / 2, window.innerHeight / 2);
+    setInterval(flicker, 90);
     $("camera-close").addEventListener("click", function () {
       Game.closeCamera();
       V.render();

@@ -25,9 +25,54 @@ html, body {
   font-weight: 300;
 }
 
-#scene, #camera, #camera-art, #overlay, #title-art { position: fixed; inset: 0; }
+#scene, #camera, #camera-art, #overlay, #tint, #title-art { position: fixed; inset: 0; }
 #scene svg, #camera-art svg, #title-art svg { width: 100%; height: 100%; display: block; }
-#overlay { pointer-events: none; }
+#scene { touch-action: none; }
+
+/* lights on: a soft vignette around the edges */
+#overlay {
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+/* lights out: near-black, except where the phone light points */
+body.dark #overlay {
+  background: rgba(2, 2, 6, 0.97);
+  -webkit-mask-image: radial-gradient(circle var(--fr, 300px) at var(--fx, 50%) var(--fy, 50%), transparent 0, transparent 40%, rgba(0, 0, 0, 0.7) 78%, #000 100%);
+  mask-image: radial-gradient(circle var(--fr, 300px) at var(--fx, 50%) var(--fy, 50%), transparent 0, transparent 40%, rgba(0, 0, 0, 0.7) 78%, #000 100%);
+}
+/* danger: everything goes a little red */
+#tint { pointer-events: none; background: var(--danger); opacity: 0; transition: opacity 0.6s; mix-blend-mode: screen; }
+body.danger #tint { opacity: 0.35; }
+
+/* film grain */
+#grain { display: none; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; pointer-events: none; opacity: 0.06; animation: grain 0.7s steps(6) infinite; }
+body.playing #grain { display: block; }
+body.dark #grain { opacity: 0.1; }
+@keyframes grain {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-6%, 4%); }
+  40% { transform: translate(5%, -7%); }
+  60% { transform: translate(-3%, -4%); }
+  80% { transform: translate(7%, 3%); }
+  100% { transform: translate(-4%, 6%); }
+}
+
+/* jump scares and shaking */
+[data-scare].scare-in { transform-box: fill-box; transform-origin: center; animation: scare-in 0.45s ease-out; }
+@keyframes scare-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.12) translate(3px, -2px); opacity: 1; }
+  80% { transform: scale(0.98) translate(-3px, 2px); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+.shake { animation: shake 0.4s linear; }
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-8px, 4px); }
+  40% { transform: translate(7px, -5px); }
+  60% { transform: translate(-5px, -3px); }
+  80% { transform: translate(4px, 5px); }
+}
 #camera { display: none; background: var(--void); }
 #camera.on { display: block; }
 

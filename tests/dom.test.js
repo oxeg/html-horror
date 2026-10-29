@@ -33,5 +33,23 @@ if (typeof document !== "undefined") {
       View.applyFlags(p.box, { b: true });
       ok(hidden(p.g), "hidden without a");
     });
+
+    var box100 = { left: 0, top: 0, right: 100, bottom: 100 };
+
+    test("circleHitsRect inside", function () {
+      eq(View.circleHitsRect(50, 50, 10, box100), true);
+    });
+
+    test("circleHitsRect touching edge", function () {
+      eq(View.circleHitsRect(110, 50, 10, box100), true);
+    });
+
+    test("circleHitsRect outside", function () {
+      eq(View.circleHitsRect(130, 50, 10, box100), false);
+    });
+
+    test("circleHitsRect corner", function () {
+      eq(View.circleHitsRect(108, 108, 10, box100), false);
+    });
   })();
 }
