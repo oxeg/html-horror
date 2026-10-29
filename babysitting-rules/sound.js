@@ -132,8 +132,8 @@ var Sound = (function () {
   // overtones that die almost at once (a chime rings on; keys don't).
   function clink(out, t) {
     var base = 2200 + Math.random() * 1400;
-    tick(out, t, 6000 + Math.random() * 3000, 2, 0.1, 0.012);
-    [[1, 0.03], [2.76, 0.018]].forEach(function (p) {
+    tick(out, t, 6000 + Math.random() * 3000, 2, 0.2, 0.012);
+    [[1, 0.06], [2.76, 0.035]].forEach(function (p) {
       var g = gain(out);
       run(osc("sine", base * p[0] * (0.98 + Math.random() * 0.04), g), t, 0.1);
       hit(g, t, p[1], 0.001, 0.01);
@@ -145,7 +145,7 @@ var Sound = (function () {
     var g = gain(out);
     var f = filter("bandpass", 2200, 4, g);
     shape(f.frequency, t, [[0, 2200], [len, 3600]]);
-    shape(g.gain, t, [[0, 0], [0.03, 0.12], [len, 0.06], [len + 0.04, 0]]);
+    shape(g.gain, t, [[0, 0], [0.03, 0.22], [len, 0.11], [len + 0.04, 0]]);
     var grit = osc("sawtooth", 38, gain(g.gain, 0.05));  // a rough, bumpy texture
     run(noise(f), t, len + 0.05);
     run(grit, t, len + 0.05);
@@ -228,9 +228,10 @@ var Sound = (function () {
         for (var i = 0; i < hits; i++) clink(master, at + Math.random() * 0.07);
       }
       scrape(master, t + 0.85, 0.3);
-      for (var p = 0; p < 3; p++) tick(master, t + 1.25 + p * 0.045, 2200 - p * 250, 3, 0.12, 0.012);
-      tick(master, t + 1.42, 900, 2, 0.35, 0.03);
-      thump(master, t + 1.42, 220, 90, 0.3, 0.06);
+      for (var p = 0; p < 3; p++) tick(master, t + 1.25 + p * 0.045, 2200 - p * 250, 3, 0.22, 0.012);
+      tick(master, t + 1.42, 3000, 2, 0.7, 0.01);    // the bolt slides: a bright metal "clack"
+      tick(master, t + 1.42, 1500, 9, 0.9, 0.03);
+      tick(master, t + 1.47, 2600, 2, 0.45, 0.01);
     },
     // a light switch: a small sharp snap
     click: function (t) {
