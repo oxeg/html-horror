@@ -117,7 +117,9 @@ var View = (function () {
     return (cx - nx) * (cx - nx) + (cy - ny) * (cy - ny) <= r * r;
   };
 
-  function isDark() { return playing && !!Game.state.flags.dark; }
+  function editing() { return typeof EditMode !== "undefined" && EditMode.on; }
+
+  function isDark() { return playing && !!Game.state.flags.dark && !editing(); }
 
   function beamRadius() { return window.innerWidth * SETTINGS.flashlightSize / 100; }
 
@@ -326,6 +328,7 @@ var View = (function () {
     beamMoved();
 
     if (s.ending) showEnding(s.ending); else el.ending.className = "";
+    if (typeof EditMode !== "undefined") EditMode.afterRender();
   };
 
   // Take what the engine returned: queue its texts, play its sounds, then redraw.
@@ -384,6 +387,7 @@ var View = (function () {
     el.cont.addEventListener("click", function () {
       if (Game.continueGame()) startPlaying();
     });
+    if (typeof EditMode !== "undefined") EditMode.boot();
     showTitle();
   };
 
