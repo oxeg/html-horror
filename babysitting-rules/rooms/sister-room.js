@@ -1,4 +1,4 @@
-// Your little sister's room: her bed, her toys, the moon night-light and a window with curtains.
+// Your little sister's room: her bed, her toys, the moon night-light and a window (no curtains, like everywhere in the apartment).
 // Your sister is drawn three ways: awake and playing, asleep under the blanket, or gone (the empty bed).
 // Clickable things have data-hotspot="...", the same names as in story.js.
 ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
@@ -46,7 +46,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
     <polygon points="187,774 333,679 333,684 187,779" fill="var(--glow)" opacity="0.35"/>
   </g>
 
-  <!-- the window, with curtains. Just the dark out there. -->
+  <!-- the window: bare glass, no curtains. Just the dark out there. -->
   <g data-hotspot="window">
     <rect x="450" y="198" width="244" height="244" fill="var(--furniture)"/>
     <rect x="462" y="210" width="220" height="220" fill="var(--accent)" opacity="0.45"/>
@@ -58,13 +58,6 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
     <polygon points="612,210 628,210 582,430 566,430" fill="var(--glow)" opacity="0.05"/>
     <rect x="569" y="210" width="6" height="220" fill="var(--furniture)"/>
     <rect x="440" y="440" width="264" height="10" fill="var(--accent)"/>
-    <rect x="426" y="184" width="292" height="6" rx="3" fill="var(--accent)"/>
-    <polygon points="434,188 474,188 468,470 428,470" fill="var(--accent)" opacity="0.85"/>
-    <polygon points="670,188 710,188 716,470 676,470" fill="var(--accent)" opacity="0.85"/>
-    <g fill="var(--glow)" opacity="0.35">
-      <circle cx="450" cy="230" r="3"/><circle cx="458" cy="300" r="3"/><circle cx="446" cy="370" r="3"/><circle cx="456" cy="440" r="3"/>
-      <circle cx="694" cy="250" r="3"/><circle cx="688" cy="320" r="3"/><circle cx="698" cy="390" r="3"/><circle cx="692" cy="450" r="3"/>
-    </g>
   </g>
 
   <!-- the face in the window (rule 3). Far away first... -->
