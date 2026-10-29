@@ -179,12 +179,14 @@ var Sound = (function () {
       bell(master, t, 660, 0.35, 0.3);
       bell(master, t + 0.6, 523, 0.35, 0.4);
     },
-    // three soft knocks on a door
+    // three knocks on a wooden door: a sharp knuckle "tak" and a short, hollow wooden "tok"
     knock: function (t) {
       for (var i = 0; i < 3; i++) {
-        var at = t + i * 0.28 + Math.random() * 0.03;
-        thump(master, at, 180, 80, 0.5, 0.1);
-        tick(master, at, 450, 1.5, 0.4, 0.05);
+        var at = t + i * 0.22 + Math.random() * 0.02;
+        tick(master, at, 2400, 1.2, 0.55, 0.008);  // the knuckle
+        tick(master, at, 520, 10, 1.1, 0.05);      // the wood rings for a moment
+        tick(master, at, 1150, 8, 0.55, 0.03);
+        thump(master, at, 160, 110, 0.2, 0.04);    // a hint of a heavy door
       }
     },
     // a jump scare: a low thud and a soft, tense chord, never louder or higher than a knock
