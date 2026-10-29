@@ -140,15 +140,13 @@ var Sound = (function () {
     });
   }
 
-  // Metal sliding on metal: gritty noise through a narrow filter that slides up.
-  function scrape(out, t, len) {
-    var g = gain(out);
-    var f = filter("bandpass", 2200, 4, g);
-    shape(f.frequency, t, [[0, 2200], [len, 3600]]);
-    shape(g.gain, t, [[0, 0], [0.03, 0.22], [len, 0.11], [len + 0.04, 0]]);
-    var grit = osc("sawtooth", 38, gain(g.gain, 0.05));  // a rough, bumpy texture
-    run(noise(f), t, len + 0.05);
-    run(grit, t, len + 0.05);
+  // A key sliding into a lock: its teeth bump past the pins, tk-tk-tk-tk, a little faster each time.
+  function keyIn(out, t) {
+    var at = t;
+    for (var i = 0; i < 6; i++) {
+      tick(out, at, 3400 + Math.random() * 900, 3, 0.22, 0.008);
+      at += 0.05 - i * 0.005;
+    }
   }
 
   // Somewhere a floorboard creaks: a slow buzz of tiny ticks through a narrow filter.
@@ -227,7 +225,7 @@ var Sound = (function () {
         var hits = 4 + Math.floor(Math.random() * 3);
         for (var i = 0; i < hits; i++) clink(master, at + Math.random() * 0.07);
       }
-      scrape(master, t + 0.85, 0.3);
+      keyIn(master, t + 0.95);
       for (var p = 0; p < 3; p++) tick(master, t + 1.25 + p * 0.045, 2200 - p * 250, 3, 0.22, 0.012);
       tick(master, t + 1.42, 3000, 2, 0.7, 0.01);    // the bolt slides: a bright metal "clack"
       tick(master, t + 1.42, 1500, 9, 0.9, 0.03);
