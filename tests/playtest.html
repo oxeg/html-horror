@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>playtest</title>
+</head>
+<body>
+  <pre id="out">running...</pre>
+  <script>var ROOMS = {};</script>
+  <script src="../babysitting-rules/story.js"></script>
+  <script src="../babysitting-rules/rooms/title.js"></script>
+  <script src="../babysitting-rules/rooms/entrance.js"></script>
+  <script src="../babysitting-rules/rooms/living.js"></script>
+  <script src="../babysitting-rules/rooms/my-room.js"></script>
+  <script src="../babysitting-rules/rooms/sister-room.js"></script>
+  <script src="../babysitting-rules/rooms/master-door.js"></script>
+  <script src="../babysitting-rules/rooms/master.js"></script>
+  <script src="../babysitting-rules/rooms/walk-in.js"></script>
+  <script src="../babysitting-rules/rooms/bath-washer.js"></script>
+  <script src="../babysitting-rules/rooms/bath.js"></script>
+  <script src="../babysitting-rules/rooms/buzzer-feed.js"></script>
+  <script src="../babysitting-rules/sound.js"></script>
+  <script src="../babysitting-rules/engine.js"></script>
+  <script src="../babysitting-rules/check.js"></script>
+  <script src="../babysitting-rules/view.js"></script>
+  <script src="harness.js"></script>
+  <script src="playthroughs.js"></script>
+  <script src="game.test.js"></script>
+  <script src="dom.test.js"></script>
+  <script>
+    window.addEventListener("load", function () {
+      var res = runTests();
+      var lines = res.failures.map(function (f) { return "FAIL " + f.name + ": " + f.message; });
+      lines.push(res.failures.length ? res.failures.length + " FAILED (" + res.passed + " passed)" : "ALL PASS (" + res.passed + " tests)");
+      document.getElementById("out").textContent = lines.join("\n");
+      document.title = res.failures.length ? "FAIL " + res.failures.length : "PASS " + res.passed;
+    });
+  </script>
+</body>
+</html>

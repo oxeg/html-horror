@@ -2,10 +2,111 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Babysitting Rules</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <script>var ROOMS = {};</script>
+  <div id="scene"></div>
+  <div id="overlay"></div>
+  <div id="camera"><div id="camera-art"></div><button id="camera-close">Close</button></div>
+
+  <div id="ui-clock"></div>
+  <button id="ui-notes-btn">Notes</button>
+  <div id="ui-popup"></div>
+  <div id="ui-bar"><div id="ui-nav"></div><button id="ui-wait">Wait</button></div>
+  <div id="ui-label"></div>
+
+  <div id="notes"><div class="panel"><div id="notes-list"></div><button id="notes-close">Close</button></div></div>
+
+  <div id="title">
+    <div id="title-art"></div>
+    <div class="menu">
+      <h1>The Babysitting Rules</h1>
+      <button id="title-start">Start</button>
+      <button id="title-continue">Continue</button>
+      <p id="title-count"></p>
+    </div>
+  </div>
+
+  <div id="ending">
+    <div class="menu">
+      <h1 id="ending-title"></h1>
+      <p id="ending-text"></p>
+      <div id="ending-buttons"></div>
+    </div>
+  </div>
+
+  <div id="problem"></div>
+
+  <script>
+    // This part shows a plain-words message if a game file is broken or missing.
+    var ROOMS = {};
+    var lastError = null;
+    window.onerror = function (message, file, line) {
+      lastError = { message: message, file: file || "", line: line || 0 };
+    };
+
+    function showProblem(title, lines) {
+      var box = document.getElementById("problem");
+      var html = "<h2>" + title + "</h2>";
+      for (var i = 0; i < lines.length; i++) html += "<p>" + lines[i] + "</p>";
+      box.innerHTML = html;
+      box.className = "on";
+    }
+
+    // Does this script file define what it should?
+    function registered(name) {
+      var room = /^rooms\/(.+)\.js$/.exec(name);
+      if (room) return typeof ROOMS[room[1]] === "string";
+      if (name === "story.js") return typeof ROOM_INFO !== "undefined";
+      if (name === "engine.js") return typeof Game !== "undefined";
+      if (name === "check.js") return typeof Check !== "undefined";
+      if (name === "view.js") return typeof View !== "undefined";
+      if (name === "sound.js") return typeof Sound !== "undefined";
+      return true;
+    }
+
+    window.addEventListener("load", function () {
+      var names = [];
+      var scripts = document.getElementsByTagName("script");
+      for (var i = 0; i < scripts.length; i++) {
+        var src = scripts[i].getAttribute("src");
+        if (src) names.push(src);
+      }
+      var broken = names.filter(function (n) { return !registered(n); });
+      if (broken.length === names.length) {
+        showProblem("The other game files are missing.",
+          ["If you opened this from a zip file, extract (unzip) the whole folder first, then open index.html inside it."]);
+        return;
+      }
+      if (broken.length) {
+        var lines = [];
+        broken.forEach(function (n) {
+          lines.push("<b>" + n + "</b> has a mistake in it.");
+        });
+        if (lastError && lastError.line && lastError.file) {
+          lines.push("The browser says: " + lastError.message + " (line " + lastError.line + " of " + lastError.file.split("/").slice(-2).join("/") + ")");
+        }
+        lines.push("Press Ctrl+Shift+J to see the exact line.");
+        showProblem("Something is wrong", lines);
+        return;
+      }
+      var found = Check.run();
+      if (found.errors.length) {
+        showProblem("The story has a mistake", found.errors.concat(["Fix it in story.js, then reload the page."]));
+        return;
+      }
+      if (found.warnings.length) {
+        var note = document.createElement("div");
+        note.id = "warnings";
+        note.innerHTML = found.warnings.join("<br>") + " <button>OK</button>";
+        note.getElementsByTagName("button")[0].onclick = function () { note.remove(); };
+        document.body.appendChild(note);
+      }
+      View.boot();
+    });
+  </script>
   <script src="story.js"></script>
   <script src="rooms/title.js"></script>
   <script src="rooms/entrance.js"></script>
