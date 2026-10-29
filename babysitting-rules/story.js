@@ -208,10 +208,13 @@ const ROOM_INFO = {
 //           "beam"      = when your flashlight finds the drawing named in group
 //  text:    what pops up.  sound: a sound to play
 //  setFlags / clearFlags: switches to turn on or off
+//  after:   the id of another event that has to happen first
 //
 //  A danger is the scary part. You have a few clicks (the deadline) to do
 //  the right thing (the steps). Clicking something in fatal ends the game.
 //  hold is what you have to keep doing once you're safe (Wait, or Count).
+//  During a hold, leaving (or clicking what its labels name, like the door) ends the game;
+//  clicking anything else just shows its keep text.
 //  whenSafe is what happens when you make it.
 // ---------------------------------------------------------------------
 const EVENTS = [
@@ -243,6 +246,7 @@ const EVENTS = [
           { text: "Closer. It calls your name again.", setFlags: ["shadow"] },
           { text: "Right outside the door. Your name, one last time." },
         ],
+        keep: "Stay still. Wait until it stops.",
         fatal: "E1",
       },
       whenSafe: { text: "It stops. Silence.", clearFlags: ["notSister", "shadow"] },
@@ -263,7 +267,8 @@ const EVENTS = [
   },
 
   // Rule 6: the bedroom door opens by itself
-  { id: "rule6", time: "21:50", trigger: "now", notIn: ["master", "walk-in"], setFlags: ["masterOpen"] },
+  // (after: "rule1" means it waits until rule 1 has happened, so you can always reach the walk-in for rule 1)
+  { id: "rule6", time: "21:50", trigger: "now", after: "rule1", notIn: ["master", "walk-in"], setFlags: ["masterOpen"] },
 
   // Rule 5: the cat on the balcony
   {
@@ -307,6 +312,7 @@ const EVENTS = [
           { text: "100." },
         ],
         labels: { lock: "Open the door" },
+        keep: "Keep counting...",
         fatal: "E6",
       },
       whenSafe: { text: "Silence. The knocking has stopped.", clearFlags: ["face", "faceClose", "washerSpin"] },
@@ -358,6 +364,8 @@ const EVENTS = [
           { text: "The door handle turns. Click. It's locked." },
           { text: "The handle turns again. Slower." },
         ],
+        labels: { lock: "Open the door" },
+        keep: "Stay quiet. Wait.",
         fatal: "E9",
       },
       whenSafe: { text: "Then… silence.", clearFlags: ["ringing", "feedHallway"] },

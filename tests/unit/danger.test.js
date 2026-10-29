@@ -278,3 +278,23 @@ test("storage that throws does not break play", function () {
     eq(Game.hasSave(), false);
   });
 });
+
+test("harmless clicks during a hold don't break it", function () {
+  startHide("a");
+  Game.go("b");
+  Game.click("door");
+  var r = Game.click("box");
+  eq(r.ending, null);
+  eq(r.texts, ["Keep counting"]);
+  eq(Game.state.danger.holding, true);
+  eq(Game.state.danger.held, 0);
+  Game.wait();
+  ok(Game.wait().texts.indexOf("Safe") >= 0, "the hold still finishes");
+});
+
+test("a hotspot named in hold.labels is fatal during the hold", function () {
+  startHide("a");
+  Game.go("b");
+  Game.click("door");
+  eq(Game.click("coat").ending, "X3");
+});

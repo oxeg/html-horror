@@ -145,12 +145,31 @@ var Check = (function () {
 
     // events
     var last = -1;
+    var lastId = "";
+    var seenIds = {};
+    var allEventIds = EVENTS.map(function (e) { return e.id; });
+    function hasSpot(roomId, spot) {
+      return !!(ROOM_INFO[roomId] && ROOM_INFO[roomId].hotspots && ROOM_INFO[roomId].hotspots[spot]);
+    }
     EVENTS.forEach(function (ev) {
       var where = 'story.js: event "' + ev.id + '"';
+      if (seenIds[ev.id]) errors.push(where + ' is in the list twice. Every event needs its own id: rename one of them.');
+      seenIds[ev.id] = true;
       if (checkTime(where, ev.time)) {
         var t = Game.parseTime(ev.time);
-        if (t < last) errors.push(where + " (" + ev.time + ") comes before the event above it. Events must be in time order: move it down.");
+        if (t < last) errors.push(where + " (" + ev.time + ') is earlier than "' + lastId + '" above it. Events must be in time order: move it up above "' + lastId + '", or change its time.');
+        if (t >= last) lastId = ev.id;
         last = Math.max(last, t);
+      }
+      var trigger = ev.trigger || "now";
+      if (["now", "nextEntry", "inRoom", "beam"].indexOf(trigger) < 0) {
+        errors.push(where + ' has trigger "' + trigger + '". It must be "now", "nextEntry", "inRoom" or "beam" (capital letters matter).');
+      }
+      if ((trigger === "nextEntry" || trigger === "beam") && !ids(ROOM_INFO).some(function (r) { return Game.roomHas(r, ev.group); })) {
+        warnings.push(where + ' waits for "' + ev.group + '", but no room drawing has a part with that name, so it will never happen.');
+      }
+      if (ev.after && allEventIds.indexOf(ev.after) < 0) {
+        errors.push(where + ' waits for an event called "' + ev.after + '", but there is no event with that id.');
       }
       if (ev.room) checkRoom(where + " room", ev.room);
       (ev.notIn || []).forEach(function (r) { checkRoom(where + " notIn", r); });
@@ -160,11 +179,19 @@ var Check = (function () {
       (d.fatal || []).forEach(function (f) {
         checkEnding(where + " fatal", f.ending);
         if (f.room) checkRoom(where + " fatal", f.room);
+        if (f.hotspot && !(f.room ? hasSpot(f.room, f.hotspot) : ids(ROOM_INFO).some(function (r) { return hasSpot(r, f.hotspot); }))) {
+          warnings.push(where + ' has a fatal click on "' + f.hotspot + '", but there is no clickable thing with that name' + (f.room ? ' in room "' + f.room + '"' : "") + ".");
+        }
       });
       if (d.late) checkEnding(where + " late", d.late);
       if (d.hold) checkEnding(where + " hold", d.hold.fatal);
       (d.steps || []).forEach(function (s) {
-        list(s.room !== undefined ? s.room : s.leave).forEach(function (r) { checkRoom(where + " steps", r); });
+        list(s.room !== undefined ? s.room : s.leave).forEach(function (r) {
+          checkRoom(where + " steps", r);
+          if (s.hotspot && isRoom(r) && !hasSpot(r, s.hotspot)) {
+            errors.push(where + ' has a step that clicks "' + s.hotspot + '" in room "' + r + '", but that room has no clickable thing with that name.');
+          }
+        });
       });
 
       // is the deadline long enough for the worst starting room?

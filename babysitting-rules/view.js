@@ -20,6 +20,18 @@ var View = (function () {
 
   function words(text) { return text ? text.split(/\s+/).filter(Boolean) : []; }
 
+  // A double-click must never count twice: after one action, ignore clicks for a moment,
+  // or the second click lands on whatever the first one just put under the mouse.
+  var busyUntil = 0;
+  V.act = function (fn) {
+    var now = Date.now();
+    if (now < busyUntil) return false;
+    busyUntil = now + 350;
+    var result = fn();
+    if (result) V.show(result);
+    return true;
+  };
+
   // story.js may start a sentence with a name like "your sister": show it as "Your sister".
   V.capitalize = function (text) {
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
@@ -117,10 +129,11 @@ var View = (function () {
   }
 
   function clickHotspot(id) {
+    if (!playing || Game.state.ending || el.notes.className === "on") return;
     var info = ROOM_INFO[Game.scene()];
     var def = info && info.hotspots && info.hotspots[id];
     hideLabel();
-    V.show(Game.click(id));
+    if (!V.act(function () { return Game.click(id); })) return;
     if (def && def.note && !Game.state.ending) openNotes();
   }
 
@@ -228,9 +241,10 @@ var View = (function () {
   }
 
   // A new action's texts replace whatever was still showing: what just happened matters most.
+  // All of one action's texts show together, so a danger's warning is never stuck behind another line.
   function queuePopups(texts) {
     if (!texts.length) return;
-    popups = texts.slice();
+    popups = [texts.map(V.capitalize).join("<br>")];
     nextPopup();
   }
 
@@ -324,10 +338,10 @@ var View = (function () {
       el.endButtons.appendChild(b);
     }
     if (end.win) {
-      button("Back to title", showTitle);
+      button("Back to title", function () { V.act(function () { showTitle(); return null; }); });
     } else {
-      button("Try again", function () { scared = {}; V.show(Game.tryAgain()); });
-      button("Start over", function () { scared = {}; V.show(Game.startOver()); });
+      button("Try again", function () { V.act(function () { scared = {}; return Game.tryAgain(); }); });
+      button("Start over", function () { V.act(function () { scared = {}; return Game.startOver(); }); });
     }
     el.ending.className = "on";
   }
@@ -364,7 +378,7 @@ var View = (function () {
     Game.exits().forEach(function (to) {
       var b = document.createElement("button");
       b.textContent = V.capitalize(ROOM_INFO[to].name);
-      b.addEventListener("click", function () { V.show(Game.go(to)); });
+      b.addEventListener("click", function () { V.act(function () { return Game.go(to); }); });
       el.nav.appendChild(b);
     });
 
@@ -429,10 +443,9 @@ var View = (function () {
     moveBeam(window.innerWidth / 2, window.innerHeight / 2);
     setInterval(flicker, 90);
     $("camera-close").addEventListener("click", function () {
-      Game.closeCamera();
-      V.render();
+      V.act(function () { Game.closeCamera(); V.render(); return null; });
     });
-    el.wait.addEventListener("click", function () { V.show(Game.wait()); });
+    el.wait.addEventListener("click", function () { V.act(function () { return Game.wait(); }); });
     el.notesBtn.addEventListener("click", openNotes);
     el.mute.addEventListener("click", function () {
       sound("setMuted", !sound("muted"));
@@ -444,10 +457,10 @@ var View = (function () {
     el.popup.addEventListener("click", nextPopup);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeNotes(); });
     $("title-start").addEventListener("click", function () {
-      startPlaying(Game.newGame());
+      V.act(function () { startPlaying(Game.newGame()); return null; });
     });
     el.cont.addEventListener("click", function () {
-      if (Game.continueGame()) startPlaying();
+      V.act(function () { if (Game.continueGame()) startPlaying(); return null; });
     });
     if (typeof EditMode !== "undefined") EditMode.boot();
     showTitle();

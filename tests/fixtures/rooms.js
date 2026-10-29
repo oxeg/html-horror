@@ -5,7 +5,7 @@ ROOMS.b = `<svg viewBox="0 0 1600 900">
   <rect data-hotspot="note" x="400" y="200" width="100" height="100"/>
   <g data-name="ghost" data-show-if="ghostOn"><rect x="600" y="200" width="100" height="100"/></g>
 </svg>`;
-ROOMS.closet = `<svg viewBox="0 0 1600 900"><rect data-hotspot="coat" x="200" y="200" width="100" height="100"/></svg>`;
+ROOMS.closet = `<svg viewBox="0 0 1600 900"><rect data-hotspot="coat" x="200" y="200" width="100" height="100"/><rect data-hotspot="box" x="400" y="200" width="100" height="100"/></svg>`;
 ROOMS.c = `<svg viewBox="0 0 1600 900">
   <rect data-hotspot="trap" x="200" y="200" width="100" height="100"/>
   <rect data-hotspot="lamp" x="400" y="200" width="100" height="100"/>

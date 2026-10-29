@@ -58,3 +58,16 @@ PLAYTHROUGHS.forEach(function (pt) {
     }
   });
 });
+
+test("rule 1 is still survivable when it first happens after 21:50", function () {
+  Game.useStorage(false);
+  Game.newGame();
+  ["jump 21:05 bath", "wait", "wait", "wait", "go entrance"].forEach(playStep);
+  eq(Game.state.danger && Game.state.danger.id, "rule1", "rule 1 starts in the hallway");
+  eq(Game.state.flags.masterOpen, undefined, "the bedroom door is still closed");
+  ["go master-door", "click door-closed", "click walk-in-door", "wait", "wait", "wait"].forEach(playStep);
+  eq(Game.state.ending, null, "made it to the walk-in");
+  ["go master", "go master-door", "wait", "wait"].forEach(playStep);
+  eq(Game.state.ending, null);
+  eq(Game.state.flags.masterOpen, true, "afterwards the door is found open");
+});

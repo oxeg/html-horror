@@ -41,6 +41,14 @@ if (typeof document !== "undefined") {
       eq(View.capitalize(""), "");
     });
 
+    test("act ignores a second click that comes right after the first", function () {
+      var n = 0;
+      function bump() { n++; return null; }
+      eq(View.act(bump), true);
+      eq(View.act(bump), false);
+      eq(n, 1);
+    });
+
     var box100 = { left: 0, top: 0, right: 100, bottom: 100 };
 
     test("circleHitsRect inside", function () {

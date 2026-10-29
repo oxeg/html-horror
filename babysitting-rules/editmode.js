@@ -119,7 +119,7 @@ var EditMode = (function () {
   M.boot = function () {
     document.addEventListener("keydown", function (e) {
       var tag = (e.target.tagName || "").toLowerCase();
-      if (tag === "input" || tag === "select") return;
+      if (tag === "select" || (tag === "input" && e.target.type !== "checkbox")) return;  // typing a time
       if ((e.key === "e" || e.key === "E") && document.body.classList.contains("playing")) M.toggle();
     });
     window.addEventListener("resize", function () { M.afterRender(); });

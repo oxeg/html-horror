@@ -227,7 +227,7 @@ var Game = (function () {
     for (var i = 0; i < EVENTS.length; i++) {
       var ev = EVENTS[i];
       if (G.state.ending || G.state.danger) return;
-      if (!due(ev)) continue;
+      if (!due(ev) || (ev.after && !G.state.fired[ev.after])) continue;
       var trigger = ev.trigger || "now";
       if (trigger === "now") {
         if (!(ev.notIn && ev.notIn.indexOf(G.state.room) >= 0)) fire(ev, r);
@@ -340,6 +340,11 @@ var Game = (function () {
     if (ending) {
       endGame(ending, r);
       save();
+      return r;
+    }
+    // During a hold only leaving, or the things its labels name (the door), give you away.
+    if (G.state.danger && G.state.danger.holding && !h.goTo && !(D.hold.labels || {})[id]) {
+      r.texts.push(D.hold.keep || "Keep going...");
       return r;
     }
     if (breaksHold(r)) return r;

@@ -136,3 +136,14 @@ test("setFlag toggles a flag", function () {
   Game.setFlag("lit", false);
   eq(Game.state.flags.lit, undefined);
 });
+
+test("after waits until the named event has happened", function () {
+  Game.newGame();
+  waits(2);
+  eq(Game.state.flags.lateOn, undefined, "late is due but ghost hasn't happened");
+  waits(2);
+  Game.go("b");
+  eq(Game.state.flags.ghostOn, true);
+  Game.click("note");
+  eq(Game.state.flags.lateOn, true);
+});

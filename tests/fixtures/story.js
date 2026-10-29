@@ -37,6 +37,7 @@ const ROOM_INFO = {
     exits: ["b"],
     hotspots: {
       coat: { label: "Coat", text: "A coat." },
+      box: { label: "Box", text: "A box." },
     },
   },
   c: {
@@ -63,6 +64,7 @@ const ROOM_INFO = {
 const EVENTS = [
   { id: "e1", time: "19:20", trigger: "now", text: "E1 text", setFlags: ["x"], sound: "click" },
   { id: "e2", time: "19:20", trigger: "now", text: "E2 text" },
+  { id: "late", time: "19:30", trigger: "now", after: "ghost", setFlags: ["lateOn"] },
   { id: "bed", time: "19:40", trigger: "now", unlessFlag: "asleep", setFlags: ["asleep"], text: "Bed" },
   { id: "ghost", time: "19:50", trigger: "nextEntry", group: "ghost", setFlags: ["ghostOn"] },
   { id: "glass", time: "20:00", trigger: "inRoom", room: "c", text: "Glass", textAway: "Away" },
@@ -85,6 +87,7 @@ const EVENTS = [
         button: "Count",
         steps: [{ text: "1" }, { text: "2", sound: "knock", scare: true }],
         labels: { coat: "Open it" },
+        keep: "Keep counting",
         fatal: "X3",
       },
       whenSafe: { text: "Safe", clearFlags: ["x"] },

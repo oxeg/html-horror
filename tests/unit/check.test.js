@@ -94,7 +94,7 @@ test("check: bad time format and out-of-order events", function () {
     checked(function (r) { ok(mentions(r.errors, ["e1", "7:5"]), r.errors.join("|")); });
     e1.time = old;
     EVENTS[1].time = "19:10";
-    checked(function (r) { ok(mentions(r.errors, ["e2", "19:10"]), r.errors.join("|")); });
+    checked(function (r) { ok(mentions(r.errors, ["e2", "19:10", "e1", "up"]), r.errors.join("|")); });
     EVENTS[1].time = "19:20";
     ROOM_INFO.c.hotspots.kid.notBefore = "9:3";
     checked(function (r) { ok(mentions(r.errors, ["kid", "9:3"]), r.errors.join("|")); });
@@ -144,4 +144,56 @@ test("check: deadline too short gives a warning naming the event and the numbers
     hide.danger.deadline = 2;
     checked(function (r) { ok(mentions(r.warnings, ["hide", "2", "3"]), r.warnings.join("|")); });
   } finally { hide.danger.deadline = old; }
+});
+
+function eventById(id) {
+  return EVENTS.filter(function (e) { return e.id === id; })[0];
+}
+
+test("check: two events with the same id", function () {
+  var ev = eventById("e2");
+  try {
+    ev.id = "e1";
+    checked(function (r) { ok(mentions(r.errors, ["e1", "twice"]), r.errors.join("|")); });
+  } finally { ev.id = "e2"; }
+});
+
+test("check: unknown trigger", function () {
+  var ev = eventById("glass");
+  try {
+    ev.trigger = "inroom";
+    checked(function (r) { ok(mentions(r.errors, ["glass", "inroom"]), r.errors.join("|")); });
+  } finally { ev.trigger = "inRoom"; }
+});
+
+test("check: a danger step clicks a hotspot its room doesn't have", function () {
+  var step = eventById("pick").danger.steps[0];
+  try {
+    step.hotspot = "kidd";
+    checked(function (r) { ok(mentions(r.errors, ["pick", "kidd"]), r.errors.join("|")); });
+  } finally { step.hotspot = "kid"; }
+});
+
+test("check: an event group no drawing has", function () {
+  var ev = eventById("ghost");
+  try {
+    ev.group = "ghostt";
+    checked(function (r) { ok(mentions(r.warnings, ["ghost", "ghostt"]), r.warnings.join("|")); });
+  } finally { ev.group = "ghost"; }
+});
+
+test("check: a fatal hotspot that doesn't exist", function () {
+  var f = eventById("hide").danger.fatal[0];
+  try {
+    f.hotspot = "trapp";
+    checked(function (r) { ok(mentions(r.warnings, ["hide", "trapp"]), r.warnings.join("|")); });
+  } finally { f.hotspot = "trap"; }
+});
+
+test("check: after names an event that doesn't exist", function () {
+  var ev = eventById("late");
+  try {
+    ev.after = "ghostt";
+    checked(function (r) { ok(mentions(r.errors, ["late", "ghostt"]), r.errors.join("|")); });
+  } finally { ev.after = "ghost"; }
 });
