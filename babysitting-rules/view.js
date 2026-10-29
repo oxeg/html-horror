@@ -145,13 +145,13 @@ var View = (function () {
     el.ending.className = "";
     closeNotes();
     el.title.className = "on";
-    document.body.className = "";
+    document.body.classList.remove("playing");
   }
 
   function startPlaying(result) {
     playing = true;
     el.title.className = "";
-    document.body.className = "playing";
+    document.body.classList.add("playing");
     popups = [];
     nextPopup();
     if (result) V.show(result); else V.render();

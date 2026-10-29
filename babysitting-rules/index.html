@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Babysitting Rules</title>
   <link rel="stylesheet" href="style.css">
+  <style>body:not(.ready):not(.playing) > div:not(#problem):not(#warnings) { display: none !important; }</style>
 </head>
 <body>
   <div id="scene"></div>
@@ -42,29 +43,57 @@
   <script>
     // This part shows a plain-words message if a game file is broken or missing.
     var ROOMS = {};
-    var lastError = null;
+    var errors = [];
     window.onerror = function (message, file, line) {
-      lastError = { message: message, file: file || "", line: line || 0 };
+      errors.push({ message: message, file: file || "", line: line || 0 });
     };
+
+    // Works even if style.css is missing, so it never lands on a blank or messy page.
+    function styleBox(box, css) { box.style.cssText = css; }
 
     function showProblem(title, lines) {
       var box = document.getElementById("problem");
-      var html = "<h2>" + title + "</h2>";
+      var html = "<h2 style='color:#ffb4b4;font-weight:400'>" + title + "</h2>";
       for (var i = 0; i < lines.length; i++) html += "<p>" + lines[i] + "</p>";
       box.innerHTML = html;
       box.className = "on";
+      styleBox(box, "display:block;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;background:#000;color:#fff;padding:8vh 10vw;overflow:auto;font:18px/1.5 system-ui,sans-serif");
     }
 
     // Does this script file define what it should?
+    // (A const that was never reached still exists but throws when touched, so a throw means "not defined".)
     function registered(name) {
+      try { return isRegistered(name); } catch (e) { return false; }
+    }
+    function isRegistered(name) {
       var room = /^rooms\/(.+)\.js$/.exec(name);
       if (room) return typeof ROOMS[room[1]] === "string";
-      if (name === "story.js") return typeof ROOM_INFO !== "undefined";
+      if (name === "story.js") {
+        return typeof SISTER_NAME !== "undefined" && typeof CAT_NAME !== "undefined" &&
+          typeof SETTINGS !== "undefined" && typeof NOTES !== "undefined" &&
+          typeof ROOM_INFO !== "undefined" && typeof EVENTS !== "undefined" && typeof ENDINGS !== "undefined";
+      }
       if (name === "engine.js") return typeof Game !== "undefined";
       if (name === "check.js") return typeof Check !== "undefined";
       if (name === "view.js") return typeof View !== "undefined";
       if (name === "sound.js") return typeof Sound !== "undefined";
       return true;
+    }
+
+    // What the browser said about this file, with its own line number when it gave one.
+    function errorsFor(name) {
+      var out = [];
+      errors.forEach(function (e) {
+        var file = e.file.split("?")[0];
+        if (file.slice(-name.length) === name) {
+          out.push("The browser says: " + e.message + (e.line ? " (line " + e.line + ")" : ""));
+        }
+      });
+      return out;
+    }
+
+    function failed(e) {
+      showProblem("Something is wrong", [e.message, "Press Ctrl+Shift+J to see the exact line."]);
     }
 
     window.addEventListener("load", function () {
@@ -84,27 +113,31 @@
         var lines = [];
         broken.forEach(function (n) {
           lines.push("<b>" + n + "</b> has a mistake in it.");
+          lines = lines.concat(errorsFor(n));
         });
-        if (lastError && lastError.line && lastError.file) {
-          lines.push("The browser says: " + lastError.message + " (line " + lastError.line + " of " + lastError.file.split("/").slice(-2).join("/") + ")");
-        }
         lines.push("Press Ctrl+Shift+J to see the exact line.");
         showProblem("Something is wrong", lines);
         return;
       }
-      var found = Check.run();
-      if (found.errors.length) {
-        showProblem("The story has a mistake", found.errors.concat(["Fix it in story.js, then reload the page."]));
-        return;
+      try {
+        var found = Check.run();
+        if (found.errors.length) {
+          showProblem("The story has a mistake", found.errors.concat(["Fix it in story.js, then reload the page."]));
+          return;
+        }
+        if (found.warnings.length) {
+          var note = document.createElement("div");
+          note.id = "warnings";
+          styleBox(note, "position:fixed;z-index:90;bottom:8px;left:8px;padding:8px 12px;font:13px system-ui,sans-serif;background:#222;color:#fff;border:1px solid #666;border-radius:8px");
+          note.innerHTML = found.warnings.join("<br>") + " <button>OK</button>";
+          note.getElementsByTagName("button")[0].onclick = function () { note.remove(); };
+          document.body.appendChild(note);
+        }
+        document.body.className = "ready";
+        View.boot();
+      } catch (e) {
+        failed(e);
       }
-      if (found.warnings.length) {
-        var note = document.createElement("div");
-        note.id = "warnings";
-        note.innerHTML = found.warnings.join("<br>") + " <button>OK</button>";
-        note.getElementsByTagName("button")[0].onclick = function () { note.remove(); };
-        document.body.appendChild(note);
-      }
-      View.boot();
     });
   </script>
   <script src="story.js"></script>
