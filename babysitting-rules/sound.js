@@ -234,10 +234,11 @@ var Sound = (function () {
       tick(master, t + 1.42, 1500, 9, 0.9, 0.03);
       tick(master, t + 1.47, 2600, 2, 0.45, 0.01);
     },
-    // a light switch: a small sharp snap
+    // a light switch: a crisp plastic snap, with the tiny second click a real switch makes
     click: function (t) {
-      tick(master, t, 2800, 1.2, 0.3, 0.008);
-      thump(master, t, 500, 200, 0.15, 0.02);
+      tick(master, t, 6000, 1, 0.55, 0.003);
+      tick(master, t, 3200, 2, 0.45, 0.005);
+      tick(master, t + 0.014, 4500, 2, 0.3, 0.003);
     },
   };
 
