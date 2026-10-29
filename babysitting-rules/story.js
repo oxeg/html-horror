@@ -41,18 +41,18 @@ const NOTES = {
     text: `<b>Rules for tonight</b>, Mom & Dad<br><br>
 1. ${SISTER_NAME} is asleep by 8:30 and doesn't wake up until morning. If she's standing in a doorway after 9, it isn't her. Don't answer when it calls your name. Go to our walk-in closet and wait until it stops.<br>
 2. After dark, the balcony door is a mirror. If your reflection moves when you don't, walk away slowly and don't look back until you're in another room.<br>
-3. We live high up. If you see a face in a window anyway, lock yourself in the bathroom <b>without</b> the washing machine and count to 100. Don't open the door for anyone, even if they sound like us.<br>
-4. If the buzzer rings, check the camera first. If no one is there, don't answer. If the camera shows the inside of our apartment, take ${SISTER_NAME} and hide.<br>
-5. ${CAT_NAME} is never allowed on the balcony. If you see her out there, don't let her in. Check her tree house in our bedroom first.<br>
+3. If you see a face in the window, lock yourself in the bathroom <b>without</b> the washing machine and count to 100. Don't open the door for anyone, even if they sound like us.<br>
+4. If the doorbell rings, check the camera first. If no one is there, don't answer. If the camera shows the inside of our apartment, take ${SISTER_NAME} and hide.<br>
+5. The cat is never allowed on the balcony. If you see her out there, don't let her in. Check her tree house in our bedroom first.<br>
 6. Keep our bedroom door closed. If you find it open, don't go in, not even to hide.<br>
-7. We're home at 11:30. We have keys. We will <b>never</b> ring the buzzer.<br><br>
+7. We're home at 11:30. We have keys. We will <b>never</b> ring the doorbell.<br><br>
 Love you! ❤️`,
   },
   fake: {
     title: "Note from under the door",
     look: "fake",
     text: `The note on the fridge isn't from us. Rule 7 is wrong, we lost our keys!<br>
-Let us in. The cat is fine. Hurry.<br>
+Let us in. Your sister is fine. Hurry.<br>
 Mom & Dad`,
   },
 };
@@ -83,7 +83,7 @@ const ROOM_INFO = {
     exits: ["living", "my-room", "sister-room", "bath", "bath-washer", "master-door"],
     hotspots: {
       "front-door": { label: "Front door", text: "Locked. Mom and Dad have their keys." },
-      "buzzer": { label: "Buzzer screen", action: "camera" },
+      "doorbell": { label: "Doorbell screen", action: "camera" },
       "light-switch": { label: "Light switch", text: "Click. Click." },
       "coats": { label: "Coat hooks", text: "Mom's red coat is gone. So is Dad's." },
       "fake-note": { label: "A note under the door", note: "fake" },
@@ -99,7 +99,7 @@ const ROOM_INFO = {
       "counter": { label: "Kitchen counter", text: "Crumbs. Somebody had cookies." },
       "sofa": { label: "Sofa", text: "The remote is stuck between the cushions again." },
       "cat-bowl": { label: "Cat bowl", text: `You fill ${CAT_NAME}'s bowl. She's asleep in her tree house and doesn't come.` },
-      "window": { label: "Window", text: "Far below, the city lights. We live really high up." },
+      "window": { label: "Window", text: "The city lights, far away." },
       "balcony-door": { label: "Balcony door", text: "Locked. It's cold out there, and there's no balcony light." },
       "reflection": { label: "Your reflection", ending: "E2" },
       "cat-outside": { label: `${CAT_NAME}?`, text: "She stares at you through the glass. Her eyes shine in your light." },
@@ -183,14 +183,14 @@ const ROOM_INFO = {
       "lock": { label: "Lock the door", text: "Click. Locked." },
     },
   },
-  // The buzzer's camera. It's not a room you walk into: it opens on top of the hallway.
-  "buzzer-feed": {
-    name: "Buzzer camera",
+  // The doorbell's camera. It's not a room you walk into: it opens on top of the hallway.
+  "doorbell-camera": {
+    name: "Doorbell camera",
     overlay: true,
     exits: [],
     hotspots: {
       "talk": { label: "Talk", text: "Static. Nobody's there." },
-      "open": { label: "Open the building door", text: "You buzz the door. Nobody comes in." },
+      "open": { label: "Open the building door", text: "You open the door downstairs. Nobody comes in." },
     },
   },
 };
@@ -281,7 +281,7 @@ const EVENTS = [
   {
     id: "rule3", time: "22:20", trigger: "beam", group: "face",
     armFlags: ["face"], setFlags: ["faceClose", "washerSpin"],
-    text: "A face. In the window. We live really high up.",
+    text: "A face. In the window. Looking at you.",
     fallback: 3,
     fallbackText: "Knock. Knock. A face is pressed against the window.",
     fallbackSound: "knock",
@@ -311,36 +311,36 @@ const EVENTS = [
     },
   },
 
-  // Rule 4: nobody at the buzzer
+  // Rule 4: nobody at the doorbell
   {
-    id: "rule4a", time: "22:40", trigger: "now", setFlags: ["ringing"], sound: "buzzer",
-    text: "Ding-dong. The buzzer.",
+    id: "rule4a", time: "22:40", trigger: "now", setFlags: ["ringing"], sound: "doorbell",
+    text: "Ding-dong. The doorbell.",
     danger: {
       endure: 3,
       waitEnds: true,
       fatal: [{ hotspot: "talk", ending: "E7" }, { hotspot: "open", ending: "E7" }],
-      whenSafe: { text: "The buzzer stops ringing.", clearFlags: ["ringing"] },
+      whenSafe: { text: "The doorbell stops ringing.", clearFlags: ["ringing"] },
     },
   },
 
   // Rule 7: "Mom" at the door, and a note slides under it
   {
-    id: "rule7", time: "23:00", trigger: "now", setFlags: ["ringing", "feedMom", "fakeNote"], sound: "buzzer", scare: true,
-    text: "Ding-dong. The buzzer again.<br>Something slides under the front door.",
+    id: "rule7", time: "23:00", trigger: "now", setFlags: ["ringing", "feedMom", "fakeNote"], sound: "doorbell", scare: true,
+    text: "Ding-dong. The doorbell again.<br>Something slides under the front door.",
     danger: {
       endure: 4,
       waitEnds: false,
       fatal: [{ hotspot: "open", ending: "E8" }],
-      say: { talk: `"We lost our keys! Buzz us in, it's freezing!"` },
-      labels: { open: "Buzz them in" },
-      whenSafe: { text: "The buzzer stops. On the screen, the entrance is empty again.", clearFlags: ["ringing", "feedMom"] },
+      say: { talk: `"We lost our keys! Let us in, it's freezing!"` },
+      labels: { open: "Let them in" },
+      whenSafe: { text: "The doorbell stops. On the screen, the entrance is empty again.", clearFlags: ["ringing", "feedMom"] },
     },
   },
 
   // Rule 4 again: the camera shows the inside of the apartment
   {
     id: "rule4b", time: "23:10", trigger: "now", setFlags: ["ringing", "feedHallway"],
-    text: "Out in the hallway, the buzzer screen lights up. No sound.",
+    text: "Out in the hallway, the doorbell screen lights up. No sound.",
     danger: {
       steps: [
         { room: "sister-room", hotspot: "sister-asleep", setFlags: ["sisterWithYou"], text: `You pick ${SISTER_NAME} up. She doesn't wake.` },
@@ -404,7 +404,7 @@ const ENDINGS = {
   },
   E8: {
     title: "We lost our keys",
-    text: `You buzz them in. Footsteps climb the stairs. Many more than two.<br>Real Mom would never call ${CAT_NAME} "the cat"…`,
+    text: `You let them in. Footsteps climb the stairs. Many more than two.<br>Real Mom would never call ${SISTER_NAME} "your sister"…`,
   },
   E9: {
     title: "You forgot her",
