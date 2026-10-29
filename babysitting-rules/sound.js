@@ -128,6 +128,29 @@ var Sound = (function () {
     });
   }
 
+  // One key hitting another: a "tsk" of bright noise and two clangy, out-of-tune
+  // overtones that die almost at once (a chime rings on; keys don't).
+  function clink(out, t) {
+    var base = 2200 + Math.random() * 1400;
+    tick(out, t, 6000 + Math.random() * 3000, 2, 0.1, 0.012);
+    [[1, 0.03], [2.76, 0.018]].forEach(function (p) {
+      var g = gain(out);
+      run(osc("sine", base * p[0] * (0.98 + Math.random() * 0.04), g), t, 0.1);
+      hit(g, t, p[1], 0.001, 0.01);
+    });
+  }
+
+  // Metal sliding on metal: gritty noise through a narrow filter that slides up.
+  function scrape(out, t, len) {
+    var g = gain(out);
+    var f = filter("bandpass", 2200, 4, g);
+    shape(f.frequency, t, [[0, 2200], [len, 3600]]);
+    shape(g.gain, t, [[0, 0], [0.03, 0.12], [len, 0.06], [len + 0.04, 0]]);
+    var grit = osc("sawtooth", 38, gain(g.gain, 0.05));  // a rough, bumpy texture
+    run(noise(f), t, len + 0.05);
+    run(grit, t, len + 0.05);
+  }
+
   // Somewhere a floorboard creaks: a slow buzz of tiny ticks through a narrow filter.
   function creak(out, t) {
     var len = 0.5 + Math.random() * 0.8;
@@ -195,21 +218,17 @@ var Sound = (function () {
       shape(motor.frequency, t, [[0, 50], [6, 180]]);
       [spin, motor, noise(filter("lowpass", 300, 1, drum))].forEach(function (s) { run(s, t, 6.1); });
     },
-    // keys jingle, then the lock turns: click, clack
+    // a bunch of keys jingling, the key slides into the lock, the pins click, the bolt goes clack
     keys: function (t) {
-      for (var i = 0; i < 14; i++) {
-        var at = t + Math.random() * 0.7;
-        var f = 2200 + Math.random() * 2400;
-        var g = gain(master);
-        run(osc("sine", f, g), at, 0.25);
-        run(osc("sine", f * 1.48, g), at, 0.25);
-        hit(g, at, 0.035, 0.002, 0.04);
-        if (i % 3 === 0) tick(master, at, 5000, 1, 0.05, 0.03);
+      for (var shake = 0; shake < 4; shake++) {
+        var at = t + shake * 0.17 + Math.random() * 0.03;
+        var hits = 4 + Math.floor(Math.random() * 3);
+        for (var i = 0; i < hits; i++) clink(master, at + Math.random() * 0.07);
       }
-      tick(master, t + 1.0, 1800, 4, 0.3, 0.02);
-      thump(master, t + 1.0, 300, 160, 0.2, 0.04);
-      tick(master, t + 1.25, 1200, 4, 0.35, 0.03);
-      thump(master, t + 1.25, 220, 110, 0.3, 0.06);
+      scrape(master, t + 0.85, 0.3);
+      for (var p = 0; p < 3; p++) tick(master, t + 1.25 + p * 0.045, 2200 - p * 250, 3, 0.12, 0.012);
+      tick(master, t + 1.42, 900, 2, 0.35, 0.03);
+      thump(master, t + 1.42, 220, 90, 0.3, 0.06);
     },
     // a light switch: a small sharp snap
     click: function (t) {
