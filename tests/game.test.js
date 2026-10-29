@@ -1,0 +1,51 @@
+// The real game: validation, texts, and every scripted playthrough.
+function playStep(step) {
+  var p = step.split(" ");
+  if (p[0] === "go") return Game.go(p[1]);
+  if (p[0] === "click") return Game.click(p[1]);
+  if (p[0] === "wait") return Game.wait();
+  if (p[0] === "beam") return Game.beamTouched(p[1]);
+  if (p[0] === "close") return Game.closeCamera();
+  if (p[0] === "jump") return Game.editJump(p[2], p[1]);
+  if (p[0] === "flag") return Game.setFlag(p[1], p[2] === "on");
+  throw new Error("unknown step: " + step);
+}
+
+function describeState() {
+  var s = Game.state;
+  return Game.clock() + " in " + s.room + (s.danger ? " (danger " + s.danger.id + ")" : "") + (s.ending ? " ended " + s.ending : "");
+}
+
+test("real game passes validation", function () {
+  var res = Check.run();
+  eq(res.errors, []);
+  eq(res.warnings, []);
+});
+
+test("no unfilled template text", function () {
+  var all = JSON.stringify([NOTES, ROOM_INFO, EVENTS, ENDINGS]);
+  ok(all.indexOf("${") < 0, "a ${...} was left unfilled");
+  ok(all.indexOf("SISTER_NAME") < 0 && all.indexOf("CAT_NAME") < 0, "placeholder name in text");
+  ok(all.indexOf("Mia") >= 0 && all.indexOf("Whiskers") >= 0, "names are used");
+});
+
+test("fake note never names them", function () {
+  ok(NOTES.fake.text.indexOf("Mia") < 0 && NOTES.fake.text.indexOf("Whiskers") < 0, "fake note names someone");
+});
+
+PLAYTHROUGHS.forEach(function (pt) {
+  test("playthrough " + pt.name, function () {
+    Game.useStorage(false);
+    Game.newGame();
+    pt.steps.forEach(function (step, i) {
+      if (Game.state.ending) throw new Error("ended " + Game.state.ending + " early, before step " + i + " (" + step + ")");
+      playStep(step);
+    });
+    eq(Game.state.ending, pt.ending, "ending (now " + describeState() + ")");
+    if (pt.retry) {
+      Game.tryAgain();
+      eq(Game.state.ending, null, "ending after Try again");
+      eq(Game.state.danger ? Game.state.danger.id : null, pt.retry.danger, "danger after Try again");
+    }
+  });
+});
