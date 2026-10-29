@@ -59,7 +59,20 @@ const ROOM_INFO = {
   },
 };
 
-const EVENTS = [];
+const EVENTS = [
+  { id: "e1", time: "19:20", trigger: "now", text: "E1 text", setFlags: ["x"], sound: "click" },
+  { id: "e2", time: "19:20", trigger: "now", text: "E2 text" },
+  { id: "bed", time: "19:40", trigger: "now", unlessFlag: "asleep", setFlags: ["asleep"], text: "Bed" },
+  { id: "ghost", time: "19:50", trigger: "nextEntry", group: "ghost", setFlags: ["ghostOn"] },
+  { id: "glass", time: "20:00", trigger: "inRoom", room: "c", text: "Glass", textAway: "Away" },
+  { id: "stay", time: "20:00", trigger: "now", notIn: ["closet"], setFlags: ["open"] },
+  { id: "meow", time: "20:05", trigger: "now", room: "c", text: "Here", textAway: "Away" },
+  {
+    id: "peek", time: "20:10", trigger: "beam", group: "face", armFlags: ["face"], setFlags: ["faceClose"],
+    fallback: 3, fallbackText: "Knock", fallbackSound: "knock", scare: true,
+  },
+  { id: "home", time: "21:00", trigger: "now", ending: "WIN" },
+];
 
 const ENDINGS = {
   X1: { title: "X1", text: "Ending one." },

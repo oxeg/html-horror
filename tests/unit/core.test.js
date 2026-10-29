@@ -64,7 +64,8 @@ test("notBefore shows tooEarly and applies nothing", function () {
   Game.newGame();
   Game.go("c");
   var r = Game.click("kid");
-  eq(r.texts, ["Too early"]);
+  eq(r.texts[0], "Too early");
+  ok(r.texts.indexOf("Goodnight.") < 0, "no goodnight text");
   eq(Game.state.flags.asleep, undefined);
 });
 

@@ -64,10 +64,110 @@ var Game = (function () {
       flags: {},
       notes: [],
       fired: {},
+      armed: {},
       actionsHere: 0,
       ending: null,
       danger: null,
     };
+  }
+
+  // ---- events ----
+
+  function due(ev) {
+    return !G.state.fired[ev.id] && G.state.time >= parseTime(ev.time);
+  }
+
+  // Fires one event: checkpoint first, so "Try again" lands just before it.
+  function fire(ev, r, byFallback) {
+    G.checkpoint = { eventId: ev.id, state: copy(G.state) };
+    G.state.fired[ev.id] = true;
+    if (ev.unlessFlag && G.state.flags[ev.unlessFlag]) return;
+    setFlags(ev.setFlags, true);
+    setFlags(ev.clearFlags, false);
+    var text = ev.room && ev.textAway && G.state.room !== ev.room ? ev.textAway : ev.text;
+    var sound = ev.sound;
+    if (byFallback) {
+      text = ev.fallbackText || text;
+      sound = ev.fallbackSound || sound;
+    }
+    if (text) r.texts.push(text);
+    if (sound) r.sounds.push(sound);
+    if (ev.scare) r.shake = true;
+    if (ev.ending) endGame(ev.ending, r);
+  }
+
+  // Runs after every action: fires whatever is due, in story order.
+  function processEvents(r, entered) {
+    for (var i = 0; i < EVENTS.length; i++) {
+      var ev = EVENTS[i];
+      if (G.state.ending) return;
+      if (!due(ev)) continue;
+      var trigger = ev.trigger || "now";
+      if (trigger === "now") {
+        if (!(ev.notIn && ev.notIn.indexOf(G.state.room) >= 0)) fire(ev, r);
+      } else if (trigger === "nextEntry") {
+        if (entered && roomHas(G.state.room, ev.group)) fire(ev, r);
+      } else if (trigger === "inRoom") {
+        if (G.state.room === ev.room) fire(ev, r);
+      } else if (trigger === "beam") {
+        if (!G.state.armed[ev.id]) {
+          G.state.armed[ev.id] = true;
+          G.state.actionsHere = 0;
+          setFlags(ev.armFlags, true);
+        } else if (ev.fallback && roomHas(G.state.room, ev.group) && G.state.actionsHere >= ev.fallback) {
+          fire(ev, r, true);
+        }
+      }
+    }
+  }
+
+  function after(r, entered) {
+    if (!entered) G.state.actionsHere++;
+    processEvents(r, entered);
+    return r;
+  }
+
+  function beamTouched(name) {
+    var r = emptyResult();
+    if (G.state.ending) return r;
+    for (var i = 0; i < EVENTS.length; i++) {
+      var ev = EVENTS[i];
+      if (ev.trigger === "beam" && ev.group === name && due(ev) && G.state.armed[ev.id]) {
+        fire(ev, r);
+        return after(r, true);
+      }
+    }
+    return r;
+  }
+
+  // Edit mode: jump to a time. Earlier events count as done (their flags are
+  // applied, but no texts, sounds or dangers); later ones will happen again.
+  function editJump(roomId, time) {
+    var t = parseTime(time);
+    var s = G.state;
+    s.time = t;
+    s.room = roomId;
+    s.camera = false;
+    s.danger = null;
+    s.ending = null;
+    s.actionsHere = 0;
+    EVENTS.forEach(function (ev) {
+      if (parseTime(ev.time) < t) {
+        if (s.fired[ev.id]) return;
+        s.fired[ev.id] = true;
+        setFlags(ev.armFlags, true);
+        setFlags(ev.setFlags, true);
+        setFlags(ev.clearFlags, false);
+        var safe = ev.danger && ev.danger.whenSafe;
+        if (safe) {
+          setFlags(safe.setFlags, true);
+          setFlags(safe.clearFlags, false);
+        }
+      } else {
+        delete s.fired[ev.id];
+        delete s.armed[ev.id];
+      }
+    });
   }
 
   // ---- moving, looking, ending ----
@@ -93,7 +193,7 @@ var Game = (function () {
     if ((ROOM_INFO[G.state.room].exits || []).indexOf(roomId) < 0) return r;
     enter(roomId);
     spend(SETTINGS.moveMinutes);
-    return r;
+    return after(r, true);
   }
 
   function click(id) {
@@ -108,7 +208,7 @@ var Game = (function () {
     if (h.notBefore && G.state.time < parseTime(h.notBefore)) {
       r.texts.push(h.tooEarly);
       spend(minutes);
-      return r;
+      return after(r, false);
     }
     if (h.text) r.texts.push(h.text);
     if (h.note && G.state.notes.indexOf(h.note) < 0) G.state.notes.push(h.note);
@@ -116,14 +216,14 @@ var Game = (function () {
     if (h.action === "camera") G.state.camera = true;
     if (h.goTo) enter(h.goTo);
     spend(minutes);
-    return r;
+    return after(r, !!h.goTo);
   }
 
   function wait() {
     var r = emptyResult();
     if (G.state.ending) return r;
     spend(SETTINGS.waitMinutes);
-    return r;
+    return after(r, false);
   }
 
   // ---- what the view asks ----
@@ -136,7 +236,7 @@ var Game = (function () {
   G.newGame = function () {
     G.state = freshState();
     G.checkpoint = null;
-    return emptyResult();
+    return after(emptyResult(), true);
   };
   G.go = go;
   G.click = click;
@@ -153,6 +253,11 @@ var Game = (function () {
     return formatTime(G.state.time);
   };
   G.roomHas = roomHas;
+  G.beamTouched = beamTouched;
+  G.editJump = editJump;
+  G.setFlag = function (name, on) {
+    setFlags([name], on);
+  };
   G.parseTime = parseTime;
   G.formatTime = formatTime;
   G.useStorage = function (on) {
