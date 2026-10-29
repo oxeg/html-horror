@@ -236,20 +236,49 @@ var View = (function () {
 
   // ---- notes ----
 
+  // Each line of a note becomes its own block, so a rule never splits between the two columns.
+  function noteLines(text) {
+    return String(text).split(/<br\s*\/?>/).map(function (line) {
+      line = line.trim();
+      return line ? '<div class="line">' + line + "</div>" : '<div class="gap"></div>';
+    }).join("");
+  }
+
   function renderNotes() {
     var found = Game.state.notes;
     var html = "";
     found.forEach(function (id) {
       var n = NOTES[id];
-      if (n) html += '<div class="note ' + n.look + '"><h2>' + n.title + "</h2><p>" + n.text + "</p></div>";
+      if (n) html += '<div class="note ' + n.look + '" title="' + n.title + '">' + noteLines(n.text) + "</div>";
     });
     el.notesList.innerHTML = html || '<p class="none">No notes yet.</p>';
     el.notesList.className = found.length > 1 ? "both" : "";
   }
 
+  // Shrink the writing until every note fits on the screen: no scroll bars, ever.
+  function fitNotes() {
+    var list = el.notesList;
+    var notes = list.querySelectorAll(".note");
+    var maxH = window.innerHeight * 0.82;
+    var maxW = window.innerWidth * 0.94;
+    for (var size = 20; size > 9; size -= 0.5) {
+      list.style.fontSize = size + "px";
+      var top = Infinity, bottom = -Infinity, left = Infinity, right = -Infinity;
+      for (var i = 0; i < notes.length; i++) {
+        var r = notes[i].getBoundingClientRect();
+        top = Math.min(top, r.top);
+        bottom = Math.max(bottom, r.bottom);
+        left = Math.min(left, r.left);
+        right = Math.max(right, r.right);
+      }
+      if (bottom - top <= maxH && right - left <= maxW) return;
+    }
+  }
+
   function openNotes() {
     renderNotes();
     el.notes.className = "on";
+    fitNotes();
   }
 
   function closeNotes() { el.notes.className = ""; }
@@ -380,6 +409,7 @@ var View = (function () {
     el.label = $("ui-label");
     el.cameraArt = $("camera-art");
     el.notesList = $("notes-list");
+    window.addEventListener("resize", function () { if (el.notes.className === "on") fitNotes(); });
     el.titleArt = $("title-art");
     el.cont = $("title-continue");
     el.count = $("title-count");

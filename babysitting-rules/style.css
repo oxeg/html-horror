@@ -150,15 +150,21 @@ body.playing #ui-popup.on { display: block; }
 #notes { display: none; position: fixed; inset: 0; z-index: 30; background: rgba(7, 7, 13, 0.7); align-items: center; justify-content: center; }
 #notes.on { display: flex; }
 #notes .panel { display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 96vw; max-height: 94vh; }
-#notes-list { display: flex; gap: 24px; justify-content: center; align-items: flex-start; overflow: auto; max-height: 82vh; }
+#notes-list { display: flex; gap: 24px; justify-content: center; align-items: center; overflow: hidden; max-width: 98vw; max-height: 88vh; padding: 14px; font-size: 17px; }
 #notes-list .none { opacity: 0.6; }
 
-.note { width: min(420px, 44vw); min-width: 260px; padding: 22px 26px; color: #2a2118; background: #e9e0c8; box-shadow: 0 8px 30px #000; }
-#notes-list:not(.both) .note { width: min(520px, 90vw); }
-.note h2 { margin: 0 0 10px; font-size: 22px; font-weight: 400; }
-.note p { margin: 0; font-size: 16px; line-height: 1.4; }
-.note.mom { font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; transform: rotate(-1deg); }
+/* notes are landscape cards; the rules flow in two columns */
+.note { padding: 1.2em 1.6em; color: #2a2118; background: #e9e0c8; box-shadow: 0 8px 30px #000; line-height: 1.35; }
+.note .line { margin: 0 0 0.35em; break-inside: avoid; }
+.note .gap { height: 0.5em; }
+.note.mom { width: min(62em, 92vw); column-count: 2; column-gap: 2em; font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; transform: rotate(-1deg); }
+.note.mom .line:first-child { column-span: all; font-size: 1.2em; margin-bottom: 0.2em; }
+.note.mom .line:last-child { column-span: all; text-align: right; margin: 0.3em 0 0; }
+.note.mom .gap { column-span: all; }
+/* both notes found: side by side, the fridge note big and the fake one small */
+#notes-list.both .note.mom { width: min(50em, 64vw); }
 .note.fake {
+  width: min(19em, 28vw);
   font-family: "Ink Free", "Chalkduster", "Marker Felt", fantasy;
   color: #3a0b12;
   background: #d8d2bf;
