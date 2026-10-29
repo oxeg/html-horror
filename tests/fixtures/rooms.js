@@ -11,6 +11,7 @@ ROOMS.c = `<svg viewBox="0 0 1600 900">
   <rect data-hotspot="lamp" x="400" y="200" width="100" height="100"/>
   <rect data-hotspot="kid" x="600" y="200" width="100" height="100"/>
   <rect data-hotspot="cam" x="800" y="200" width="100" height="100"/>
+  <rect data-hotspot="clock" x="1200" y="200" width="100" height="100"/>
   <g data-name="face" data-show-if="face"><rect x="1000" y="200" width="100" height="100"/></g>
 </svg>`;
 ROOMS.feed = `<svg viewBox="0 0 1600 900"><rect data-hotspot="talk" x="200" y="200" width="100" height="100"/></svg>`;

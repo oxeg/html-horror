@@ -7,6 +7,7 @@ var Game = (function () {
   var SAVE_KEY = "babysitting-rules:save";
   var ENDINGS_KEY = "babysitting-rules:endings";
   var storageOn = true;
+  var foundInMemory = [];
   var G = { state: null, checkpoint: null };
 
   // ---- small helpers ----
@@ -22,13 +23,8 @@ var Game = (function () {
     return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
   }
 
-  function emptyResult() {
-    return { texts: [], sounds: [], shake: false, ending: null };
-  }
-
-  function copy(value) {
-    return JSON.parse(JSON.stringify(value));
-  }
+  function emptyResult() { return { texts: [], sounds: [], shake: false, ending: null }; }
+  function copy(value) { return JSON.parse(JSON.stringify(value)); }
 
   function setFlags(list, on) {
     (list || []).forEach(function (name) {
@@ -37,9 +33,12 @@ var Game = (function () {
     });
   }
 
+  function eventById(id) {
+    return EVENTS.filter(function (ev) { return ev.id === id; })[0] || null;
+  }
+
   function overlayRoom() {
-    for (var id in ROOM_INFO) if (ROOM_INFO[id].overlay) return id;
-    return null;
+    return Object.keys(ROOM_INFO).filter(function (id) { return ROOM_INFO[id].overlay; })[0] || null;
   }
 
   function scene() {
@@ -71,11 +70,136 @@ var Game = (function () {
     };
   }
 
+  // ---- saving (every call is wrapped: the game must work without storage) ----
+
+  function readStore(key) {
+    try {
+      return storageOn ? JSON.parse(localStorage.getItem(key) || "null") : null;
+    } catch (e) {
+      return null; // no storage or a broken save: play on without it
+    }
+  }
+
+  function writeStore(key, value) {
+    try {
+      if (storageOn) localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {} // no storage: keep playing
+  }
+
+  function save() { writeStore(SAVE_KEY, { state: G.state, checkpoint: G.checkpoint }); }
+
+  // A save from before she edited story.js may name things that no longer exist.
+  function validState(s) {
+    if (!s || typeof s.time !== "number" || !ROOM_INFO[s.room] || !s.flags || !s.fired) return false;
+    for (var id in s.fired) if (!eventById(id)) return false;
+    if (s.danger && !(eventById(s.danger.id) || {}).danger) return false;
+    if (s.ending && !ENDINGS[s.ending]) return false;
+    return (s.notes || []).every(function (n) {
+      return NOTES[n];
+    });
+  }
+
+  function loadSave() {
+    var data = readStore(SAVE_KEY);
+    if (!data || !validState(data.state)) return null;
+    if (data.checkpoint && !(validState(data.checkpoint.state) && eventById(data.checkpoint.eventId))) return null;
+    if (data.state.ending && ENDINGS[data.state.ending].win) return null;
+    return data;
+  }
+
+  function endingsFound() { return (readStore(ENDINGS_KEY) || foundInMemory).slice(); }
+
+  function endGame(endingId, r) {
+    G.state.ending = endingId;
+    r.ending = endingId;
+    if (ENDINGS[endingId] && ENDINGS[endingId].sound) r.sounds.push(ENDINGS[endingId].sound);
+    var found = endingsFound();
+    if (found.indexOf(endingId) < 0) found.push(endingId);
+    foundInMemory = found;
+    writeStore(ENDINGS_KEY, found);
+  }
+
+  // ---- dangers ----
+
+  function dangerDef() { return G.state.danger ? eventById(G.state.danger.id).danger : null; }
+
+  function stepDone(step, act) {
+    if (step.leave) return G.state.room !== step.leave;
+    var rooms = [].concat(step.room);
+    if (step.hotspot) return act.hotspot === step.hotspot && rooms.indexOf(act.room) >= 0;
+    return rooms.indexOf(G.state.room) >= 0;
+  }
+
+  function resolve(r) {
+    var safe = dangerDef().whenSafe || {};
+    if (safe.text) r.texts.push(safe.text);
+    setFlags(safe.setFlags, true);
+    setFlags(safe.clearFlags, false);
+    G.state.danger = null;
+  }
+
+  // Ticks off as many steps as this action finished; starts the hold or resolves at the end.
+  function advanceSteps(r, act) {
+    var d = G.state.danger;
+    var D = dangerDef();
+    while (d.step < D.steps.length && stepDone(D.steps[d.step], act)) {
+      var step = D.steps[d.step];
+      setFlags(step.setFlags, true);
+      if (step.text) r.texts.push(step.text);
+      d.step++;
+      act = {};
+    }
+    if (d.step < D.steps.length) return false;
+    if (D.hold) d.holding = true;
+    else resolve(r);
+    return true;
+  }
+
+  function startDanger(ev, r) {
+    G.state.danger = { id: ev.id, used: 0, step: 0, held: 0, holding: false };
+    if (ev.danger.steps) advanceSteps(r, {});
+  }
+
+  // Which ending (if any) a click on hotspot id in roomId causes during the danger.
+  function fatalFor(id, roomId) {
+    var list = dangerDef().fatal || [];
+    for (var i = 0; i < list.length; i++) {
+      var f = list[i];
+      if (f.hotspot && f.hotspot !== id) continue;
+      if (f.room && f.room !== roomId) continue;
+      if (f.unlessFlag && G.state.flags[f.unlessFlag]) continue;
+      return f.ending;
+    }
+    return null;
+  }
+
+  // Counts one action against the danger running before it.
+  function dangerTick(r, act) {
+    var d = G.state.danger;
+    var D = dangerDef();
+    d.used++;
+    if (D.endure) {
+      if (d.used >= D.endure || (act.wait && D.waitEnds)) resolve(r);
+      return;
+    }
+    if (!advanceSteps(r, act) && d.used >= D.deadline) endGame(D.late, r);
+  }
+
+  function holdStep(r) {
+    var d = G.state.danger;
+    var hold = dangerDef().hold;
+    var step = hold.steps[d.held] || {};
+    if (step.text) r.texts.push(step.text);
+    if (step.sound) r.sounds.push(step.sound);
+    if (step.scare) r.shake = true;
+    setFlags(step.setFlags, true);
+    d.held++;
+    if (d.held >= hold.steps.length) resolve(r);
+  }
+
   // ---- events ----
 
-  function due(ev) {
-    return !G.state.fired[ev.id] && G.state.time >= parseTime(ev.time);
-  }
+  function due(ev) { return !G.state.fired[ev.id] && G.state.time >= parseTime(ev.time); }
 
   // Fires one event: checkpoint first, so "Try again" lands just before it.
   function fire(ev, r, byFallback) {
@@ -94,13 +218,15 @@ var Game = (function () {
     if (sound) r.sounds.push(sound);
     if (ev.scare) r.shake = true;
     if (ev.ending) endGame(ev.ending, r);
+    else if (ev.danger) startDanger(ev, r);
   }
 
   // Runs after every action: fires whatever is due, in story order.
+  // Nothing new starts while a danger runs; it all waits until the danger is over.
   function processEvents(r, entered) {
     for (var i = 0; i < EVENTS.length; i++) {
       var ev = EVENTS[i];
-      if (G.state.ending) return;
+      if (G.state.ending || G.state.danger) return;
       if (!due(ev)) continue;
       var trigger = ev.trigger || "now";
       if (trigger === "now") {
@@ -121,15 +247,18 @@ var Game = (function () {
     }
   }
 
-  function after(r, entered) {
+  // Everything that happens after an action: danger counting, then events, then saving.
+  function after(r, entered, act) {
     if (!entered) G.state.actionsHere++;
+    if (G.state.danger && act && !G.state.ending) dangerTick(r, act);
     processEvents(r, entered);
+    save();
     return r;
   }
 
   function beamTouched(name) {
     var r = emptyResult();
-    if (G.state.ending) return r;
+    if (G.state.ending || G.state.danger) return r;
     for (var i = 0; i < EVENTS.length; i++) {
       var ev = EVENTS[i];
       if (ev.trigger === "beam" && ev.group === name && due(ev) && G.state.armed[ev.id]) {
@@ -168,9 +297,10 @@ var Game = (function () {
         delete s.armed[ev.id];
       }
     });
+    save();
   }
 
-  // ---- moving, looking, ending ----
+  // ---- the player's actions ----
 
   function enter(roomId) {
     G.state.room = roomId;
@@ -178,90 +308,130 @@ var Game = (function () {
     G.state.actionsHere = 0;
   }
 
-  function endGame(endingId, r) {
-    G.state.ending = endingId;
-    r.ending = endingId;
+  function spend(minutes) {
+    if (!G.state.danger) G.state.time += minutes; // the clock stops during a danger
   }
 
-  function spend(minutes) {
-    G.state.time += minutes;
+  // During a hold (counting, waiting it out) anything except Wait is fatal.
+  function breaksHold(r) {
+    if (!(G.state.danger && G.state.danger.holding)) return false;
+    endGame(dangerDef().hold.fatal, r);
+    save();
+    return true;
   }
 
   function go(roomId) {
     var r = emptyResult();
     if (G.state.ending) return r;
     if ((ROOM_INFO[G.state.room].exits || []).indexOf(roomId) < 0) return r;
+    if (breaksHold(r)) return r;
     enter(roomId);
     spend(SETTINGS.moveMinutes);
-    return after(r, true);
+    return after(r, true, {});
   }
 
   function click(id) {
     var r = emptyResult();
     var h = hotspot(id);
     if (G.state.ending || !h) return r;
-    if (h.ending) {
-      endGame(h.ending, r);
+    var room = G.state.room;
+    var D = dangerDef();
+    var ending = h.ending || (D && fatalFor(id, scene()));
+    if (ending) {
+      endGame(ending, r);
+      save();
       return r;
     }
+    if (breaksHold(r)) return r;
+    var act = { hotspot: id, room: room };
     var minutes = h.minutes != null ? h.minutes : h.note ? 0 : h.goTo ? SETTINGS.moveMinutes : SETTINGS.lookMinutes;
     if (h.notBefore && G.state.time < parseTime(h.notBefore)) {
       r.texts.push(h.tooEarly);
       spend(minutes);
-      return after(r, false);
+      return after(r, false, act);
     }
-    if (h.text) r.texts.push(h.text);
+    var said = D && D.say && D.say[id];
+    if (said || h.text) r.texts.push(said || h.text);
     if (h.note && G.state.notes.indexOf(h.note) < 0) G.state.notes.push(h.note);
     setFlags(h.setFlags, true);
     if (h.action === "camera") G.state.camera = true;
     if (h.goTo) enter(h.goTo);
     spend(minutes);
-    return after(r, !!h.goTo);
+    return after(r, !!h.goTo, act);
   }
 
   function wait() {
     var r = emptyResult();
     if (G.state.ending) return r;
+    if (G.state.danger && G.state.danger.holding) {
+      holdStep(r);
+      return after(r, false, null);
+    }
     spend(SETTINGS.waitMinutes);
-    return after(r, false);
+    return after(r, false, { wait: true });
   }
 
   // ---- what the view asks ----
 
   function label(id) {
     var h = hotspot(id);
-    return h ? h.label : "";
+    if (!h) return "";
+    var D = dangerDef();
+    if (D && G.state.danger.holding && D.hold.labels && D.hold.labels[id]) return D.hold.labels[id];
+    if (D && D.labels && D.labels[id]) return D.labels[id];
+    return h.label;
   }
+
+  // ---- what the view (and the tests) can call ----
 
   G.newGame = function () {
     G.state = freshState();
     G.checkpoint = null;
     return after(emptyResult(), true);
   };
+  G.startOver = G.newGame;
+  G.tryAgain = function () {
+    if (!G.checkpoint) return G.newGame();
+    var r = emptyResult();
+    G.state = copy(G.checkpoint.state);
+    fire(eventById(G.checkpoint.eventId), r);
+    return after(r, true);
+  };
+  G.continueGame = function () {
+    var data = loadSave();
+    if (data) {
+      G.state = data.state;
+      G.checkpoint = data.checkpoint;
+    }
+    return !!data;
+  };
+  G.closeCamera = function () {
+    G.state.camera = false;
+    save();
+  };
+  G.waitLabel = function () {
+    var D = dangerDef();
+    return D && G.state.danger.holding ? D.hold.button : "Wait";
+  };
+  G.dangerLevel = function () {
+    var D = dangerDef();
+    return D && D.deadline && !G.state.danger.holding ? G.state.danger.used / D.deadline : 0;
+  };
+  G.hasSave = function () { return !!loadSave(); };
+  G.exits = function () { return (ROOM_INFO[G.state.room].exits || []).slice(); };
+  G.clock = function () { return formatTime(G.state.time); };
+  G.setFlag = function (name, on) { setFlags([name], on); };
+  G.useStorage = function (on) { storageOn = on; };
   G.go = go;
   G.click = click;
   G.wait = wait;
-  G.closeCamera = function () {
-    G.state.camera = false;
-  };
-  G.exits = function () {
-    return (ROOM_INFO[G.state.room].exits || []).slice();
-  };
   G.scene = scene;
   G.label = label;
-  G.clock = function () {
-    return formatTime(G.state.time);
-  };
   G.roomHas = roomHas;
   G.beamTouched = beamTouched;
   G.editJump = editJump;
-  G.setFlag = function (name, on) {
-    setFlags([name], on);
-  };
+  G.endingsFound = endingsFound;
   G.parseTime = parseTime;
   G.formatTime = formatTime;
-  G.useStorage = function (on) {
-    storageOn = on;
-  };
   return G;
 })();

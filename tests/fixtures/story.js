@@ -47,6 +47,7 @@ const ROOM_INFO = {
       lamp: { label: "Lamp", text: "Click.", setFlags: ["lit"] },
       kid: { label: "Kid", text: "Goodnight.", notBefore: "19:30", tooEarly: "Too early", setFlags: ["asleep"] },
       cam: { label: "Camera", action: "camera" },
+      clock: { label: "Clock", text: "Tick.", minutes: 0 },
     },
   },
   feed: {
@@ -70,6 +71,41 @@ const EVENTS = [
   {
     id: "peek", time: "20:10", trigger: "beam", group: "face", armFlags: ["face"], setFlags: ["faceClose"],
     fallback: 3, fallbackText: "Knock", fallbackSound: "knock", scare: true,
+  },
+  {
+    id: "hide", time: "20:20", trigger: "now",
+    danger: {
+      steps: [{ room: "b" }, { room: "closet" }],
+      deadline: 4,
+      late: "X2",
+      fatal: [{ hotspot: "trap", ending: "X1" }],
+      say: { lamp: "Not now" },
+      labels: { lamp: "Run" },
+      hold: {
+        button: "Count",
+        steps: [{ text: "1" }, { text: "2", sound: "knock", scare: true }],
+        labels: { coat: "Open it" },
+        fatal: "X3",
+      },
+      whenSafe: { text: "Safe", clearFlags: ["x"] },
+    },
+  },
+  {
+    id: "wait1", time: "20:40", trigger: "now",
+    danger: { endure: 3, waitEnds: true, fatal: [{ room: "c", ending: "X1" }], whenSafe: { text: "Gone" } },
+  },
+  {
+    id: "pick", time: "20:50", trigger: "now",
+    danger: {
+      steps: [{ room: "c", hotspot: "kid", setFlags: ["carry"] }, { room: ["b", "closet"] }],
+      deadline: 7,
+      late: "X2",
+      fatal: [{ hotspot: "door", unlessFlag: "carry", ending: "X3" }],
+    },
+  },
+  {
+    id: "leaveC", time: "20:55", trigger: "now", room: "c",
+    danger: { steps: [{ leave: "c" }], deadline: 2, late: "X2" },
   },
   { id: "home", time: "21:00", trigger: "now", ending: "WIN" },
 ];

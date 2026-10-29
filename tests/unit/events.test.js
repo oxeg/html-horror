@@ -45,7 +45,7 @@ test("notIn waits until outside", function () {
 
 test("nextEntry fires only on entry into a room with the group", function () {
   Game.newGame();
-  waits(4);
+  waits(3);
   Game.go("c");
   eq(Game.state.flags.ghostOn, undefined);
   Game.go("a");
@@ -90,9 +90,9 @@ test("beam fallback after N actions in a room with the group", function () {
   Game.newGame();
   Game.go("c");
   waits(4);
-  Game.click("lamp");
-  Game.click("lamp");
-  var r = Game.click("lamp");
+  Game.click("clock");
+  Game.click("clock");
+  var r = Game.click("clock");
   ok(has(r.texts, "Knock"), JSON.stringify(r.texts));
   ok(has(r.sounds, "knock"), "knock sound");
   eq(Game.state.fired.peek, true);
