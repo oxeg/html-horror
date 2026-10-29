@@ -120,7 +120,7 @@ before the last `</svg>`), and add a shape with a `data-hotspot` name:
 ```html
 <!-- my new poster -->
 <g data-hotspot="poster">
-  <rect x="600" y="250" width="120" height="160" fill="var(--accent)"/>
+  <rect x="1000" y="240" width="110" height="140" fill="var(--accent)"/>
 </g>
 ```
 
