@@ -77,6 +77,9 @@ body.dark #grain { opacity: 0.1; }
 #camera.on { display: block; }
 
 [data-hotspot] { cursor: pointer; outline: none; }
+/* named decorations (glows, faces, footprints...) never catch clicks: only data-hotspot things do */
+[data-name] { pointer-events: none; }
+[data-name] [data-hotspot] { pointer-events: auto; }
 [data-hotspot]:hover, [data-hotspot]:focus { filter: brightness(1.35) drop-shadow(0 0 6px var(--glow)); }
 
 button {
@@ -182,3 +185,12 @@ body.playing #ui-popup.on { display: block; }
   30% { transform: rotate(-2deg) translateX(-6px); }
   70% { transform: rotate(2.5deg) translateX(8px); }
 }
+
+/* edit mode (press E): boxes around clickable things, and the panel */
+#edit-panel { display: none; position: fixed; z-index: 50; top: 52px; left: 16px; max-width: 360px; padding: 10px 14px; font-size: 13px; line-height: 1.7; background: rgba(7, 7, 13, 0.85); border: 1px solid var(--ui-line); border-radius: 10px; }
+body.editing #edit-panel { display: block; }
+#edit-panel select, #edit-panel input[size] { font: inherit; color: #000; }
+#edit-panel button { padding: 2px 12px; font-size: 13px; }
+#edit-flags { display: flex; flex-wrap: wrap; gap: 0 12px; max-height: 40vh; overflow: auto; margin-top: 6px; }
+#edit-boxes { position: fixed; inset: 0; z-index: 15; pointer-events: none; }
+.edit-box { position: fixed; border: 1px dashed #7dffa0; color: #7dffa0; font: 11px/1 monospace; padding: 2px; text-shadow: 0 0 3px #000; }
