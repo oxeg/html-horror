@@ -1,4 +1,5 @@
-// loader.js: reads the rooms, notes and endings out of index.html, and the night out of rules.js.
+// loader.js: reads the rooms, notes and endings out of index.html, the night out of rules.js, and
+// which parts of the drawings start hidden.
 // Your HTML is the story: each <section class="room"> is a room, each button or link inside it
 // is something you can click, <article class="note"> is a note and <section class="ending"> is
 // an ending. This file turns them into what the game uses. You don't need to change it.
@@ -130,6 +131,19 @@ var Loader = (function () {
       });
     });
     return world;
+  };
+
+  // The names of the drawing parts (rooms/*.js) that start hidden: data-name="…" with data-hidden.
+  L.hiddenInDrawings = function () {
+    var names = [];
+    var drawings = typeof ROOMS !== "undefined" ? ROOMS : {};
+    Object.keys(drawings).forEach(function (id) {
+      (String(drawings[id]).match(/<[^>]+>/g) || []).forEach(function (t) {
+        var m = /\sdata-name="([^"]+)"/.exec(t);
+        if (m && /\sdata-hidden[\s>\/=]/.test(t) && names.indexOf(m[1]) < 0) names.push(m[1]);
+      });
+    });
+    return names;
   };
 
   return L;

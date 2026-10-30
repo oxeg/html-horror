@@ -1,7 +1,25 @@
-// Tests for check.js. Each test breaks one thing in the fixture world, then puts it back.
-function checked(fn) {
-  var r = Check.run();
-  fn(r);
+// Tests for check.js. Each test builds a small world with world(html, rulesFn) and looks at what
+// Check.run() says about it; the fixture world comes back afterwards.
+
+// The fixture world, read again the way run-node.js first read it: tests/fixtures/rules.js and
+// tests/fixtures/index.html.
+function readFixture() {
+  Toolbox.reset();
+  fixtureRules();
+  Loader.read(minidom(FIXTURE_HTML).body);
+}
+
+// Checks a world made of html (its index.html) and what rulesFn writes (its rules.js; Toolbox's
+// defaults if there's none), then puts the fixture world back. Gives Check.run()'s answer.
+function world(html, rulesFn) {
+  Toolbox.reset();
+  try {
+    if (rulesFn) rulesFn();
+    Loader.read(minidom(html).body);
+    return Check.run();
+  } finally {
+    readFixture();
+  }
 }
 
 function mentions(list, parts) {
@@ -10,6 +28,8 @@ function mentions(list, parts) {
   });
 }
 
+function startInA() { startAt("19:00", "a"); }
+
 test("check: clean fixture has no errors or warnings", function () {
   var r = Check.run();
   eq(r.errors, [], "errors");
@@ -17,126 +37,94 @@ test("check: clean fixture has no errors or warnings", function () {
 });
 
 test("check: unknown exit", function () {
-  var old = ROOM_INFO.a.exits;
-  try {
-    ROOM_INFO.a.exits = ["zz"];
-    checked(function (r) { ok(mentions(r.errors, ["index.html", '"a"', '"zz"']), r.errors.join("|")); });
-  } finally { ROOM_INFO.a.exits = old; }
+  var r = world('<section class="room" id="a" title="Hub"><nav><a href="#zz">Nowhere</a></nav></section>', startInA);
+  ok(mentions(r.errors, ["index.html", '"a"', '"zz"']), r.errors.join("|"));
 });
 
 test("check: unknown goTo", function () {
-  var old = ROOM_INFO.b.hotspots.door.goTo;
-  try {
-    ROOM_INFO.b.hotspots.door.goTo = "nowhere";
-    checked(function (r) { ok(mentions(r.errors, ["index.html", "door", "nowhere"]), r.errors.join("|")); });
-  } finally { ROOM_INFO.b.hotspots.door.goTo = old; }
+  var r = world('<section class="room" id="b" title="Room B"><a id="door" href="#nowhere" title="Door">In you go.</a></section>');
+  ok(mentions(r.errors, ["index.html", "door", "nowhere"]), r.errors.join("|"));
 });
 
 test("check: a button with nothing drawn for it is fine (the view gives it the plain look)", function () {
-  var old = ROOMS.c;
-  try {
-    ROOMS.c = old.replace('data-name="lamp"', 'data-x="lamp"');
-    checked(function (r) { eq(r.errors, []); eq(r.warnings, []); });
-  } finally { ROOMS.c = old; }
+  // room c's drawing has no part called "vase"
+  var r = world('<section class="room" id="c" title="Room C"><button id="vase" title="Vase">A vase.</button></section>',
+    function () { startAt("19:00", "c"); });
+  eq(r.errors, []);
+  eq(r.warnings, []);
 });
 
 test("check: room without a drawing", function () {
-  var old = ROOMS.b;
-  try {
-    delete ROOMS.b;
-    checked(function (r) { ok(mentions(r.errors, ["rooms/b.js"]), r.errors.join("|")); });
-  } finally { ROOMS.b = old; }
+  var r = world('<section class="room" id="attic" title="Attic"></section>');
+  ok(mentions(r.errors, ["rooms/attic.js"]), r.errors.join("|"));
 });
 
 test("check: title drawing is required", function () {
+  // The drawings aren't part of a world (they're rooms/*.js), so this one goes away by hand.
   var old = ROOMS.title;
   try {
     delete ROOMS.title;
-    checked(function (r) { ok(mentions(r.errors, ["rooms/title.js"]), r.errors.join("|")); });
+    var r = Check.run();
+    ok(mentions(r.errors, ["rooms/title.js"]), r.errors.join("|"));
   } finally { ROOMS.title = old; }
 });
 
 test("check: unknown ending ids", function () {
-  var h = ROOM_INFO.c.hotspots.trap;
-  var hide = EVENTS.filter(function (e) { return e.id === "hide"; })[0];
-  var home = EVENTS.filter(function (e) { return e.id === "home"; })[0];
-  var saved = [h.ending, hide.danger.fatal[0].ending, hide.danger.late, hide.danger.hold.fatal, home.ending];
-  try {
-    h.ending = "NOPE1";
-    checked(function (r) { ok(mentions(r.errors, ["NOPE1"]), "hotspot"); });
-    h.ending = saved[0];
-    hide.danger.fatal[0].ending = "NOPE2";
-    checked(function (r) { ok(mentions(r.errors, ["NOPE2"]), "fatal"); });
-    hide.danger.fatal[0].ending = saved[1];
-    hide.danger.late = "NOPE3";
-    checked(function (r) { ok(mentions(r.errors, ["NOPE3"]), "late"); });
-    hide.danger.late = saved[2];
-    hide.danger.hold.fatal = "NOPE4";
-    checked(function (r) { ok(mentions(r.errors, ["NOPE4"]), "hold"); });
-    hide.danger.hold.fatal = saved[3];
-    home.ending = "NOPE5";
-    checked(function (r) { ok(mentions(r.errors, ["NOPE5"]), "event"); });
-  } finally {
-    h.ending = saved[0];
-    hide.danger.fatal[0].ending = saved[1];
-    hide.danger.late = saved[2];
-    hide.danger.hold.fatal = saved[3];
-    home.ending = saved[4];
-  }
+  var r = world('<section class="room" id="c" title="Room C"><button id="trap" title="Trap" data-ending="NOPE1"></button></section>', function () {
+    startAt("19:00", "c");
+    when("20:20", function () {
+      danger({ clicks: 4, safe: beIn("c"), ending: "NOPE3", deadly: click("trap", { ending: "NOPE2" }),
+        thenWait: { steps: ["1"], ending: "NOPE4" } });
+    });
+    when("21:00", function () { endGame("NOPE5"); });
+  });
+  ok(mentions(r.errors, ["NOPE1"]), "hotspot");
+  ok(mentions(r.errors, ["NOPE2"]), "fatal");
+  ok(mentions(r.errors, ["NOPE3"]), "late");
+  ok(mentions(r.errors, ["NOPE4"]), "hold");
+  ok(mentions(r.errors, ["NOPE5"]), "event");
 });
 
 test("check: bad time format and out-of-order events", function () {
-  var e1 = EVENTS[0];
-  var old = e1.time;
-  var oldNb = ROOM_INFO.c.hotspots.kid.notBefore;
-  try {
-    e1.time = "7:5";
-    checked(function (r) { ok(mentions(r.errors, ["e1", "7:5"]), r.errors.join("|")); });
-    e1.time = old;
-    EVENTS[1].time = "19:10";
-    checked(function (r) { ok(mentions(r.errors, ["e2", "19:10", "e1", "up"]), r.errors.join("|")); });
-    EVENTS[1].time = "19:20";
-    ROOM_INFO.c.hotspots.kid.notBefore = "9:3";
-    checked(function (r) { ok(mentions(r.errors, ["kid", "9:3"]), r.errors.join("|")); });
-  } finally {
-    e1.time = old;
-    EVENTS[1].time = "19:20";
-    ROOM_INFO.c.hotspots.kid.notBefore = oldNb;
-  }
+  var r = world(FIXTURE_HTML, function () {
+    startAt("9:3", "a");
+    when("7:5", function () {});
+  });
+  ok(mentions(r.errors, ["rules.js", '"7:5"']), r.errors.join("|"));
+  ok(mentions(r.errors, ["startAt", "9:3"]), r.errors.join("|"));
+  // Rules sort themselves by time, so one written above an earlier one is fine.
+  r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("19:20", function () {});
+    when("19:10", function () {});
+  });
+  eq(r.errors, [], "rules in any order");
 });
 
 test("check: hotspot note that does not exist", function () {
-  var old = ROOM_INFO.b.hotspots.note.note;
-  try {
-    ROOM_INFO.b.hotspots.note.note = "ghostnote";
-    checked(function (r) { ok(mentions(r.errors, ["ghostnote"]), r.errors.join("|")); });
-  } finally { ROOM_INFO.b.hotspots.note.note = old; }
+  var r = world('<section class="room" id="b" title="Room B"><button id="note" title="Note" data-note="ghostnote"></button></section>');
+  ok(mentions(r.errors, ["ghostnote"]), r.errors.join("|"));
 });
 
 test("check: fake note signed Love you gives a warning", function () {
-  var old = NOTES.fake.html;
-  try {
-    NOTES.fake.html = old + "<p>Love you!</p>";
-    checked(function (r) { ok(mentions(r.warnings, ["fake", "Love you"]), r.warnings.join("|")); });
-  } finally { NOTES.fake.html = old; }
+  var r = world('<article class="note fake" id="fake"><p>Let us in.</p><p>Love you!</p></article>');
+  ok(mentions(r.warnings, ["fake", "Love you"]), r.warnings.join("|"));
 });
 
 test("check: real note without Love you gives a warning", function () {
-  var old = NOTES.n1.html;
-  try {
-    NOTES.n1.html = "<ol><li>Rule one.</li></ol>";
-    checked(function (r) { ok(mentions(r.warnings, ["n1", "Love you"]), r.warnings.join("|")); });
-  } finally { NOTES.n1.html = old; }
+  var r = world('<article class="note" id="n1"><h2>Rules</h2><ol><li>Rule one.</li></ol></article>');
+  ok(mentions(r.warnings, ["n1", "Love you"]), r.warnings.join("|"));
 });
 
 test("check: danger steps and deadly clicks find hotspots by name", function () {
-  var step = eventById("pick").danger.steps[0];
-  var f = eventById("hide").danger.fatal[0];
-  try {
-    step.hotspot = "light"; // the lamp's class, in room c
-    f.hotspot = "light";
-    checked(function (r) { eq(r.errors, [], "errors"); eq(r.warnings, [], "warnings"); });
-  } finally { step.hotspot = "kid"; f.hotspot = "trap"; }
+  var r = world('<section class="room" id="c" title="Room C"><button id="lamp" class="light" title="Lamp">Click.</button></section>' +
+    '<section class="ending" id="X1"><h1>X1</h1>Ending one.</section>', function () {
+    startAt("19:00", "c");
+    when("20:20", function () { danger({ clicks: 4, safe: beIn("c"), ending: "X1", deadly: click("light") }); });
+    when("20:50", function () { danger({ clicks: 7, safe: click("light"), ending: "X1" }); }); // the lamp's class
+  });
+  eq(r.errors, [], "errors");
+  eq(r.warnings, [], "warnings");
 });
 
 test("check: shortest counts nav, goTo and clicks", function () {
@@ -148,64 +136,63 @@ test("check: shortest counts nav, goTo and clicks", function () {
 });
 
 test("check: deadline too short gives a warning naming the event and the numbers", function () {
-  var hide = EVENTS.filter(function (e) { return e.id === "hide"; })[0];
-  var old = hide.danger.deadline;
-  try {
-    hide.danger.deadline = 2;
-    checked(function (r) { ok(mentions(r.warnings, ["hide", "2", "3"]), r.warnings.join("|")); });
-  } finally { hide.danger.deadline = old; }
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("20:20", function () { danger({ clicks: 2, safe: [beIn("b"), beIn("closet")], ending: "X2" }); });
+  });
+  ok(mentions(r.warnings, ['"20:20"', "deadline of 2", "takes 3"]), r.warnings.join("|"));
 });
 
-function eventById(id) {
-  return EVENTS.filter(function (e) { return e.id === id; })[0];
-}
-
 test("check: two events with the same id", function () {
-  var ev = eventById("e2");
-  try {
-    ev.id = "e1";
-    checked(function (r) { ok(mentions(r.errors, ["e1", "twice"]), r.errors.join("|")); });
-  } finally { ev.id = "e2"; }
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("19:20", function () {});
+    when("19:20", function () {});    // this one is "19:20 #2"
+    when("19:20 #2", function () {}); // a time that is really that id
+  });
+  ok(mentions(r.errors, ['"19:20 #2"', "twice"]), r.errors.join("|"));
 });
 
 test("check: unknown trigger", function () {
-  var ev = eventById("glass");
-  try {
-    ev.trigger = "inroom";
-    checked(function (r) { ok(mentions(r.errors, ["glass", "inroom"]), r.errors.join("|")); });
-  } finally { ev.trigger = "inRoom"; }
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("20:00", { trigger: "inroom", room: "c" }, function () {});
+  });
+  ok(mentions(r.errors, ['"20:00"', "inroom"]), r.errors.join("|"));
 });
 
 test("check: a danger step clicks a hotspot its room doesn't have", function () {
-  var step = eventById("pick").danger.steps[0];
-  try {
-    step.hotspot = "kidd";
-    checked(function (r) { ok(mentions(r.errors, ["pick", "kidd"]), r.errors.join("|")); });
-  } finally { step.hotspot = "kid"; }
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("20:50", function () { danger({ clicks: 7, safe: [click("kidd"), beIn(["b", "closet"])], ending: "X2" }); });
+  });
+  ok(mentions(r.errors, ['"20:50"', "kidd"]), r.errors.join("|"));
 });
 
 test("check: an event group no drawing has", function () {
-  var ev = eventById("ghost");
-  try {
-    ev.group = "ghostt";
-    checked(function (r) { ok(mentions(r.warnings, ["ghost", "ghostt"]), r.warnings.join("|")); });
-  } finally { ev.group = "ghost"; }
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("19:50", enteringRoomWith("ghostt"), notIn("closet"), function () { show("ghost"); });
+  });
+  ok(mentions(r.warnings, ['"19:50"', "ghostt"]), r.warnings.join("|"));
 });
 
 test("check: a fatal hotspot that doesn't exist", function () {
-  var f = eventById("hide").danger.fatal[0];
-  try {
-    f.hotspot = "trapp";
-    checked(function (r) { ok(mentions(r.warnings, ["hide", "trapp"]), r.warnings.join("|")); });
-  } finally { f.hotspot = "trap"; }
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("20:20", function () {
+      danger({ clicks: 4, safe: [beIn("b"), beIn("closet")], ending: "X2", deadly: click("trapp", { ending: "X1" }) });
+    });
+  });
+  ok(mentions(r.warnings, ['"20:20"', "trapp"]), r.warnings.join("|"));
 });
 
 test("check: after names an event that doesn't exist", function () {
-  var ev = eventById("late");
-  try {
-    ev.after = "ghostt";
-    checked(function (r) { ok(mentions(r.errors, ["late", "ghostt"]), r.errors.join("|")); });
-  } finally { ev.after = "ghost"; }
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("19:30", afterRule("19:55"), function () { show("lateOn"); });
+  });
+  ok(mentions(r.errors, ['"19:30"', "19:55"]), r.errors.join("|"));
 });
 
 test("check: shortest finds a click with no room wherever that button is", function () {
@@ -215,44 +202,29 @@ test("check: shortest finds a click with no room wherever that button is", funct
   eq(Check.shortest("a", [{ hotspot: "nothing" }]), Infinity);
 });
 
-// Puts rules made by when() at the end of the fixture's EVENTS while fn runs.
-function withRules(rules, fn) {
-  rules.forEach(function (rule) { EVENTS.push(rule); });
-  try {
-    fn();
-  } finally {
-    rules.forEach(function () { EVENTS.pop(); });
-    Toolbox.reset();
-  }
-}
-
 test("check: a rule's danger is checked from a pretend run", function () {
-  Toolbox.reset();
-  var rule = when("21:00", function () {
-    show("x");
-    danger({ clicks: 1, safe: click("kid"), ending: "NOPE6", deadly: click("trap", { ending: "NOPE7" }),
-      thenWait: { steps: ["1"], ending: "NOPE8" } });
-  });
-  withRules([rule], function () {
-    var before = JSON.stringify(Game.state);
-    checked(function (r) {
-      ok(mentions(r.errors, ["rules.js", '"21:00"', "NOPE6"]), "late: " + r.errors.join("|"));
-      ok(mentions(r.errors, ["NOPE7"]), "deadly: " + r.errors.join("|"));
-      ok(mentions(r.errors, ["NOPE8"]), "the wait: " + r.errors.join("|"));
-      ok(mentions(r.warnings, ['"21:00"', "deadline of 1", "at least 5"]), r.warnings.join("|"));
+  var before = JSON.stringify(Game.state);
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("21:00", function () {
+      show("x");
+      danger({ clicks: 1, safe: click("kid"), ending: "NOPE6", deadly: click("trap", { ending: "NOPE7" }),
+        thenWait: { steps: ["1"], ending: "NOPE8" } });
     });
-    eq(JSON.stringify(Game.state), before, "the pretend run changed nothing");
   });
+  ok(mentions(r.errors, ["rules.js", '"21:00"', "NOPE6"]), "late: " + r.errors.join("|"));
+  ok(mentions(r.errors, ["NOPE7"]), "deadly: " + r.errors.join("|"));
+  ok(mentions(r.errors, ["NOPE8"]), "the wait: " + r.errors.join("|"));
+  ok(mentions(r.warnings, ['"21:00"', "deadline of 1", "at least 5"]), r.warnings.join("|"));
+  eq(JSON.stringify(Game.state), before, "the pretend run changed nothing");
 });
 
 test("check: a rule's ending and the buttons its steps click are checked", function () {
-  Toolbox.reset();
-  var end = when("21:00", function () { endGame("NOPE9"); });
-  var steps = when("21:00", function () { danger({ clicks: 9, safe: click("kidd"), ending: "X2" }); });
-  withRules([end, steps], function () {
-    checked(function (r) {
-      ok(mentions(r.errors, ['"21:00"', "NOPE9"]), r.errors.join("|"));
-      ok(mentions(r.errors, ['"21:00 #2"', "kidd"]), r.errors.join("|"));
-    });
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("21:00", function () { endGame("NOPE9"); });
+    when("21:00", function () { danger({ clicks: 9, safe: click("kidd"), ending: "X2" }); });
   });
+  ok(mentions(r.errors, ['"21:00"', "NOPE9"]), r.errors.join("|"));
+  ok(mentions(r.errors, ['"21:00 #2"', "kidd"]), r.errors.join("|"));
 });

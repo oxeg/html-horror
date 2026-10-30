@@ -1,4 +1,5 @@
-// Bare-bones drawings for the fixture world: just the attributes the engine looks for.
+// Bare-bones drawings for the fixture world (tests/fixtures/index.html): just the attributes the
+// engine looks for.
 ROOMS.a = `<svg viewBox="0 0 1600 900"><rect data-name="rug" x="200" y="200" width="100" height="100"/></svg>`;
 ROOMS.b = `<svg viewBox="0 0 1600 900">
   <rect data-name="door" x="200" y="200" width="100" height="100"/>

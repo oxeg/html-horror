@@ -14,12 +14,7 @@ var EditMode = (function () {
     var found = {};
     function add(list) { (list || []).forEach(function (n) { found[n] = true; }); }
     function moment(m) { add((m || {}).show); add((m || {}).hide); }
-    Object.keys(ROOMS).forEach(function (id) {
-      (ROOMS[id].match(/<[^>]*\sdata-hidden(?=[\s>\/=])[^>]*>/g) || []).forEach(function (tag) {
-        var m = /data-name="([^"]+)"/.exec(tag);
-        if (m) add([m[1]]);
-      });
-    });
+    add(Loader.hiddenInDrawings());
     Object.keys(ROOM_INFO).forEach(function (id) {
       var spots = ROOM_INFO[id].hotspots || {};
       Object.keys(spots).forEach(function (h) {

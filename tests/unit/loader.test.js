@@ -50,13 +50,26 @@ test("loader lists every element with where it is", function () {
 
 test("Loader.read sets the globals and attaches whenClicked scripts by name", function () {
   Toolbox.reset();
-  var fn = function () {};
-  whenClicked("light", fn);
-  var w = Loader.read(minidom(HTML).body);
-  eq(w.rooms.den.hotspots.lamp.run === fn, true);
-  eq(w.rooms.den.hotspots.hatch.run, undefined);
-  eq(Object.keys(globalThis.NOTES), ["n"]);
-  Toolbox.reset();
+  try {
+    var fn = function () {};
+    whenClicked("light", fn);
+    var w = Loader.read(minidom(HTML).body);
+    eq(w.rooms.den.hotspots.lamp.run === fn, true);
+    eq(w.rooms.den.hotspots.hatch.run, undefined);
+    eq(Object.keys(globalThis.NOTES), ["n"]);
+  } finally {
+    readFixture(); // from check.test.js: the fixture world comes back for the tests after this one
+  }
+});
+
+test("loader names the drawing parts that start hidden, once each", function () {
+  // ghost is in both b and the closet; ghostly is a <rect data-name data-hidden x=…>, the rest are <g>s
+  eq(Loader.hiddenInDrawings(), ["ghost", "ghostly", "face", "asleep", "carry"]);
+  var old = ROOMS.a;
+  try {
+    ROOMS.a = '<svg><g data-name="rug-shadow" data-hiddenish="1"></g><g data-hidden data-name="dust"></g></svg>';
+    eq(Loader.hiddenInDrawings().slice(0, 1), ["dust"], "data-hidden in any place, but only data-hidden itself");
+  } finally { ROOMS.a = old; }
 });
 
 // In a browser, children is an HTMLCollection: it has length and [i], but no forEach or filter.

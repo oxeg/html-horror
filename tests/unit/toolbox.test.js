@@ -13,14 +13,17 @@ function withRule(rule, fn) {
   }
 }
 
-// Gives a fixture hotspot its whenClicked script while fn runs (the loader does this later).
+// Gives a fixture hotspot the whenClicked script just written while fn runs, then puts back the
+// one the loader gave it from tests/fixtures/rules.js (if it had one).
 function withScript(roomId, id, fn) {
   var h = ROOM_INFO[roomId].hotspots[id];
+  var own = h.run;
   h.run = Toolbox.clickScripts()[id].run;
   try {
     fn();
   } finally {
-    delete h.run;
+    if (own) h.run = own;
+    else delete h.run;
   }
 }
 

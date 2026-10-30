@@ -21,7 +21,7 @@ code, and **you can change all of it.**
 | `style.css` | ✏️ The colors, the look of the buttons, and where each thing you can click sits on the picture. |
 | `rooms/` | ✏️ One drawing per room. They're made of shapes (SVG), not pictures. |
 | `sounds/` | ✏️ Put your own sound files here (see below). |
-| `engine.js`, `view.js`, `check.js`, `sound.js`, `editmode.js` | The machinery. You don't need to touch these. |
+| `engine.js`, `save.js`, `view.js`, `check.js`, `sound.js`, `editmode.js` | The machinery. You don't need to touch these. |
 
 **Golden rule:** change one small thing, save, and reload the page (press F5) to see it.
 If something breaks, undo your last change (Ctrl+Z) and save again.

@@ -1,7 +1,8 @@
 // Runs the engine tests in Node, with no npm: `node tests/run-node.js`.
-// unit: fixture story + engine + toolbox (+ check.js, sound.js once they exist) + tests/unit/*.test.js
+// unit: the fixture drawings + engine, save, toolbox, loader, check, sound + the fixture's rules.js, then
+//   Loader.read(the fixture's index.html) + tests/unit/*.test.js (all in tests/fixtures/)
 // game: the real game files in index.html order, then Loader.read(index.html) + playthroughs + game.test.js
-// migration (until Task 14): the frozen old story + drawings + engine + toolbox + loader + rules.js +
+// migration (until Task 14): the frozen old story + drawings + engine + save + toolbox + loader + rules.js +
 //   migration.test.js, with index.html's source as INDEX_HTML
 const fs = require("fs");
 const path = require("path");
@@ -23,10 +24,6 @@ function suite(name, steps, globals) {
   return { passed: res.passed, failed: res.failures.length };
 }
 
-function optional(file) {
-  return fs.existsSync(file) ? [file] : [];
-}
-
 const INDEX = path.join(GAME, "index.html");
 const INDEX_HTML = fs.existsSync(INDEX) ? fs.readFileSync(INDEX, "utf8") : "";
 
@@ -36,6 +33,11 @@ function gameScripts() {
 
 // What the page does on load: read the rooms, notes and endings out of index.html.
 const readPage = { code: "Loader.read(minidom(INDEX_HTML).body);", filename: "index.html (Loader.read)" };
+
+// The unit tests' made-up world, read the same way.
+const FIXTURES = path.join(__dirname, "fixtures");
+const FIXTURE_HTML = fs.readFileSync(path.join(FIXTURES, "index.html"), "utf8");
+const readFixture = { code: "Loader.read(minidom(FIXTURE_HTML).body);", filename: "tests/fixtures/index.html (Loader.read)" };
 
 const unitTests = fs.readdirSync(path.join(__dirname, "unit"))
   .filter((f) => f.endsWith(".test.js")).sort()
@@ -47,16 +49,18 @@ const drawings = fs.readdirSync(path.join(GAME, "rooms"))
 
 const results = [
   suite("unit", [
-    path.join(__dirname, "fixtures/story.js"),
-    path.join(__dirname, "fixtures/rooms.js"),
+    path.join(FIXTURES, "drawings.js"),
     path.join(GAME, "engine.js"),
+    path.join(GAME, "save.js"),
     path.join(GAME, "toolbox.js"),
     path.join(GAME, "loader.js"),
-    ...optional(path.join(GAME, "check.js")),
-    ...optional(path.join(GAME, "sound.js")),
+    path.join(GAME, "check.js"),
+    path.join(GAME, "sound.js"),
+    path.join(FIXTURES, "rules.js"),
+    readFixture,
     path.join(__dirname, "harness.js"),
     ...unitTests,
-  ]),
+  ], { FIXTURE_HTML }),
 ];
 
 if (INDEX_HTML) {
@@ -73,6 +77,7 @@ results.push(suite("migration", [
   path.join(__dirname, "fixtures/old-story.js"),
   ...drawings,
   path.join(GAME, "engine.js"),
+  path.join(GAME, "save.js"),
   path.join(GAME, "toolbox.js"),
   path.join(GAME, "loader.js"),
   path.join(__dirname, "tools/renames.js"),

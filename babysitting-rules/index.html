@@ -276,6 +276,7 @@
       var room = /^rooms\/(.+)\.js$/.exec(name);
       if (room) return typeof ROOMS[room[1]] === "string";
       if (name === "engine.js") return typeof Game !== "undefined";
+      if (name === "save.js") return typeof Game !== "undefined" && typeof Game.continueGame === "function";
       if (name === "toolbox.js") return typeof Toolbox !== "undefined";
       if (name === "loader.js") return typeof Loader !== "undefined";
       // a mistake in rules.js stops it before it hands its scripts to the toolbox
@@ -361,6 +362,7 @@
   <script src="rooms/doorbell-camera.js"></script>
   <script src="sound.js"></script>
   <script src="engine.js"></script>
+  <script src="save.js"></script>
   <script src="toolbox.js"></script>
   <script src="loader.js"></script>
   <script src="check.js"></script>

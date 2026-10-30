@@ -4,16 +4,7 @@
 // file: everything you'd want to change lives in index.html and rules.js.
 
 var Game = (function () {
-  var SAVE_KEY = "babysitting-rules:save";
-  var ENDINGS_KEY = "babysitting-rules:endings";
-  var storageOn = true;
-  var foundInMemory = [];
   var G = { state: null, checkpoint: null };
-  // Endings found before they had readable names still count.
-  var LEGACY_ENDINGS = {
-    E1: "it-wasnt-her", E2: "mirror", E3: "open-door", E4: "not-the-cat", E5: "spin-cycle",
-    E6: "sounds-like-us", E7: "nobody-there", E8: "lost-keys", E9: "forgot-her", W1: "home",
-  };
 
   // ---- small helpers ----
 
@@ -93,21 +84,15 @@ var Game = (function () {
   }
 
   // Is this name showing? What show/hide stored, else the first hotspot with that name,
-  // else not if a drawing marks that part data-hidden, else yes.
+  // else not if a drawing marks that part data-hidden (loader.js finds those), else yes.
   function isShown(name) {
     if (G.state.shown[name] !== undefined) return G.state.shown[name];
     for (var room in ROOM_INFO) {
       var id = findHotspot(room, name);
       if (id) return !ROOM_INFO[room].hotspots[id].hidden;
     }
-    var drawings = typeof ROOMS !== "undefined" ? ROOMS : {};
-    for (var d in drawings) {
-      var tags = String(drawings[d]).match(/<[^>]+>/g) || [];
-      for (var i = 0; i < tags.length; i++) {
-        if (tags[i].indexOf('data-name="' + name + '"') >= 0 && /\sdata-hidden[\s>\/=]/.test(tags[i])) return false;
-      }
-    }
-    return true;
+    var hidden = typeof Loader !== "undefined" ? Loader.hiddenInDrawings() : [];
+    return hidden.indexOf(name) < 0;
   }
 
   // A moment: { text, sound, shake, show: [names], hide: [names] }. Without r it only shows and hides.
@@ -136,68 +121,14 @@ var Game = (function () {
     };
   }
 
-  // ---- saving (every call is wrapped: the game must work without storage) ----
-
-  function readStore(key) {
-    try {
-      return storageOn ? JSON.parse(localStorage.getItem(key) || "null") : null;
-    } catch (e) {
-      return null; // no storage or a broken save: play on without it
-    }
-  }
-
-  function writeStore(key, value) {
-    try {
-      if (storageOn) localStorage.setItem(key, JSON.stringify(value));
-    } catch (e) {} // no storage: keep playing
-  }
-
-  function save() { writeStore(SAVE_KEY, { state: G.state, checkpoint: G.checkpoint }); }
-
-  // A save from before she edited rules.js or index.html may name things that no longer exist.
-  function validState(s) {
-    if (!s || typeof s.time !== "number" || !ROOM_INFO[s.room] || !s.shown || !s.fired) return false;
-    if (s.camera && !ROOM_INFO[s.camera]) return false;
-    for (var id in s.fired) if (!eventById(id)) return false;
-    if (s.danger && !(eventById(s.danger.id) && validDanger(s.danger.def))) return false;
-    if (s.ending && !ENDINGS[s.ending]) return false;
-    return (s.notes || []).every(function (n) {
-      return NOTES[n];
-    });
-  }
-
-  // A saved danger is its own definition: every ending it can lead to must still exist.
-  function validDanger(def) {
-    if (!def) return false;
-    var endings = [def.late, def.hold && def.hold.fatal].concat((def.fatal || []).map(function (f) { return f.ending; }));
-    return endings.every(function (e) { return e == null || ENDINGS[e]; });
-  }
-
-  function loadSave() {
-    var data = readStore(SAVE_KEY);
-    if (!data || !validState(data.state)) return null;
-    if (data.checkpoint && !(validState(data.checkpoint.state) && eventById(data.checkpoint.eventId))) return null;
-    if (data.state.ending && ENDINGS[data.state.ending].win) return null;
-    return data;
-  }
-
-  function endingsFound() {
-    var found = [];
-    (readStore(ENDINGS_KEY) || foundInMemory).forEach(function (id) {
-      if (!ENDINGS[id] && LEGACY_ENDINGS[id]) id = LEGACY_ENDINGS[id];
-      if (ENDINGS[id] && found.indexOf(id) < 0) found.push(id);
-    });
-    return found;
-  }
+  // save.js keeps the game between visits: it saves after every action and remembers the endings.
+  function save() { G.saveNow(); }
 
   function endGame(endingId, r) {
     G.state.ending = endingId;
     r.ending = endingId;
     if (ENDINGS[endingId] && ENDINGS[endingId].sound) r.sounds.push(ENDINGS[endingId].sound);
-    var found = endingsFound();
-    if (found.indexOf(endingId) < 0) found.push(endingId);
-    foundInMemory = found;
-    writeStore(ENDINGS_KEY, found);
+    G.rememberEnding(endingId);
   }
 
   // ---- dangers ----
@@ -245,7 +176,6 @@ var Game = (function () {
       var f = list[i];
       if (f.hotspot && names.indexOf(f.hotspot) < 0) continue;
       if (f.room && f.room !== roomId) continue;
-      if (f.unlessShown && isShown(f.unlessShown)) continue;
       return f.ending;
     }
     return null;
@@ -276,27 +206,14 @@ var Game = (function () {
   function due(ev) { return !G.state.fired[ev.id] && G.state.time >= parseTime(ev.time); }
 
   // Fires one event: checkpoint first, so "Try again" lands just before it.
-  // A rule from rules.js runs its script; its ending or danger comes back from the toolbox.
+  // Every event is a rule from rules.js: it runs its script, and its ending or danger comes back
+  // from the toolbox.
   function fire(ev, r, byFallback) {
     G.checkpoint = { eventId: ev.id, state: copy(G.state) };
     G.state.fired[ev.id] = true;
-    if (ev.run) {
-      var out = Toolbox.run(ev.run, { r: r, byFallback: !!byFallback });
-      if (out.ending) endGame(out.ending, r);
-      else if (out.danger) startDanger(ev.id, out.danger, r);
-      return;
-    }
-    if (ev.unlessShown && isShown(ev.unlessShown)) return;
-    if (ev.lightsOut) G.state.dark = true;
-    var text = ev.room && ev.textAway && G.state.room !== ev.room ? ev.textAway : ev.text;
-    var sound = ev.sound;
-    if (byFallback) {
-      text = ev.fallbackText || text;
-      sound = ev.fallbackSound || sound;
-    }
-    applyMoment({ text: text, sound: sound, shake: ev.scare, show: ev.show, hide: ev.hide }, r);
-    if (ev.ending) endGame(ev.ending, r);
-    else if (ev.danger) startDanger(ev.id, ev.danger, r);
+    var out = Toolbox.run(ev.run, { r: r, byFallback: !!byFallback });
+    if (out.ending) endGame(out.ending, r);
+    else if (out.danger) startDanger(ev.id, out.danger, r);
   }
 
   // Runs after every action: fires whatever is due, in time order.
@@ -367,13 +284,8 @@ var Game = (function () {
         if (s.fired[ev.id]) return;
         s.fired[ev.id] = true;
         mark(ev.armShow, true);
-        if (ev.run) {
-          var out = Toolbox.run(ev.run, { r: emptyResult(), silent: true });
-          return applyMoment(out.danger && out.danger.whenSafe);
-        }
-        if (ev.lightsOut) s.dark = true;
-        applyMoment(ev);
-        applyMoment(ev.danger && ev.danger.whenSafe);
+        var out = Toolbox.run(ev.run, { r: emptyResult(), silent: true });
+        applyMoment(out.danger && out.danger.whenSafe);
       } else {
         delete s.fired[ev.id];
         delete s.armed[ev.id];
@@ -437,16 +349,11 @@ var Game = (function () {
     }
     if (breaksHold(r)) return r;
     var minutes = h.minutes != null ? h.minutes : h.note ? 0 : h.goTo ? SETTINGS.moveMinutes : SETTINGS.lookMinutes;
-    if (h.notBefore && G.state.time < parseTime(h.notBefore)) {
-      r.texts.push(h.tooEarly);
-      spend(minutes);
-      return after(r, false, act);
-    }
     if (h.note && G.state.notes.indexOf(h.note) < 0) G.state.notes.push(h.note);
     // A whenClicked script runs here. The button's own text shows unless the script said
     // something. A danger from a click is ignored.
     var out = h.run ? Toolbox.run(h.run, { r: r }) : {};
-    applyMoment({ text: out.said ? null : (D && byName(D.say, names)) || h.text, show: h.show, hide: h.hide }, r);
+    applyMoment({ text: out.said ? null : (D && byName(D.say, names)) || h.text }, r);
     if (out.ending) {
       endGame(out.ending, r);
       save();
@@ -495,14 +402,6 @@ var Game = (function () {
     fire(eventById(G.checkpoint.eventId), r);
     return after(r, true);
   };
-  G.continueGame = function () {
-    var data = loadSave();
-    if (data) {
-      G.state = data.state;
-      G.checkpoint = data.checkpoint;
-    }
-    return !!data;
-  };
   G.closeCamera = function () {
     G.state.camera = false;
     save();
@@ -515,7 +414,6 @@ var Game = (function () {
     var D = dangerDef();
     return D && D.deadline && !G.state.danger.holding ? G.state.danger.used / D.deadline : 0;
   };
-  G.hasSave = function () { return !!loadSave(); };
   G.freshState = freshState;
   G.exits = function () { return (ROOM_INFO[G.state.room].exits || []).slice(); };
   G.clock = function () { return formatTime(G.state.time); };
@@ -524,7 +422,6 @@ var Game = (function () {
   G.isShown = isShown;
   G.isVisible = isVisible;
   G.partVisible = partVisible;
-  G.useStorage = function (on) { storageOn = on; };
   G.go = go;
   G.click = click;
   G.wait = wait;
@@ -534,7 +431,6 @@ var Game = (function () {
   G.findHotspot = findHotspot;
   G.beamTouched = beamTouched;
   G.editJump = editJump;
-  G.endingsFound = endingsFound;
   G.parseTime = parseTime;
   G.formatTime = formatTime;
   return G;

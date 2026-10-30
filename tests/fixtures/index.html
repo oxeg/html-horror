@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>The fixture world</title>
+</head>
+<body>
+  <!-- A tiny made-up world for the engine's unit tests, written like babysitting-rules/index.html.
+       tests/run-node.js reads it with Loader.read(minidom(this file).body); its night is in
+       tests/fixtures/rules.js and its drawings in tests/fixtures/drawings.js. -->
+
+  <!-- The hub, where the night starts -->
+  <section class="room" id="a" title="Hub">
+    <nav>Go to: <a href="#b">Room B</a> <a href="#c">Room C</a></nav>
+    <button id="rug" title="Rug" data-minutes="0">A rug.</button>
+  </section>
+
+  <section class="room" id="b" title="Room B">
+    <nav>Go to: <a href="#a">Hub</a></nav>
+    <a id="door" href="#closet" title="Door">In you go.</a>
+    <button id="note" title="Note" data-note="n1"></button>
+  </section>
+
+  <section class="room" id="closet" title="Closet">
+    <nav>Go to: <a href="#b">Room B</a></nav>
+    <button id="coat" title="Coat">A coat.</button>
+    <button id="box" title="Box">A box.</button>
+  </section>
+
+  <section class="room" id="c" title="Room C">
+    <nav>Go to: <a href="#a">Hub</a></nav>
+    <button id="trap" title="Trap" data-ending="X1"></button>
+    <button id="lamp" class="light" title="Lamp">Click.</button>
+    <button id="kid" title="Kid">Goodnight.</button>
+    <button id="cam" title="Camera" data-camera="feed"></button>
+    <button id="clock" title="Clock" data-minutes="0">Tick.</button>
+    <button id="ghostly" title="Ghostly" hidden>Boo.</button>
+  </section>
+
+  <!-- The camera: it opens on top of room c -->
+  <section class="room camera" id="feed" title="Feed">
+    <button id="talk" title="Talk">Static.</button>
+  </section>
+
+  <article class="note" id="n1"><h2>Rules</h2><ol><li>Rule one.</li></ol><p class="sign">Love you!</p></article>
+  <article class="note fake" id="fake"><p>Let us in.</p></article>
+
+  <section class="ending" id="X1"><h1>X1</h1>Ending one.</section>
+  <section class="ending" id="X2"><h1>X2</h1>Ending two.</section>
+  <section class="ending" id="X3"><h1>X3</h1>Ending three.</section>
+  <section class="ending win" id="WIN"><h1>Win</h1>You made it.</section>
+</body>
+</html>

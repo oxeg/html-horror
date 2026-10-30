@@ -136,7 +136,6 @@ var Check = (function () {
         if (spot.goTo && !isRoom(spot.goTo)) errors.push(where + ' goes to "' + spot.goTo + '", but there is no room "' + spot.goTo + '".');
         if (spot.note && !NOTES[spot.note]) errors.push(where + ' gives the note "' + spot.note + '", but there is no note "' + spot.note + '".');
         if (spot.ending) checkEnding(where, spot.ending);
-        if (spot.notBefore) checkTime(where + " notBefore", spot.notBefore);
       });
       if (!hasDrawing(id)) errors.push('rooms/' + id + '.js is missing: room "' + id + '" is in index.html but has no drawing. Make rooms/' + id + '.js and add it to index.html.');
     });
@@ -160,8 +159,7 @@ var Check = (function () {
     var allEventIds = EVENTS.map(function (e) { return e.id; });
     function hasSpot(roomId, spot) { return !!spotNamed(roomId, spot); }
     EVENTS.forEach(function (ev) {
-      var file = ev.run ? "rules.js" : "story.js";
-      var where = file + (ev.run ? ': the rule at "' : ': event "') + ev.id + '"';
+      var where = 'rules.js: the rule at "' + ev.id + '"';
       if (seenIds[ev.id]) errors.push(where + ' is in the list twice. Every event needs its own id: rename one of them.');
       seenIds[ev.id] = true;
       if (checkTime(where, ev.time)) {
@@ -182,7 +180,7 @@ var Check = (function () {
       }
       if (ev.room) checkRoom(where + " room", ev.room);
       (ev.notIn || []).forEach(function (r) { checkRoom(where + " notIn", r); });
-      var does = ev.run ? Toolbox.pretend(ev) : { danger: ev.danger, ending: ev.ending };
+      var does = Toolbox.pretend(ev);
       if (does.ending) checkEnding(where, does.ending);
       var d = does.danger;
       if (!d) return;
@@ -215,7 +213,7 @@ var Check = (function () {
           if (isRoom(r)) worst = Math.max(worst, C.shortest(r, d.steps));
         });
         if (isFinite(worst) && d.deadline < worst + 1) {
-          warnings.push(where + " has a deadline of " + d.deadline + ", but in the worst case it takes " + worst + " actions to finish its steps. Make the deadline at least " + (worst + 1) + " in " + file + ".");
+          warnings.push(where + " has a deadline of " + d.deadline + ", but in the worst case it takes " + worst + " actions to finish its steps. Make the deadline at least " + (worst + 1) + " in rules.js.");
         } else if (!isFinite(worst)) {
           warnings.push(where + " has steps that can never be finished from some starting room. Check the rooms and exits in index.html.");
         }

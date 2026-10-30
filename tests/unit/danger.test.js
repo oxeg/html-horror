@@ -3,12 +3,12 @@ function contains(list, item) {
   return list.indexOf(item) >= 0;
 }
 
-// Starts the "hide" danger while standing in roomId.
+// Starts the 20:20 danger (get to the closet, then count) while standing in roomId.
 function startHide(roomId) {
   Game.newGame();
   Game.editJump(roomId, "20:19");
   Game.wait();
-  eq(Game.state.danger.id, "hide");
+  eq(Game.state.danger.id, "20:20");
 }
 
 function fakeStorage(throws) {
@@ -52,10 +52,10 @@ test("steps must be done in order", function () {
   Game.newGame();
   Game.editJump("b", "20:50");
   Game.click("note");
-  eq(Game.state.danger.id, "pick");
+  eq(Game.state.danger.id, "20:50");
   Game.go("a");
   Game.go("b");
-  eq(Game.state.danger.id, "pick");
+  eq(Game.state.danger.id, "20:50");
   eq(Game.state.danger.step, 0);
 });
 
@@ -121,7 +121,7 @@ test("endure resolves after N actions or one Wait", function () {
   Game.newGame();
   Game.editJump("a", "20:40");
   Game.click("rug");
-  eq(Game.state.danger.id, "wait1");
+  eq(Game.state.danger.id, "20:40");
   Game.click("rug");
   Game.click("rug");
   ok(contains(Game.click("rug").texts, "Gone"), "gone after three");
@@ -136,7 +136,7 @@ test("room-only fatal matches any hotspot there", function () {
   Game.newGame();
   Game.editJump("c", "20:40");
   Game.click("lamp");
-  eq(Game.state.danger.id, "wait1");
+  eq(Game.state.danger.id, "20:40");
   eq(Game.click("kid").ending, "X1");
 });
 
@@ -162,7 +162,7 @@ test("leave step", function () {
   Game.newGame();
   Game.editJump("c", "20:55");
   Game.click("lamp");
-  eq(Game.state.danger.id, "leaveC");
+  eq(Game.state.danger.id, "20:55");
   Game.go("a");
   eq(Game.state.danger, null);
 });
@@ -171,18 +171,18 @@ test("due event fires right after a danger resolves", function () {
   Game.newGame();
   Game.editJump("a", "20:40");
   Game.wait();
-  eq(Game.state.danger.id, "wait1");
+  eq(Game.state.danger.id, "20:40");
   Game.wait();
-  eq(Game.state.danger.id, "pick");
+  eq(Game.state.danger.id, "20:50");
 });
 
 test("armed trigger waits for the danger to end", function () {
   Game.newGame();
   Game.editJump("a", "20:19");
-  delete Game.state.fired.ghost;
+  delete Game.state.fired["19:50"];
   Game.setShown("ghost", false);
   Game.wait();
-  eq(Game.state.danger.id, "hide");
+  eq(Game.state.danger.id, "20:20");
   Game.go("b");
   eq(Game.state.shown.ghost, false);
   Game.click("door");
@@ -228,7 +228,7 @@ test("tryAgain restores the checkpoint and re-fires its event", function () {
   eq(Game.wait().ending, "X2");
   Game.tryAgain();
   eq(Game.state.ending, null);
-  eq(Game.state.danger.id, "hide");
+  eq(Game.state.danger.id, "20:20");
   eq(Game.state.danger.used, 0);
   eq(Game.state.time, before.time);
   eq(Game.state.room, before.room);
@@ -323,8 +323,8 @@ test("a click that does the next safe step is never deadly", function () {
   Game.newGame();
   Game.editJump("c", "20:50");
   Game.click("lamp");
-  eq(Game.state.danger.id, "pick");
-  eq(Game.click("kid").ending, null); // kid is also in pick's fatal list now
+  eq(Game.state.danger.id, "20:50");
+  eq(Game.click("kid").ending, null); // kid is also in the 20:50 danger's deadly list
   eq(Game.state.danger.step, 1);
   eq(Game.click("kid").ending, "X1", "once the step is done, the same click is deadly");
 });

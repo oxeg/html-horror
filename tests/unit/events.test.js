@@ -15,7 +15,7 @@ test("now event fires when an action crosses its time", function () {
   ok(has(r.texts, "E1 text"), "text");
   ok(has(r.sounds, "click"), "sound");
   eq(Game.state.shown.x, true);
-  eq(Game.state.fired.e1, true);
+  eq(Game.state.fired["19:20"], true);
 });
 
 test("events crossed together fire in list order", function () {
@@ -29,7 +29,7 @@ test("unlessShown fires silently", function () {
   waits(2);
   var r = Game.wait();
   ok(!has(r.texts, "Bed"), "no Bed text");
-  eq(Game.state.fired.bed, true);
+  eq(Game.state.fired["19:40"], true);
 });
 
 test("notIn waits until outside", function () {
@@ -73,7 +73,7 @@ test("beam arms its names at time and fires on beamTouched", function () {
   Game.go("c");
   waits(4);
   eq(Game.state.shown.face, true);
-  eq(Game.state.fired.peek, undefined);
+  eq(Game.state.fired["20:10"], undefined);
   var r = Game.beamTouched("face");
   eq(r.shake, true);
   eq(Game.state.shown["face-close"], true);
@@ -83,7 +83,7 @@ test("beamTouched before time does nothing", function () {
   Game.newGame();
   Game.go("c");
   Game.beamTouched("face");
-  eq(Game.state.fired.peek, undefined);
+  eq(Game.state.fired["20:10"], undefined);
 });
 
 test("beam fallback after N actions in a room with the group", function () {
@@ -95,24 +95,24 @@ test("beam fallback after N actions in a room with the group", function () {
   var r = Game.click("clock");
   ok(has(r.texts, "Knock"), JSON.stringify(r.texts));
   ok(has(r.sounds, "knock"), "knock sound");
-  eq(Game.state.fired.peek, true);
+  eq(Game.state.fired["20:10"], true);
 });
 
 test("armed events do not block later now events", function () {
   Game.newGame();
   Game.editJump("a", "20:57");
-  delete Game.state.fired.ghost;
+  delete Game.state.fired["19:50"];
   eq(Game.wait().ending, "WIN");
 });
 
 test("checkpoint is a deep copy taken just before the event", function () {
   Game.newGame();
   waits(2);
-  eq(Game.checkpoint.eventId, "e2");
+  eq(Game.checkpoint.eventId, "19:20 #2");
   eq(Game.checkpoint.state.shown.x, true);
-  eq(Game.checkpoint.state.fired.e2, undefined);
+  eq(Game.checkpoint.state.fired["19:20 #2"], undefined);
   Game.wait();
-  eq(Game.checkpoint.eventId, "bed");
+  eq(Game.checkpoint.eventId, "19:40");
   eq(Game.checkpoint.state.shown.asleep, undefined);
   Game.state.shown.zz = true;
   eq(Game.checkpoint.state.shown.zz, undefined);
@@ -121,7 +121,7 @@ test("checkpoint is a deep copy taken just before the event", function () {
 test("editJump marks earlier events done and applies their show and hide silently", function () {
   Game.newGame();
   Game.editJump("b", "20:05");
-  eq(Game.state.fired.e1, true);
+  eq(Game.state.fired["19:20"], true);
   eq(Game.state.shown.x, true);
   eq(Game.state.room, "b");
   eq(Game.state.time, 1205);
@@ -161,7 +161,7 @@ test("notIn holds a nextEntry rule too", function () {
   Game.newGame();
   Game.editJump("b", "19:45");
   Game.click("door"); // into the closet, which has a ghost too
-  eq(Game.state.fired.ghost, undefined, "not in the closet");
+  eq(Game.state.fired["19:50"], undefined, "not in the closet");
   Game.go("b");
-  eq(Game.state.fired.ghost, true);
+  eq(Game.state.fired["19:50"], true);
 });
