@@ -35,11 +35,12 @@ var Toolbox = (function () {
   // between(…) goes by its first time, and keeps the last one in latest. It keeps every
   // trigger it was given (check.js says so when there's more than one).
   T.addRule = function (time, conditions, fn, line) {
-    var latest = time && time.between ? time.to : undefined;
-    if (time && time.between) time = time.from;
+    var span = time && time.between ? time : null;
+    if (span) time = span.from;
     var same = rules.filter(function (r) { return r.time === time; }).length;
     var rule = {
-      id: same ? time + " #" + (same + 1) : time, time: time, latest: latest, trigger: "now", group: undefined, room: undefined,
+      id: same ? time + " #" + (same + 1) : time, time: time, between: !!span, latest: span ? span.to : undefined,
+      trigger: "now", group: undefined, room: undefined,
       fallback: undefined, notIn: [], after: undefined, armShow: [], run: fn, line: line, triggers: [],
     };
     conditions.forEach(function (c) {

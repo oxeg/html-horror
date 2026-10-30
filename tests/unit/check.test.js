@@ -237,6 +237,36 @@ test("check: a rule's id is made from its time, so only a bad time can look like
   ok(!mentions(r.errors, ["twice"]), r.errors.join("|"));
 });
 
+test("check: between() needs two times, the earlier one first", function () {
+  var r = world(HUB + WIN, function () {
+    startInA();
+    when(between("22:40", "21:30"), function () {});
+    when(between("21:00"), function () {});
+    when(between("21:5", "22:00"), function () {});
+    when(between("21:10", "21:50"), function () {});
+  });
+  ok(mentions(r.errors, ["rules.js (line ", 'between("22:40", "21:30"): the first time has to be the earlier one']), r.errors.join("|"));
+  ok(mentions(r.errors, ["rules.js (line ", 'between("21:00", …) needs two times, like between("21:00", "22:00")']), r.errors.join("|"));
+  ok(mentions(r.errors, ["rules.js (line ", 'between("21:5", "22:00"): the time "21:5"', "19:05"]), r.errors.join("|"));
+  eq(r.errors.length, 3, "the good one is fine: " + r.errors.join("|"));
+});
+
+test("check: onSomeNights() needs two whole numbers, the first one no bigger", function () {
+  var r = world(HUB + WIN, function () {
+    startInA();
+    when("21:00", onSomeNights(11, 10), function () {});
+    when("21:10", onSomeNights(1.5, 3), function () {});
+    when("21:20", onSomeNights(3), function () {});
+    when("21:30", onSomeNights(0, 4), function () {});   // never: a way to switch a rule off
+    when("21:40", onSomeNights(4, 4), function () {});
+  });
+  var says = "two whole numbers, the first one no bigger: onSomeNights(9, 10) means 9 nights out of 10";
+  ok(mentions(r.errors, ["rules.js (line ", "onSomeNights(11, 10) needs " + says]), r.errors.join("|"));
+  ok(mentions(r.errors, ["rules.js (line ", "onSomeNights(1.5, 3) needs"]), r.errors.join("|"));
+  ok(mentions(r.errors, ["rules.js (line ", "onSomeNights(3, …) needs"]), r.errors.join("|"));
+  eq(r.errors.length, 3, "the good ones are fine: " + r.errors.join("|"));
+});
+
 test("check: afterRule names a time with no rule", function () {
   var r = world(FIXTURE_HTML, function () {
     startInA();

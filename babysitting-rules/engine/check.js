@@ -321,6 +321,30 @@ var Check = (function () {
     });
   }
 
+  // A block as she wrote it, like between("21:00", "22:00"); a missing word is "…".
+  function said(block, words) {
+    while (words.length && words[words.length - 1] === undefined) words = words.slice(0, -1);
+    return block + "(" + words.map(function (w) { return w === undefined ? "…" : JSON.stringify(w); }).join(", ") + (words.length < 2 ? ", …" : "") + ")";
+  }
+
+  // between(from, to): two times, the earlier one first.
+  function checkWindow(out, at, ev) {
+    var block = said("between", [ev.time, ev.latest]);
+    if (ev.latest === undefined) return out.errors.push(at + block + ' needs two times, like between("21:00", "22:00").');
+    var bad = [ev.time, ev.latest].filter(badTime);
+    bad.forEach(function (t) { out.errors.push(at + block + ': the time "' + t + '" ' + TIME); });
+    if (!bad.length && Game.parseTime(ev.latest) < Game.parseTime(ev.time)) out.errors.push(at + block + ": the first time has to be the earlier one.");
+  }
+
+  // onSomeNights(n, of): n nights out of of.
+  function checkOdds(out, at, odds) {
+    var n = odds[0], of = odds[1];
+    function whole(x) { return typeof x === "number" && Math.floor(x) === x && x >= 0; }
+    if (!(whole(n) && whole(of) && of >= 1 && n <= of)) {
+      out.errors.push(at + said("onSomeNights", odds) + " needs two whole numbers, the first one no bigger: onSomeNights(9, 10) means 9 nights out of 10.");
+    }
+  }
+
   // rules.js: the setup, every rule (its conditions, then a pretend run, then a reading) and every
   // click script, then the hidden buttons nothing shows.
   function checkRules(out, n) {
@@ -336,8 +360,10 @@ var Check = (function () {
 
     EVENTS.forEach(function (ev) {
       var at = inRules(ev.line);
-      var hat = 'when("' + ev.time + '", …)';
-      if (badTime(ev.time)) out.errors.push(at + 'when("' + ev.time + '", …): the time "' + ev.time + '" ' + TIME);
+      var hat = ev.between ? "when(" + said("between", [ev.time, ev.latest]) + ", …)" : 'when("' + ev.time + '", …)';
+      if (ev.between) checkWindow(out, at, ev);
+      else if (badTime(ev.time)) out.errors.push(at + 'when("' + ev.time + '", …): the time "' + ev.time + '" ' + TIME);
+      if (ev.odds) checkOdds(out, at, ev.odds);
       var triggers = ev.triggers || [];
       if (triggers.length > 1) {
         out.errors.push(at + hat + " waits for " + triggers.length + " things: " + triggers.map(function (t) { return (WAITS[t] || t) + "(…)"; }).join(" and ") + ". A rule can wait for only one of them.");
