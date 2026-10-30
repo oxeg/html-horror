@@ -3,8 +3,6 @@
 //   Loader.read(the fixture's index.html) + tests/unit/*.test.js (all in tests/fixtures/)
 // game: the drawings (engine/drawings/*.js, but not plain.js), then the game files in index.html order (but
 //   not engine/errors.js, which needs a page), then Loader.read(index.html) + playthroughs + game.test.js
-// migration (until Task 14): the frozen old story + drawings + engine + save + toolbox + loader + rules.js +
-//   migration.test.js, with index.html's source as INDEX_HTML
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
@@ -80,19 +78,6 @@ if (INDEX_HTML) {
     path.join(__dirname, "game.test.js"),
   ], { INDEX_HTML }));
 }
-
-results.push(suite("migration", [
-  path.join(__dirname, "fixtures/old-story.js"),
-  ...drawings,
-  path.join(ENGINE, "engine.js"),
-  path.join(ENGINE, "save.js"),
-  path.join(ENGINE, "toolbox.js"),
-  path.join(ENGINE, "loader.js"),
-  path.join(__dirname, "tools/renames.js"),
-  path.join(GAME, "rules.js"),
-  path.join(__dirname, "harness.js"),
-  path.join(__dirname, "migration.test.js"),
-], { INDEX_HTML }));
 
 const passed = results.reduce((n, r) => n + r.passed, 0);
 const failed = results.reduce((n, r) => n + r.failed, 0);

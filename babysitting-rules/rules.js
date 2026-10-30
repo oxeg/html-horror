@@ -17,7 +17,8 @@
 //           notIn("master", "walk-in")   not while you're in one of these rooms
 //           afterRule("21:20")           only after the rule at 21:20
 //  Danger:  clicks, safe, ending, deadly, lasts, waitEndsIt, labels,
-//           buttonSays, thenWait, whenSafe (rule 1 and rule 3 show them all)
+//           buttonSays, thenWait, whenSafe (the rules at 21:20, 22:00, 22:20 and
+//           23:00 use them all)
 //           beIn("walk-in")  leaveRoom("living")  click("bath-lock")  anythingIn("living")
 //
 //  Text goes between quotes "like this", or backticks `like this` when it

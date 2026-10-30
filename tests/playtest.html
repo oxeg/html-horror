@@ -12,9 +12,7 @@
   <script>
     var frame = document.getElementById("game");
     // minidom.js is for the parity test in dom.test.js only.
-    var TESTS = ["minidom.js", "harness.js", "playthroughs.js", "game.test.js", "dom.test.js",
-      "fixtures/visible-parts.js", "visibility.test.js",
-      "fixtures/hotspot-boxes.js", "tools/renames.js", "layout.test.js"];
+    var TESTS = ["minidom.js", "harness.js", "playthroughs.js", "game.test.js", "dom.test.js"];
 
     function addScript(w, src) {
       return new Promise(function (resolve, reject) {
@@ -35,8 +33,8 @@
 
     frame.addEventListener("load", function () {
       var w = frame.contentWindow;
-      // Press Start like a player (visibility.test.js draws with the real view, which needs a game
-      // that's playing), then wait out View.act's 0.35 s so the tests' own clicks count.
+      // Press Start like a player (the DOM tests draw with the real view, which needs a game that's
+      // playing), then wait out View.act's 0.35 s so the tests' own clicks count.
       Promise.resolve().then(function () {
         w.Game.useStorage(false);
         w.document.getElementById("title-start").click();
