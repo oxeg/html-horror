@@ -4,7 +4,9 @@
 //  Everything that happens during the night is a script in this file,
 //  like the scripts in Scratch. Each one starts with a "hat block":
 //    when("21:00", function () { … });        when the clock gets to 21:00
+//    when(between("21:00", "22:00"), …);      sometime between 21:00 and 22:00
 //    whenClicked("toys", function () { … });  when you click the toys
+//  Every new night picks new times, so the scares come in a different order.
 //
 //  CHEAT SHEET
 //  Do:      say("Hi!")  playSound("knock")  shake()  show("face")  hide("face")
@@ -15,10 +17,11 @@
 //           enteringRoomWith("x")        until you walk into a room with x in it
 //           lightFinds("face", 3)        until your light finds it (or 3 clicks)
 //           notIn("master", "walk-in")   not while you're in one of these rooms
-//           afterRule("21:20")           only after the rule at 21:20
+//           afterRule("21:10")           only after the rule that starts at 21:10
+//  Random:  between("21:00", "22:00")    a new time in there every night
+//           onSomeNights(9, 10)          happens on 9 nights out of 10
 //  Danger:  clicks, safe, ending, deadly, lasts, waitEndsIt, labels,
-//           buttonSays, thenWait, whenSafe (the rules at 21:20, 22:00, 22:20 and
-//           23:00 use them all)
+//           buttonSays, thenWait, whenSafe (rules 1, 3, 5 and 7 below use them all)
 //           beIn("walk-in")  leaveRoom("living")  click("bath-lock")  anythingIn("living")
 //
 //  Text goes between quotes "like this", or backticks `like this` when it
@@ -63,8 +66,11 @@ when("21:00", function () {
   say("The lights flicker and die. The switch clicks. Nothing.<br>You turn on your phone's flashlight.");
 });
 
+// The scares after dark: each one comes at a random time in its window, and on 1 night
+// out of 10 it doesn't come at all. Press E in the game to see tonight's times.
+
 // Rule 1: the not-sister in a doorway
-when("21:20", enteringRoomWith("not-sister"), function () {
+when(between("21:10", "22:10"), onSomeNights(9, 10), enteringRoomWith("not-sister"), function () {
   show("not-sister");
   say(`Your sister is standing in the doorway. She doesn't move.<br>"Can you come here?"<br>Then it calls your name.`);
   danger({
@@ -85,7 +91,7 @@ when("21:20", enteringRoomWith("not-sister"), function () {
 });
 
 // Rule 2: the reflection in the balcony door
-when("21:40", inRoom("living"), function () {
+when(between("21:20", "22:30"), onSomeNights(9, 10), inRoom("living"), function () {
   show("reflection");
   say("In the dark glass of the balcony door, your reflection is moving.<br>You aren't.");
   danger({
@@ -98,14 +104,15 @@ when("21:40", inRoom("living"), function () {
 });
 
 // Rule 6: the bedroom door opens by itself
-// (only after rule 1, so you can always get to the walk-in closet for rule 1)
-when("21:50", afterRule("21:20"), notIn("master", "walk-in"), function () {
+// (only after rule 1, so you can always get to the walk-in closet for rule 1;
+// on a night without rule 1 it doesn't wait)
+when(between("21:30", "22:30"), onSomeNights(9, 10), afterRule("21:10"), notIn("master", "walk-in"), function () {
   hide("door-closed");
   show("door-open");
 });
 
 // Rule 5: the cat on the balcony
-when("22:00", function () {
+when(between("21:35", "22:40"), onSomeNights(9, 10), function () {
   show("cat-outside");
   playSound("meow");
   if (youAreIn("living")) {
@@ -123,7 +130,7 @@ when("22:00", function () {
 });
 
 // Rule 3: the face in the window
-when("22:20", lightFinds("face", 3), function () {
+when(between("21:40", "22:40"), onSomeNights(9, 10), lightFinds("face", 3), function () {
   show("face-close", "washer-spin", "washer-on");
   if (foundWithLight()) {
     say("A face. In the window. Looking at you.");
@@ -149,7 +156,7 @@ when("22:20", lightFinds("face", 3), function () {
 });
 
 // Rule 4: nobody at the doorbell
-when("22:40", function () {
+when(between("22:00", "22:50"), onSomeNights(9, 10), function () {
   show("doorbell-glow");
   playSound("doorbell");
   say("Ding-dong. The doorbell.");
@@ -198,6 +205,38 @@ when("23:10", function () {
     },
     whenSafe: { say: "Then… silence.", hide: ["doorbell-glow", "feed-hallway"] },
   });
+});
+
+// ---- Little spooky things ----
+// Some nights a few of these happen. They can't hurt you.
+// Copy one, change the words and the times, and make your own!
+
+when(between("19:20", "20:50"), onSomeNights(1, 3), function () {
+  say("The fridge hums. Then it stops. The flat is very quiet.");
+});
+
+when(between("20:05", "20:55"), onSomeNights(1, 3), function () {
+  playSound("click");
+  say("Somewhere in the flat, a door clicks shut.");
+});
+
+when(between("21:05", "22:20"), onSomeNights(1, 3), function () {
+  playSound("meow");
+  say("From Mom and Dad's bedroom, a sleepy meow. The cat is in her tree house.");
+});
+
+when(between("21:15", "22:40"), onSomeNights(1, 3), function () {
+  playSound("knock");
+  say("Upstairs, someone knocks on the floor. Twice. Then nothing.");
+});
+
+when(between("21:45", "22:50"), onSomeNights(1, 3), function () {
+  say("Your phone's flashlight flickers. Then it's fine again.");
+});
+
+when(between("22:05", "22:55"), onSomeNights(1, 3), function () {
+  playSound("click");
+  say("The heating pipes go tick… tick… tick. Then they stop.");
 });
 
 // Home!

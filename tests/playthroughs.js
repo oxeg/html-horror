@@ -1,8 +1,9 @@
 // Scripted runs through the real game. Each step is one of:
 //   go <room> | click <hotspot> | wait | beam <name> | close | jump <HH:MM> <room> | show <name> on|off
 // `ending` is how the run must end. `retry` says what "Try again" must bring back
-// (the danger that is running again, by its rule's id: the rule's time; or null when no danger
-// restarts). A click on a button you can't see stops the run.
+// (the danger that is running again, by its rule's id: the rule's first time; or null when no
+// danger restarts). A click on a button you can't see stops the run. They all play the classic
+// night (classicNight() in game.test.js), so the times in the comments are the scares' times.
 var PLAYTHROUGHS = [
   {
     name: "W1: the whole night, played right",
@@ -37,13 +38,13 @@ var PLAYTHROUGHS = [
   {
     name: "E1: answering the not-sister",
     ending: "it-wasnt-her",
-    retry: { danger: "21:20" },
+    retry: { danger: "21:10" },
     steps: ["jump 21:15 my-room", "wait", "go entrance", "click hall-not-sister"],
   },
   {
     name: "E2: touching anything while the reflection moves",
     ending: "mirror",
-    retry: { danger: "21:40" },
+    retry: { danger: "21:20" },
     steps: ["jump 21:35 entrance", "wait", "go living", "click fridge"],
   },
   {
@@ -55,19 +56,19 @@ var PLAYTHROUGHS = [
   {
     name: "E4: letting the cat in",
     ending: "not-the-cat",
-    retry: { danger: "22:00" },
+    retry: { danger: "21:35" },
     steps: ["jump 21:59 living", "wait", "click balcony-door"],
   },
   {
     name: "E5: hiding in the washing-machine bathroom",
     ending: "spin-cycle",
-    retry: { danger: "22:20" },
+    retry: { danger: "21:40" },
     steps: ["jump 22:15 my-room", "wait", "beam face", "go entrance", "go bath-washer", "click laundry-lock"],
   },
   {
     name: "E6: opening the door while counting",
     ending: "sounds-like-us",
-    retry: { danger: "22:20" },
+    retry: { danger: "21:40" },
     steps: [
       "jump 22:15 my-room", "wait", "beam face", "go entrance", "go bath", "click bath-lock",
       "wait", "wait", "wait", "wait", "wait", "click bath-lock",
@@ -76,13 +77,13 @@ var PLAYTHROUGHS = [
   {
     name: "E6-late: not hiding from the face in time",
     ending: "sounds-like-us",
-    retry: { danger: "22:20" },
+    retry: { danger: "21:40" },
     steps: ["jump 22:15 my-room", "wait", "beam face", "wait", "wait", "wait", "wait", "wait"],
   },
   {
     name: "E7: answering when nobody is there",
     ending: "nobody-there",
-    retry: { danger: "22:40" },
+    retry: { danger: "22:00" },
     steps: ["jump 22:35 entrance", "wait", "click doorbell", "click talk"],
   },
   {

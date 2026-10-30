@@ -1,4 +1,16 @@
 // The real game: validation, texts, and every scripted playthrough.
+
+// The classic night: every scare at the time it had before random nights, nothing skipped and no
+// little extras. The playthroughs and the tests below are written for it.
+var CLASSIC = { "21:10": "21:20", "21:20": "21:40", "21:30": "21:50", "21:35": "22:00", "21:40": "22:20", "22:00": "22:40" };
+function classicNight() {
+  var night = {};
+  EVENTS.forEach(function (ev) {
+    night[ev.id] = CLASSIC[ev.id] ? Game.parseTime(CLASSIC[ev.id]) : ev.odds ? null : Game.parseTime(ev.time);
+  });
+  return night;
+}
+
 function playStep(step) {
   var p = step.split(" ");
   if (p[0] === "go") return Game.go(p[1]);
@@ -59,7 +71,7 @@ test("the fake note gives itself away: no Love you", function () {
 
 test("clicking your sister runs her whenClicked script from rules.js", function () {
   Game.useStorage(false);
-  Game.newGame();
+  Game.newGame(classicNight());
   playStep("go sister-room");
   eq(Game.click("sister-awake").texts, ["You play a board game with your sister. She wins. Twice."], "before 8");
   ok(Game.isShown("sister-awake"), "still awake");
@@ -74,7 +86,7 @@ test("tucking your sister in says the words inside her button in index.html (HTM
   h.text = "Sweet dreams, little one.";  // as if she changed it in index.html
   try {
     Game.useStorage(false);
-    Game.newGame();
+    Game.newGame(classicNight());
     playStep("jump 20:00 sister-room");
     eq(Game.click("sister-awake").texts, ["Sweet dreams, little one."]);
   } finally {
@@ -110,7 +122,7 @@ if (typeof document === "undefined") {
 
   test("a save from before rules.js (old ids in the danger or in fired) is refused", function () {
     withStorage({}, function (data) {
-      Game.newGame();
+      Game.newGame(classicNight());
       COUNTING.concat(["wait"]).forEach(playStep);
       var good = data["babysitting-rules:save"];
       ok(Game.hasSave(), "the save of rule 3's count is fine");
@@ -129,13 +141,13 @@ if (typeof document === "undefined") {
 
   test("Continue in the middle of the count goes on where it was", function () {
     withStorage({}, function () {
-      Game.newGame();
+      Game.newGame(classicNight());
       COUNTING.concat(["wait", "wait", "wait", "wait", "wait"]).forEach(playStep);
       Game.useStorage(false);
-      Game.newGame(); // a fresh game that isn't saved: the save is still the count
+      Game.newGame(classicNight()); // a fresh game that isn't saved: the save is still the count
       Game.useStorage(true);
       ok(Game.continueGame(), "Continue is offered");
-      eq([Game.state.danger.id, Game.state.danger.held], ["22:20", 5]);
+      eq([Game.state.danger.id, Game.state.danger.held], ["21:40", 5]);
       eq(Game.waitLabel(), "Count");
       eq(Game.label("bath-lock"), "Open the door");
       var r;
@@ -148,7 +160,7 @@ if (typeof document === "undefined") {
 
 function play(steps) {
   Game.useStorage(false);
-  Game.newGame();
+  Game.newGame(classicNight());
   steps.forEach(playStep);
 }
 
@@ -196,7 +208,7 @@ test("the deadline check finds a click with no room in every room with that butt
 PLAYTHROUGHS.forEach(function (pt) {
   test("playthrough " + pt.name, function () {
     Game.useStorage(false);
-    Game.newGame();
+    Game.newGame(classicNight());
     pt.steps.forEach(function (step, i) {
       if (Game.state.ending) throw new Error("ended " + Game.state.ending + " early, before step " + i + " (" + step + ")");
       playStep(step);
@@ -210,11 +222,64 @@ PLAYTHROUGHS.forEach(function (pt) {
   });
 });
 
+// A random that gives the same numbers every run, so random nights can be tested.
+function seeded(seed) {
+  return function () {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+}
+
+var SCARES = Object.keys(CLASSIC);
+
+test("200 random nights: every time is in its window, and the end of the night stays put", function () {
+  var random = seeded(7);
+  var orders = {}, skipping = 0;
+  for (var i = 0; i < 200; i++) {
+    var night = Toolbox.rollNight(EVENTS, random);
+    eq([night["23:00"], night["23:10"], night["23:30"]], [Game.parseTime("23:00"), Game.parseTime("23:10"), Game.parseTime("23:30")]);
+    EVENTS.forEach(function (ev) {
+      var t = night[ev.id];
+      if (t === null) return ok(ev.odds, ev.id + " is skipped, but it has no onSomeNights");
+      ok(t >= Game.parseTime(ev.time) && t <= Game.parseTime(ev.latest || ev.time) && (t - Game.parseTime(ev.time)) % 5 === 0, ev.id + " at " + Game.formatTime(t));
+    });
+    ok(night["22:00"] === null || night["22:00"] < Game.parseTime("23:00"), "the first doorbell rings before Mom's");
+    var here = SCARES.filter(function (id) { return night[id] !== null; });
+    if (here.length < SCARES.length) skipping++;
+    orders[here.sort(function (a, b) { return night[a] - night[b]; }).join(" ")] = true;
+  }
+  ok(Object.keys(orders).length > 50, Object.keys(orders).length + " different orders");
+  ok(skipping > 60 && skipping < 130, skipping + " nights of 200 skip a scare");
+});
+
+test("100 random nights played with random clicks never break, and every one ends", function () {
+  var random = seeded(11);
+  function any(list) { return list[Math.floor(random() * list.length)]; }
+  for (var n = 0; n < 100; n++) {
+    Game.useStorage(false);
+    Game.newGame(Toolbox.rollNight(EVENTS, random));
+    for (var step = 0; step < 400 && !Game.state.ending; step++) {
+      var room = Game.scene();
+      var visible = Object.keys(ROOM_INFO[room].hotspots).filter(function (id) {
+        var h = ROOM_INFO[room].hotspots[id];
+        return Game.isVisible(h.names || [id], h.hidden);
+      });
+      var pick = random();
+      var r = pick < 0.3 || !visible.length ? Game.wait()
+        : pick < 0.6 && Game.exits().length ? Game.go(any(Game.exits()))
+        : pick < 0.65 ? Game.beamTouched("face")
+        : Game.click(any(visible));
+      if (r && r.problems && r.problems.length) throw new Error("night " + n + ": " + JSON.stringify(r.problems));
+    }
+    ok(Game.state.ending, "night " + n + " never ended (" + describeState() + ")");
+  }
+});
+
 test("rule 1 is still survivable when it first happens after 21:50", function () {
   Game.useStorage(false);
-  Game.newGame();
+  Game.newGame(classicNight());
   ["jump 21:05 bath", "wait", "wait", "wait", "go entrance"].forEach(playStep);
-  eq(Game.state.danger && Game.state.danger.id, "21:20", "rule 1 starts in the hallway");
+  eq(Game.state.danger && Game.state.danger.id, "21:10", "rule 1 starts in the hallway");
   eq(Game.isShown("door-open"), false, "the bedroom door is still closed");
   ["go master-door", "click door-closed", "click walk-in-door", "wait", "wait", "wait"].forEach(playStep);
   eq(Game.state.ending, null, "made it to the walk-in");

@@ -11,7 +11,7 @@ if (typeof document !== "undefined") {
     // "test-thing" is a name no hotspot in the real story has, so its data-hidden decides.
     test("applyVisibility: data-hidden starts hidden, show and hide change it", function () {
       Game.useStorage(false);
-      Game.newGame();
+      Game.newGame(classicNight());
       var p = part('data-name="test-thing" data-hidden');
       View.applyVisibility(p.box, "entrance");
       ok(hidden(p.g), "hidden at the start");
@@ -28,7 +28,7 @@ if (typeof document !== "undefined") {
 
     test("applyVisibility: data-light-only goes when the lights go out", function () {
       Game.useStorage(false);
-      Game.newGame();
+      Game.newGame(classicNight());
       var p = part('data-name="test-glow" data-light-only');
       View.applyVisibility(p.box, "entrance");
       ok(!hidden(p.g), "shown while the lights are on");
@@ -42,7 +42,7 @@ if (typeof document !== "undefined") {
 
     test("applyVisibility: data-dark-only shows only in the dark", function () {
       Game.useStorage(false);
-      Game.newGame();
+      Game.newGame(classicNight());
       var p = part('data-name="test-marks" data-dark-only');
       View.applyVisibility(p.box, "entrance");
       ok(hidden(p.g), "hidden while the lights are on");
@@ -82,7 +82,7 @@ if (typeof document !== "undefined") {
     // A fresh game in this room with the lights on, drawn by the real view.
     function inRoom(roomId) {
       Game.useStorage(false);
-      Game.newGame();
+      Game.newGame(classicNight());
       Game.editJump(roomId, "19:30");
       View.render();
       cooldownOver();
@@ -337,7 +337,7 @@ if (typeof document !== "undefined") {
         eq([].map.call(document.querySelectorAll("#ending-buttons button"), function (b) { return b.textContent; }), ["Try again", "Start over"]);
       } finally {
         document.getElementById("rule-problem-ok").click();
-        Game.newGame();
+        Game.newGame(classicNight());
         View.render();
       }
     });
