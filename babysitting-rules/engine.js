@@ -1,7 +1,7 @@
 // engine.js: the game machine. It keeps track of the clock, the room, what is shown
 // or hidden, the events and the dangers. It never draws anything (view.js does that), so the
 // tests can play the whole game without a browser. You don't need to change this
-// file: everything you'd want to change lives in index.html and story.js.
+// file: everything you'd want to change lives in index.html and rules.js.
 
 var Game = (function () {
   var SAVE_KEY = "babysitting-rules:save";
@@ -154,16 +154,23 @@ var Game = (function () {
 
   function save() { writeStore(SAVE_KEY, { state: G.state, checkpoint: G.checkpoint }); }
 
-  // A save from before she edited story.js may name things that no longer exist.
+  // A save from before she edited rules.js or index.html may name things that no longer exist.
   function validState(s) {
     if (!s || typeof s.time !== "number" || !ROOM_INFO[s.room] || !s.shown || !s.fired) return false;
     if (s.camera && !ROOM_INFO[s.camera]) return false;
     for (var id in s.fired) if (!eventById(id)) return false;
-    if (s.danger && !(s.danger.def && (eventById(s.danger.id) || {}).danger)) return false;
+    if (s.danger && !(eventById(s.danger.id) && validDanger(s.danger.def))) return false;
     if (s.ending && !ENDINGS[s.ending]) return false;
     return (s.notes || []).every(function (n) {
       return NOTES[n];
     });
+  }
+
+  // A saved danger is its own definition: every ending it can lead to must still exist.
+  function validDanger(def) {
+    if (!def) return false;
+    var endings = [def.late, def.hold && def.hold.fatal].concat((def.fatal || []).map(function (f) { return f.ending; }));
+    return endings.every(function (e) { return e == null || ENDINGS[e]; });
   }
 
   function loadSave() {
@@ -292,7 +299,7 @@ var Game = (function () {
     else if (ev.danger) startDanger(ev.id, ev.danger, r);
   }
 
-  // Runs after every action: fires whatever is due, in story order.
+  // Runs after every action: fires whatever is due, in time order.
   // Nothing new starts while a danger runs; it all waits until the danger is over.
   function processEvents(r, entered) {
     for (var i = 0; i < EVENTS.length; i++) {
@@ -509,6 +516,7 @@ var Game = (function () {
     return D && D.deadline && !G.state.danger.holding ? G.state.danger.used / D.deadline : 0;
   };
   G.hasSave = function () { return !!loadSave(); };
+  G.freshState = freshState;
   G.exits = function () { return (ROOM_INFO[G.state.room].exits || []).slice(); };
   G.clock = function () { return formatTime(G.state.time); };
   G.setShown = function (name, on) { G.state.shown[name] = !!on; };

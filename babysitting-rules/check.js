@@ -1,4 +1,4 @@
-// check.js: looks over index.html's rooms, notes and endings, story.js and the rooms/ drawings
+// check.js: looks over index.html's rooms, notes and endings, rules.js and the rooms/ drawings
 // before the game starts and reports mistakes in plain words. Errors stop the game; warnings
 // are only a note.
 // It never touches the page, so the tests can run it in Node too.
@@ -18,6 +18,13 @@ var Check = (function () {
   function spotNamed(roomId, name) {
     var id = Game.findHotspot(roomId, name);
     return id ? ROOM_INFO[roomId].hotspots[id] : null;
+  }
+
+  // The rooms a step happens in: its own, or for a click with no room, every room with that button
+  // (by id or class, so click("lock") is in either bathroom).
+  function stepRooms(step) {
+    if (step.room !== undefined) return list(step.room);
+    return ids(ROOM_INFO).filter(function (r) { return !!spotNamed(r, step.hotspot); });
   }
 
   // ---- the walking graph: exits plus hotspots that move you (goTo) ----
@@ -69,7 +76,7 @@ var Check = (function () {
           return out.forEach(function (n) { put(next, n, cost + 1); });
         }
         var dist = isRoom(room) ? distances(room) : {};
-        list(step.room).forEach(function (target) {
+        stepRooms(step).forEach(function (target) {
           if (dist[target] === undefined) return;
           if (!step.hotspot) return put(next, target, cost + dist[target]);
           var h = spotNamed(target, step.hotspot);
@@ -108,14 +115,14 @@ var Check = (function () {
     }
     function checkTime(where, time) {
       if (isNaN(Game.parseTime(time))) {
-        errors.push(where + ': the time "' + time + '" is not written like 19:05 (two digits, a colon, two digits). Fix it in story.js.');
+        errors.push(where + ': the time "' + time + '" is not written like 19:05 (two digits, a colon, two digits). Fix it.');
         return false;
       }
       return true;
     }
 
-    checkRoom("story.js SETTINGS startRoom", SETTINGS.startRoom);
-    checkTime("story.js SETTINGS startTime", SETTINGS.startTime);
+    checkRoom("rules.js startAt", SETTINGS.startRoom);
+    checkTime("rules.js startAt", SETTINGS.startTime);
 
     // rooms: exits, hotspots, drawings
     ids(ROOM_INFO).forEach(function (id) {
@@ -146,14 +153,15 @@ var Check = (function () {
       }
     });
 
-    // events
+    // events: the rules in rules.js (their dangers and endings come from a pretend run)
     var last = -1;
     var lastId = "";
     var seenIds = {};
     var allEventIds = EVENTS.map(function (e) { return e.id; });
     function hasSpot(roomId, spot) { return !!spotNamed(roomId, spot); }
     EVENTS.forEach(function (ev) {
-      var where = 'story.js: event "' + ev.id + '"';
+      var file = ev.run ? "rules.js" : "story.js";
+      var where = file + (ev.run ? ': the rule at "' : ': event "') + ev.id + '"';
       if (seenIds[ev.id]) errors.push(where + ' is in the list twice. Every event needs its own id: rename one of them.');
       seenIds[ev.id] = true;
       if (checkTime(where, ev.time)) {
@@ -174,8 +182,9 @@ var Check = (function () {
       }
       if (ev.room) checkRoom(where + " room", ev.room);
       (ev.notIn || []).forEach(function (r) { checkRoom(where + " notIn", r); });
-      if (ev.ending) checkEnding(where, ev.ending);
-      var d = ev.danger;
+      var does = ev.run ? Toolbox.pretend(ev) : { danger: ev.danger, ending: ev.ending };
+      if (does.ending) checkEnding(where, does.ending);
+      var d = does.danger;
       if (!d) return;
       (d.fatal || []).forEach(function (f) {
         checkEnding(where + " fatal", f.ending);
@@ -187,6 +196,10 @@ var Check = (function () {
       if (d.late) checkEnding(where + " late", d.late);
       if (d.hold) checkEnding(where + " hold", d.hold.fatal);
       (d.steps || []).forEach(function (s) {
+        if (s.room === undefined && s.leave === undefined) {
+          if (!stepRooms(s).length) errors.push(where + ' has a step that clicks "' + s.hotspot + '", but there is no clickable thing with that name.');
+          return;
+        }
         list(s.room !== undefined ? s.room : s.leave).forEach(function (r) {
           checkRoom(where + " steps", r);
           if (s.hotspot && isRoom(r) && !hasSpot(r, s.hotspot)) {
@@ -202,9 +215,9 @@ var Check = (function () {
           if (isRoom(r)) worst = Math.max(worst, C.shortest(r, d.steps));
         });
         if (isFinite(worst) && d.deadline < worst + 1) {
-          warnings.push(where + " has a deadline of " + d.deadline + ", but in the worst case it takes " + worst + " actions to finish its steps. Make the deadline at least " + (worst + 1) + " in story.js.");
+          warnings.push(where + " has a deadline of " + d.deadline + ", but in the worst case it takes " + worst + " actions to finish its steps. Make the deadline at least " + (worst + 1) + " in " + file + ".");
         } else if (!isFinite(worst)) {
-          warnings.push(where + " has steps that can never be finished from some starting room. Check the rooms and exits in story.js.");
+          warnings.push(where + " has steps that can never be finished from some starting room. Check the rooms and exits in index.html.");
         }
       }
     });

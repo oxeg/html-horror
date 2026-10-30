@@ -193,6 +193,49 @@ test("a rule's script starts its danger, and Try again declares it afresh", func
   });
 });
 
+test("a save in the middle of a rule's danger can be continued", function () {
+  Toolbox.reset();
+  var rule = when("19:05", function () { danger({ clicks: 3, safe: beIn("b"), ending: "X2" }); });
+  withRule(rule, function () {
+    withStorage(fakeStorage(false), function () { // both from danger.test.js
+      Game.newGame();
+      Game.wait();
+      eq(Game.state.danger.id, "19:05");
+      ok(Game.hasSave(), "Continue is offered");
+      Game.state = null;
+      ok(Game.continueGame(), "continued");
+      eq([Game.state.danger.id, Game.state.danger.def.late], ["19:05", "X2"]);
+      Game.go("b");
+      eq(Game.state.danger, null, "and it goes on");
+    });
+  });
+});
+
+test("pretend gives a rule's danger and ending, and puts the game back", function () {
+  Toolbox.reset();
+  var rule = when("19:05", function () {
+    show("lit");
+    lightsOut();
+    say("Run!");
+    playSound("knock");
+    danger({ clicks: 3, safe: beIn("b"), ending: "X2" });
+  });
+  var home = when("21:00", function () { endGame("WIN"); });
+  Game.newGame();
+  var before = JSON.stringify(Game.state);
+  eq(Toolbox.pretend(rule), { danger: { deadline: 3, steps: [{ room: "b" }], late: "X2" }, ending: null });
+  eq(Toolbox.pretend(home), { danger: null, ending: "WIN" });
+  eq(JSON.stringify(Game.state), before, "the game is just as it was");
+  var keep = Game.state;
+  Game.state = null; // before the first game, which is when check.js runs
+  try {
+    eq(Toolbox.pretend(rule).danger.late, "X2", "a script that shows things first still gets to its danger");
+    eq(Game.state, null, "still no game");
+  } finally {
+    Game.state = keep;
+  }
+});
+
 test("a rule's endGame ends the game", function () {
   Toolbox.reset();
   var rule = when("19:05", function () { playSound("keys"); endGame("WIN"); });

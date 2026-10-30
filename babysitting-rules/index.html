@@ -275,7 +275,6 @@
     function isRegistered(name) {
       var room = /^rooms\/(.+)\.js$/.exec(name);
       if (room) return typeof ROOMS[room[1]] === "string";
-      if (name === "story.js") return typeof SETTINGS !== "undefined" && typeof EVENTS !== "undefined";
       if (name === "engine.js") return typeof Game !== "undefined";
       if (name === "toolbox.js") return typeof Toolbox !== "undefined";
       if (name === "loader.js") return typeof Loader !== "undefined";
@@ -349,7 +348,6 @@
       }
     });
   </script>
-  <script src="story.js"></script>
   <script src="rooms/title.js"></script>
   <script src="rooms/entrance.js"></script>
   <script src="rooms/living.js"></script>

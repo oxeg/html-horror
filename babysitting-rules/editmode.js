@@ -9,7 +9,7 @@ var EditMode = (function () {
   var boxes = null;
 
   // Every name worth a checkbox: the parts the drawings hide (data-hidden), the hidden
-  // hotspots, and everything story.js shows or hides.
+  // hotspots, and what the dangers in rules.js show or hide.
   function allNames() {
     var found = {};
     function add(list) { (list || []).forEach(function (n) { found[n] = true; }); }
@@ -30,7 +30,7 @@ var EditMode = (function () {
     EVENTS.forEach(function (ev) {
       moment(ev);
       add(ev.armShow);
-      var d = ev.danger || {};
+      var d = ev.danger || (ev.run && Toolbox.pretend(ev).danger) || {};
       (d.steps || []).forEach(function (s) { moment(s.then); });
       ((d.hold || {}).steps || []).forEach(moment);
       moment(d.whenSafe);

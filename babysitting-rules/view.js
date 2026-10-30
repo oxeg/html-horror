@@ -1,5 +1,5 @@
 // view.js: draws the game on the screen and listens for clicks.
-// You don't need to change this file. The story lives in index.html and story.js.
+// You don't need to change this file. The story lives in index.html and rules.js.
 // It touches the page only when View.boot() is called, so the tests can load it in Node.
 // Each room in index.html is a 16:9 picture: its drawing goes in underneath, and its buttons and
 // links sit on top of it, invisible, where style.css puts them.
@@ -33,7 +33,7 @@ var View = (function () {
     return true;
   };
 
-  // story.js may start a sentence with a name like "your sister": show it as "Your sister".
+  // rules.js may start a sentence with a name like "your sister": show it as "Your sister".
   V.capitalize = function (text) {
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
   };
@@ -240,12 +240,12 @@ var View = (function () {
 
   function isDark() { return playing && !!Game.state.dark && !editing(); }
 
-  // flashlightSize is a share of the picture's width, not the window's: with black bars at the
-  // sides, the light stays the same size on the picture.
+  // flashlightSize (22 unless it's set) is a share of the picture's width, not the window's: with
+  // black bars at the sides, the light stays the same size on the picture.
   function beamRadius() {
     var stage = Game.state && rooms[Game.state.room];
     var width = stage ? stage.getBoundingClientRect().width : 0;
-    return (width || Math.min(window.innerWidth, window.innerHeight * 16 / 9)) * SETTINGS.flashlightSize / 100;
+    return (width || Math.min(window.innerWidth, window.innerHeight * 16 / 9)) * (SETTINGS.flashlightSize || 22) / 100;
   }
   V.beamRadius = beamRadius;
 

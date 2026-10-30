@@ -1,7 +1,8 @@
 // Scripted runs through the real game. Each step is one of:
 //   go <room> | click <hotspot> | wait | beam <name> | close | jump <HH:MM> <room> | show <name> on|off
 // `ending` is how the run must end. `retry` says what "Try again" must bring back
-// (the danger that is running again, or null when no danger restarts).
+// (the danger that is running again, by its rule's id: the rule's time; or null when no danger
+// restarts). A click on a button you can't see stops the run.
 var PLAYTHROUGHS = [
   {
     name: "W1: the whole night, played right",
@@ -36,13 +37,13 @@ var PLAYTHROUGHS = [
   {
     name: "E1: answering the not-sister",
     ending: "it-wasnt-her",
-    retry: { danger: "rule1" },
+    retry: { danger: "21:20" },
     steps: ["jump 21:15 my-room", "wait", "go entrance", "click hall-not-sister"],
   },
   {
     name: "E2: touching anything while the reflection moves",
     ending: "mirror",
-    retry: { danger: "rule2" },
+    retry: { danger: "21:40" },
     steps: ["jump 21:35 entrance", "wait", "go living", "click fridge"],
   },
   {
@@ -54,19 +55,19 @@ var PLAYTHROUGHS = [
   {
     name: "E4: letting the cat in",
     ending: "not-the-cat",
-    retry: { danger: "rule5" },
+    retry: { danger: "22:00" },
     steps: ["jump 21:59 living", "wait", "click balcony-door"],
   },
   {
     name: "E5: hiding in the washing-machine bathroom",
     ending: "spin-cycle",
-    retry: { danger: "rule3" },
+    retry: { danger: "22:20" },
     steps: ["jump 22:15 my-room", "wait", "beam face", "go entrance", "go bath-washer", "click laundry-lock"],
   },
   {
     name: "E6: opening the door while counting",
     ending: "sounds-like-us",
-    retry: { danger: "rule3" },
+    retry: { danger: "22:20" },
     steps: [
       "jump 22:15 my-room", "wait", "beam face", "go entrance", "go bath", "click bath-lock",
       "wait", "wait", "wait", "wait", "wait", "click bath-lock",
@@ -75,25 +76,25 @@ var PLAYTHROUGHS = [
   {
     name: "E6-late: not hiding from the face in time",
     ending: "sounds-like-us",
-    retry: { danger: "rule3" },
+    retry: { danger: "22:20" },
     steps: ["jump 22:15 my-room", "wait", "beam face", "wait", "wait", "wait", "wait", "wait"],
   },
   {
     name: "E7: answering when nobody is there",
     ending: "nobody-there",
-    retry: { danger: "rule4a" },
+    retry: { danger: "22:40" },
     steps: ["jump 22:35 entrance", "wait", "click doorbell", "click talk"],
   },
   {
     name: "E8: letting 'Mom and Dad' in",
     ending: "lost-keys",
-    retry: { danger: "rule7" },
+    retry: { danger: "23:00" },
     steps: ["jump 22:55 entrance", "wait", "click doorbell", "click open"],
   },
   {
     name: "E9: hiding without your sister",
     ending: "forgot-her",
-    retry: { danger: "rule4b" },
+    retry: { danger: "23:10" },
     steps: ["jump 23:05 entrance", "wait", "go bath", "click bath-lock"],
   },
 ];

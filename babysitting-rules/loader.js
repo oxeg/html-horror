@@ -1,4 +1,4 @@
-// loader.js: reads the rooms, notes and endings out of index.html.
+// loader.js: reads the rooms, notes and endings out of index.html, and the night out of rules.js.
 // Your HTML is the story: each <section class="room"> is a room, each button or link inside it
 // is something you can click, <article class="note"> is a note and <section class="ending"> is
 // an ending. This file turns them into what the game uses. You don't need to change it.
@@ -6,8 +6,8 @@
 var Loader = (function () {
   var L = {};
   var G = typeof globalThis !== "undefined" ? globalThis : this;
-  // Make sure the three names exist before anything reads them.
-  ["ROOM_INFO", "NOTES", "ENDINGS"].forEach(function (name) {
+  // Make sure these names exist before anything reads them.
+  ["ROOM_INFO", "NOTES", "ENDINGS", "SETTINGS", "EVENTS"].forEach(function (name) {
     if (!(name in G)) G[name] = undefined;
   });
 
@@ -107,14 +107,20 @@ var Loader = (function () {
     return world;
   };
 
-  // Builds the world, sets ROOM_INFO, NOTES and ENDINGS, and gives each hotspot its whenClicked
-  // script (when toolbox.js is there).
+  // Builds the world, sets ROOM_INFO, NOTES and ENDINGS, and (when toolbox.js is there) takes
+  // rules.js's part: SETTINGS from its setup lines, EVENTS from its when() rules, and each
+  // hotspot's whenClicked script.
   L.read = function (root) {
     var world = L.build(root);
     G.ROOM_INFO = world.rooms;
     G.NOTES = world.notes;
     G.ENDINGS = world.endings;
-    var scripts = typeof Toolbox !== "undefined" ? Toolbox.clickScripts() : {};
+    var scripts = {};
+    if (typeof Toolbox !== "undefined") {
+      G.SETTINGS = Toolbox.settings();
+      G.EVENTS = Toolbox.rules();
+      scripts = Toolbox.clickScripts();
+    }
     Object.keys(world.rooms).forEach(function (rid) {
       var spots = world.rooms[rid].hotspots;
       Object.keys(spots).forEach(function (hid) {

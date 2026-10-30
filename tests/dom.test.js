@@ -204,7 +204,7 @@ if (typeof document !== "undefined") {
       ok(stage, "the room you're in shows");
       stage.style.width = "800px";  // black bars at the sides: the picture is narrower than the window
       try {
-        eq(Math.round(View.beamRadius()), Math.round(800 * SETTINGS.flashlightSize / 100));
+        eq(Math.round(View.beamRadius()), Math.round(800 * 22 / 100)); // flashlightSize is 22 unless set
       } finally {
         stage.style.width = "";
       }

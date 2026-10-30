@@ -90,6 +90,20 @@ var Toolbox = (function () {
     return out;
   };
 
+  // What a rule would do, without doing it: its danger and its ending. Its script runs silently
+  // on a copy of the game (a new one before the first game), then the game is put back as it was.
+  // check.js looks at the dangers this way.
+  T.pretend = function (rule) {
+    var keep = Game.state;
+    Game.state = keep ? copy(keep) : Game.freshState();
+    try {
+      var out = T.run(rule.run, { r: { texts: [], sounds: [], shake: false, problems: [] }, silent: true });
+      return { danger: out.danger, ending: out.ending };
+    } finally {
+      Game.state = keep;
+    }
+  };
+
   // The script that is running, for a block that only works inside one.
   T.script = function (block) {
     if (!running) throw new Error(block + "() only works inside a when() or whenClicked() script.");

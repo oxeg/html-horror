@@ -207,3 +207,52 @@ test("check: after names an event that doesn't exist", function () {
     checked(function (r) { ok(mentions(r.errors, ["late", "ghostt"]), r.errors.join("|")); });
   } finally { ev.after = "ghost"; }
 });
+
+test("check: shortest finds a click with no room wherever that button is", function () {
+  eq(Check.shortest("a", [{ hotspot: "kid" }]), 2);
+  eq(Check.shortest("a", [{ hotspot: "light" }]), 2, "by class");
+  eq(Check.shortest("a", [{ hotspot: "door" }, { room: "closet" }]), 2, "the door takes you into the closet");
+  eq(Check.shortest("a", [{ hotspot: "nothing" }]), Infinity);
+});
+
+// Puts rules made by when() at the end of the fixture's EVENTS while fn runs.
+function withRules(rules, fn) {
+  rules.forEach(function (rule) { EVENTS.push(rule); });
+  try {
+    fn();
+  } finally {
+    rules.forEach(function () { EVENTS.pop(); });
+    Toolbox.reset();
+  }
+}
+
+test("check: a rule's danger is checked from a pretend run", function () {
+  Toolbox.reset();
+  var rule = when("21:00", function () {
+    show("x");
+    danger({ clicks: 1, safe: click("kid"), ending: "NOPE6", deadly: click("trap", { ending: "NOPE7" }),
+      thenWait: { steps: ["1"], ending: "NOPE8" } });
+  });
+  withRules([rule], function () {
+    var before = JSON.stringify(Game.state);
+    checked(function (r) {
+      ok(mentions(r.errors, ["rules.js", '"21:00"', "NOPE6"]), "late: " + r.errors.join("|"));
+      ok(mentions(r.errors, ["NOPE7"]), "deadly: " + r.errors.join("|"));
+      ok(mentions(r.errors, ["NOPE8"]), "the wait: " + r.errors.join("|"));
+      ok(mentions(r.warnings, ['"21:00"', "deadline of 1", "at least 5"]), r.warnings.join("|"));
+    });
+    eq(JSON.stringify(Game.state), before, "the pretend run changed nothing");
+  });
+});
+
+test("check: a rule's ending and the buttons its steps click are checked", function () {
+  Toolbox.reset();
+  var end = when("21:00", function () { endGame("NOPE9"); });
+  var steps = when("21:00", function () { danger({ clicks: 9, safe: click("kidd"), ending: "X2" }); });
+  withRules([end, steps], function () {
+    checked(function (r) {
+      ok(mentions(r.errors, ['"21:00"', "NOPE9"]), r.errors.join("|"));
+      ok(mentions(r.errors, ['"21:00 #2"', "kidd"]), r.errors.join("|"));
+    });
+  });
+});
