@@ -342,6 +342,47 @@ if (typeof document !== "undefined") {
       }
     });
 
+    // ---- the notes panel ----
+
+    // Her style.css, as the page has it.
+    function herSheet() {
+      return [].filter.call(document.styleSheets, function (s) { return /\/style\.css$/.test(s.href || ""); })[0];
+    }
+
+    function openNotesWith(notes) {
+      Game.state.notes = notes;
+      View.render();
+      document.getElementById("ui-notes-btn").click();
+    }
+
+    function showing(node) { return !!node && node.getClientRects().length > 0; }
+
+    test("the notes panel shows her own notes under their own ids, so her CSS styles them", function () {
+      inRoom("living");
+      var sheet = herSheet();
+      var at = sheet.cssRules.length;
+      sheet.insertRule("#door-note { letter-spacing: 3px; }", at);  // as if she wrote it in style.css
+      try {
+        openNotesWith(["rules", "door-note"]);
+        var list = document.getElementById("notes-list");
+        ["rules", "door-note"].forEach(function (id) {
+          eq(document.querySelectorAll('[id="' + id + '"]').length, 1, "one #" + id + " in the page");
+          ok(list.contains(document.getElementById(id)), "#" + id + " is in the notes panel");
+          ok(showing(document.getElementById(id)), "#" + id + " shows");
+        });
+        ok(getComputedStyle(document.getElementById("rules")).transform !== "none", "style.css's #rules tilts it");
+        eq(getComputedStyle(document.getElementById("door-note")).letterSpacing, "3px", "a #door-note rule of hers applies");
+        document.getElementById("notes-close").click();
+        openNotesWith(["door-note"]);
+        ok(!showing(document.getElementById("rules")), "a note you haven't found doesn't show");
+        ok(showing(document.getElementById("door-note")), "the one you found does");
+      } finally {
+        sheet.deleteRule(at);
+        document.getElementById("notes-close").click();
+        Game.state.notes = [];
+      }
+    });
+
     // ---- where the buttons sit: Check.layout() measures them against the picture ----
 
     function says(list, parts) {

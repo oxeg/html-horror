@@ -19,7 +19,8 @@ html, body {
   color: var(--ui);
 }
 
-/* the notes and endings written in index.html: the game reads them and shows them its own way */
+/* the notes and endings written in index.html: the notes move into the notes panel, and the game
+   shows the endings its own way */
 body > .note, body > .ending { display: none; }
 
 #overlay, #tint, #title-art { position: fixed; inset: 0; }
@@ -193,6 +194,7 @@ body.playing #ui-popup.on { display: block; }
 #notes .panel { display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 96vw; max-height: 94vh; }
 #notes-list { display: flex; gap: 24px; justify-content: center; align-items: center; overflow: hidden; max-width: 98vw; max-height: 88vh; padding: 14px; font-size: 17px; }
 #notes-list .none { opacity: 0.6; }
+#notes-list > [hidden] { display: none !important; }  /* a note you haven't found yet */
 
 /* notes are landscape cards; the rules flow in two columns, and a rule never splits between them */
 .note { padding: 1.2em 1.6em; box-shadow: 0 8px 30px #000; line-height: 1.35; }
@@ -203,9 +205,9 @@ body.playing #ui-popup.on { display: block; }
 .note li { margin: 0 0 0.35em; break-inside: avoid; }
 .note h2, .note h2 + p, .note .sign { column-span: all; }
 .note .sign { text-align: right; margin: 0.8em 0 0; }
-#note-rules { width: min(62em, 92vw); column-count: 2; column-gap: 2em; }
+#rules { width: min(62em, 92vw); column-count: 2; column-gap: 2em; }
 /* both notes found: side by side, the fridge note big and the fake one small */
-#notes-list.both #note-rules { width: min(50em, 64vw); }
+#notes-list.both #rules { width: min(50em, 64vw); }
 .note.fake { width: min(19em, 28vw); }
 
 /* title and ending */

@@ -10,6 +10,7 @@ var View = (function () {
   var V = {};
   var el = {};          // the page elements we use, found in boot()
   var rooms = {};       // every <section class="room"> by its id, found in boot()
+  var notesById = Object.create(null);  // every <article class="note"> by its id, moved into the notes panel in boot()
   var onScreen = null;  // the room (and open camera) on the screen right now
   var playing = false;  // false while the title screen is up
   var popups = [];
@@ -377,22 +378,30 @@ var View = (function () {
 
   // ---- notes ----
 
-  // Each note you found, as index.html writes it, with the id note-<its id>.
+  // Her notes (each <article class="note"> in index.html) move into the notes panel, so her CSS
+  // for them (#rules, #door-note) still works there. Each one stays hidden until you find it.
+  function moveNotes() {
+    var found = document.querySelectorAll("article.note");
+    for (var i = 0; i < found.length; i++) {
+      found[i].hidden = true;
+      notesById[found[i].id] = found[i];
+      el.notesList.appendChild(found[i]);
+    }
+  }
+
+  // The notes you found show, in the order you found them.
   function renderNotes() {
-    var found = Game.state.notes;
-    var html = "";
-    found.forEach(function (id) {
-      var n = NOTES[id];
-      if (n) html += '<div class="note' + (n.fake ? " fake" : "") + '" id="note-' + id + '">' + n.html + "</div>";
-    });
-    el.notesList.innerHTML = html || '<p class="none">No notes yet.</p>';
+    var found = Game.state.notes.filter(function (id) { return notesById[id]; });
+    for (var id in notesById) notesById[id].hidden = found.indexOf(id) < 0;
+    found.forEach(function (id) { el.notesList.appendChild(notesById[id]); });
+    el.noNotes.hidden = found.length > 0;
     el.notesList.className = found.length > 1 ? "both" : "";
   }
 
   // Shrink the writing until every note fits on the screen: no scroll bars, ever.
   function fitNotes() {
     var list = el.notesList;
-    var notes = list.querySelectorAll(".note");
+    var notes = list.querySelectorAll(".note:not([hidden])");
     var maxH = window.innerHeight * (isTouch() ? 0.86 : 0.82);
     var maxW = window.innerWidth * 0.94;
     var smallest = isTouch() ? 10 : 9;
@@ -592,7 +601,7 @@ var View = (function () {
       '<div id="ui-popup"></div>' +
       '<div id="ui-bar"><div id="ui-nav"></div><button id="ui-wait">Wait</button></div>' +
       '<div id="ui-label"></div>' +
-      '<div id="notes"><div class="panel"><div id="notes-list"></div><button id="notes-close">Close</button></div></div>' +
+      '<div id="notes"><div class="panel"><div id="notes-list"><p class="none">No notes yet.</p></div><button id="notes-close">Close</button></div></div>' +
       '<div id="title">' +
         '<div id="title-art"></div>' +
         '<div class="menu">' +
@@ -626,6 +635,8 @@ var View = (function () {
     el.popup = $("ui-popup");
     el.label = $("ui-label");
     el.notesList = $("notes-list");
+    el.noNotes = el.notesList.firstChild;
+    moveNotes();
     window.addEventListener("resize", function () { if (el.notes.className === "on") fitNotes(); });
     el.titleArt = $("title-art");
     el.cont = $("title-continue");

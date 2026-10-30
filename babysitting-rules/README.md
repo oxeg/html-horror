@@ -207,7 +207,7 @@ Under your poster's line in `style.css`, add:
 
 *You'll learn: fonts and turning things.*
 
-Find `#note-rules` in `style.css`:
+Find `#rules` in `style.css`:
 - `font-family` is the handwriting. Try `"Comic Sans MS", cursive`.
 - `transform: rotate(-1deg)` tilts the note. Try `rotate(3deg)`.
 - `.note { color: …; background: …; }` is the ink and the paper.

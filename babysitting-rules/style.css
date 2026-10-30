@@ -25,7 +25,7 @@ body {
 .note { color: #2a2118; background: #e9e0c8; }
 
 /* Mom's note on the fridge: handwriting, a little crooked. */
-#note-rules { font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; transform: rotate(-1deg); }
+#rules { font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; transform: rotate(-1deg); }
 
 /* The fake note: different handwriting, darker ink, crooked the other way. */
 .note.fake {
