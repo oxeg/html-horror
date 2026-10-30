@@ -103,6 +103,12 @@
           says(d, "no-such-ending");
           says(d, "Fix it in index.html, then reload the page.");
         } },
+      { name: "a forgotten </section>: the message says so, and shows the tag", src: copyOf("unclosed"),
+        check: function (w, d) {
+          says(d, "The story has a mistake");
+          says(d, 'index.html: the room "living" is inside the room "entrance". Did you forget </section> at the end of "entrance"?');
+          says(d, "Fix it in index.html, then reload the page.");
+        } },
     ];
 
     // Opens a page in a 1600x900 iframe; gives its window once it has loaded (and started, if it can).

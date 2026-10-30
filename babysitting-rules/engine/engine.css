@@ -225,6 +225,10 @@ body.playing #ui-popup.on { display: block; }
 #problem.on { display: block; }
 #problem h2 { color: #ffb4b4; font-weight: 400; }
 #warnings { position: fixed; z-index: 90; bottom: 8px; left: 8px; padding: 8px 12px; font-size: 13px; background: var(--ui-bg); border: 1px solid var(--ui-line); border-radius: 8px; }
+/* a mistake in rules.js while playing: a small box at the top, and the game goes on (OK closes it) */
+#rule-problem { display: none; position: fixed; z-index: 95; top: 56px; left: 50%; transform: translateX(-50%); max-width: min(640px, 92vw); padding: 8px 12px; gap: 12px; align-items: center; font-size: 14px; background: var(--ui-bg); border: 1px solid #ffb4b4; border-radius: 10px; }
+#rule-problem.on { display: flex; }
+#rule-problem p { margin: 2px 0; }
 
 /* your reflection sways slowly while you stand still (living room, rule 2) */
 [data-name="reflection"] { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 5s ease-in-out infinite; }

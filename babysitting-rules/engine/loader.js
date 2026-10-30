@@ -108,11 +108,16 @@ var Loader = (function () {
     return world;
   };
 
+  // The elements the last read found (every element with an id or in a room): check.js looks at
+  // the shape of index.html with them.
+  L.elements = [];
+
   // Builds the world, sets ROOM_INFO, NOTES and ENDINGS, and (when toolbox.js is there) takes
   // rules.js's part: SETTINGS from its setup lines, EVENTS from its when() rules, and each
   // hotspot's whenClicked script.
   L.read = function (root) {
     var world = L.build(root);
+    L.elements = world.elements;
     G.ROOM_INFO = world.rooms;
     G.NOTES = world.notes;
     G.ENDINGS = world.endings;

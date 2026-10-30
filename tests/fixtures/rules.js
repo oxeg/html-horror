@@ -76,9 +76,9 @@ function fixtureRules() {
     });
   });
 
-  // Sit it out: three clicks or one Wait, and touch nothing in c.
+  // Sit it out: three clicks or one Wait, and touch nothing in c. Then the ghostly thing is there.
   when("20:40", function () {
-    danger({ lasts: 3, waitEndsIt: true, ending: "X1", deadly: anythingIn("c"), whenSafe: "Gone" });
+    danger({ lasts: 3, waitEndsIt: true, ending: "X1", deadly: anythingIn("c"), whenSafe: { say: "Gone", show: "ghostly" } });
   });
 
   // Pick up the kid, then get to b or the closet. The door is deadly before you have the kid;

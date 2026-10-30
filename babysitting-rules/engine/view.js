@@ -532,13 +532,34 @@ var View = (function () {
     if (typeof EditMode !== "undefined") EditMode.afterRender();
   };
 
+  // ---- a mistake in rules.js while playing ----
+
+  // A script that went wrong says so in a small box ("rules.js line 57: sya is not defined. Did you
+  // mean say?"), and the game goes on. OK closes the box.
+  function showProblems(problems) {
+    var lines = [];
+    (problems || []).forEach(function (p) {
+      var line = typeof Check !== "undefined" ? Check.describe(p) : p.file + " line " + p.line + ": " + p.message;
+      if (lines.indexOf(line) < 0) lines.push(line);
+    });
+    if (!lines.length) return;
+    el.problemText.innerHTML = "";
+    lines.forEach(function (line) {
+      var p = document.createElement("p");
+      p.textContent = line;
+      el.problemText.appendChild(p);
+    });
+    el.problem.className = "on";
+  }
+
   // Take what the engine returned: queue its texts, play its sounds, redraw, then shake what's
-  // on the screen now (the room you just walked into, if you moved).
+  // on the screen now (the room you just walked into, if you moved), and show any mistake.
   V.show = function (result) {
     (result.sounds || []).forEach(play);
     if (!result.ending) queuePopups(result.texts || []);
     V.render();
     if (result.shake) shake();
+    showProblems(result.problems);
   };
 
   // ---- the game's own screen parts ----
@@ -549,8 +570,8 @@ var View = (function () {
 
   // The flashlight's dark, the danger tint and the film grain, the clock, mute and Notes buttons,
   // the popup, the bottom bar and the name label, the notes panel, the title and ending screens,
-  // the "turn your phone" overlay and the camera's Close button. The title screen's heading is
-  // the page's <title>.
+  // the "turn your phone" overlay, the camera's Close button and the box for a mistake in rules.js.
+  // The title screen's heading is the page's <title>.
   function buildUI() {
     var html =
       '<div id="tint"></div>' +
@@ -581,7 +602,8 @@ var View = (function () {
           '<div id="ending-buttons"></div>' +
         "</div>" +
       "</div>" +
-      '<div id="rotate"><div class="phone"></div><p>Turn your phone sideways</p></div>';
+      '<div id="rotate"><div class="phone"></div><p>Turn your phone sideways</p></div>' +
+      '<div id="rule-problem"><div id="rule-problem-text"></div><button id="rule-problem-ok">OK</button></div>';
     document.body.insertAdjacentHTML("afterbegin", html);
   }
 
@@ -603,6 +625,9 @@ var View = (function () {
     el.endTitle = $("ending-title");
     el.endText = $("ending-text");
     el.endButtons = $("ending-buttons");
+    el.problem = $("rule-problem");
+    el.problemText = $("rule-problem-text");
+    $("rule-problem-ok").addEventListener("click", function () { el.problem.className = ""; });
 
     // A title would pop up as a tooltip and give things away in the dark: it becomes an aria-label.
     var titled = document.querySelectorAll("section.room[title], section.room [title]");

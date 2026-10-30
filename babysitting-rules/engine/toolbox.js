@@ -31,15 +31,17 @@ var Toolbox = (function () {
   T.set = function (key, value) { setup[key] = value; };
   T.settings = function () { return copy(setup); };
 
-  // A rule's id is its time, with " #2", " #3"… for later rules at the same time.
+  // A rule's id is its time, with " #2", " #3"… for later rules at the same time. It keeps every
+  // trigger it was given (check.js says so when there's more than one).
   T.addRule = function (time, conditions, fn, line) {
     var same = rules.filter(function (r) { return r.time === time; }).length;
     var rule = {
       id: same ? time + " #" + (same + 1) : time, time: time, trigger: "now", group: undefined, room: undefined,
-      fallback: undefined, notIn: [], after: undefined, armShow: [], run: fn, line: line,
+      fallback: undefined, notIn: [], after: undefined, armShow: [], run: fn, line: line, triggers: [],
     };
     conditions.forEach(function (c) {
       if (!c || typeof c !== "object") return;
+      if (c.trigger) rule.triggers.push(c.trigger);
       for (var key in c) rule[key] = key === "notIn" || key === "armShow" ? rule[key].concat(c[key]) : c[key];
     });
     rules.push(rule);
@@ -90,15 +92,16 @@ var Toolbox = (function () {
     return out;
   };
 
-  // What a rule would do, without doing it: its danger and its ending. Its script runs silently
-  // on a copy of the game (a new one before the first game), then the game is put back as it was.
-  // check.js looks at the dangers this way.
+  // What a rule would do, without doing it: its danger, its ending, and the mistakes its script
+  // made. Its script runs silently on a copy of the game (a new one before the first game), then
+  // the game is put back as it was. check.js looks at the dangers this way.
   T.pretend = function (rule) {
     var keep = Game.state;
     Game.state = keep ? copy(keep) : Game.freshState();
     try {
-      var out = T.run(rule.run, { r: { texts: [], sounds: [], shake: false, problems: [] }, silent: true });
-      return { danger: out.danger, ending: out.ending };
+      var r = { texts: [], sounds: [], shake: false, problems: [] };
+      var out = T.run(rule.run, { r: r, silent: true });
+      return { danger: out.danger, ending: out.ending, problems: r.problems };
     } finally {
       Game.state = keep;
     }
@@ -164,6 +167,53 @@ var Toolbox = (function () {
       },
       whenSafe: moment(s.whenSafe),
     });
+  };
+
+  // ---- reading a script without running it (check.js uses this) ----
+
+  // Every block there is, by name (they're all below).
+  T.blocks = ["startAt", "walkingTakes", "lookingTakes", "waitingTakes", "when", "whenClicked",
+    "inRoom", "enteringRoomWith", "lightFinds", "notIn", "afterRule",
+    "say", "playSound", "shake", "show", "hide", "lightsOut", "lightsOn", "endGame", "danger",
+    "isShown", "youAreIn", "clockIsBefore", "isDark", "foundWithLight",
+    "beIn", "leaveRoom", "click", "anythingIn"];
+
+  var SPACE = /^(\s+|\/\/.*|\/\*[\s\S]*?\*\/)/;
+  var STRING = /^("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\[\s\S])*`)/;
+  var WORD = /^[A-Za-z_$][\w$]*/;
+
+  // Every call written in a script, read from its source: [{ name, line, method, declared, words }].
+  // line: the script's first line is 1. method: a call like list.push(…). declared: not a call but
+  // function name(…), her own block. words: the plain strings written right inside its brackets
+  // (in a list too, but not inside another call). Strings and comments are skipped.
+  T.calls = function (fn) {
+    var src = String(fn);
+    var calls = [];
+    var open = [];               // for each "(" still open: its call, or null
+    var line = 1;
+    var last = "", before = "";  // the last two things read: a word, '"' for a string, or one character
+    for (var i = 0; i < src.length; ) {
+      var rest = src.slice(i);
+      var space = SPACE.exec(rest), string = !space && STRING.exec(rest);
+      var t = (space || string || WORD.exec(rest) || [rest.charAt(0)])[0];
+      line += t.split("\n").length - 1;
+      i += t.length;
+      if (space) continue;
+      if (string) {
+        var inside = open[open.length - 1];
+        if (inside && t.indexOf("${") < 0) inside.words.push(t.slice(1, -1));
+        t = '"';
+      } else if (t === "(") {
+        var call = WORD.test(last) ? { name: last, line: line, method: before === ".", declared: before === "function", words: [] } : null;
+        if (call) calls.push(call);
+        open.push(call);
+      } else if (t === ")") {
+        open.pop();
+      }
+      before = last;
+      last = t;
+    }
+    return calls;
   };
 
   T.reset();

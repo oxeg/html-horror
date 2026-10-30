@@ -79,6 +79,11 @@ copy("room", function (dir) {
   fs.appendFileSync(path.join(dir, "style.css"), "#dusty-box { left: 40%; top: 40%; width: 10%; height: 10%; }\n");
 });
 
+// A forgotten </section> at the end of the hallway: every room after it ends up inside the hallway.
+copy("unclosed", function (dir) {
+  editLine(path.join(dir, "index.html"), /^  <\/section>\s*$/, function () { return ""; });
+});
+
 // A mistake check.js finds in index.html: a button that ends the game with an ending that isn't there.
 copy("story", function (dir) {
   editLine(path.join(dir, "index.html"), /<button id="coats"/, function (l) { return l.replace('<button id="coats"', '<button id="coats" data-ending="no-such-ending"'); });

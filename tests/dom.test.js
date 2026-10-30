@@ -301,6 +301,99 @@ if (typeof document !== "undefined") {
       ok(space.defaultPrevented, "Space didn't scroll the page");
     });
 
+    // ---- a mistake in rules.js while playing ----
+
+    test("a mistake in a script shows in a small box, and the game goes on", function () {
+      inRoom("living");
+      var fridge = ROOM_INFO.living.hotspots.fridge;
+      ok(!fridge.run, "the fridge has no script of its own in rules.js");
+      fridge.run = function () { sya("Milk!"); };
+      try {
+        document.getElementById("fridge").click();
+        var box = document.getElementById("rule-problem");
+        ok(box && getComputedStyle(box).display !== "none", "the box shows");
+        ok(/rules\.js line \d+: sya is not defined\. Did you mean say\?/.test(box.textContent), box.textContent);
+        cooldownOver();
+        var t = Game.state.time;
+        document.getElementById("counter").click();
+        ok(Game.state.time > t, "the next click still counts");
+        eq(document.getElementById("ui-popup").textContent, "Crumbs. Somebody had cookies.", "and says its text");
+        box.querySelector("button").click();
+        eq(getComputedStyle(box).display, "none", "OK closes the box");
+      } finally {
+        delete fridge.run;
+      }
+    });
+
+    // ---- where the buttons sit: Check.layout() measures them against the picture ----
+
+    function says(list, parts) {
+      return list.some(function (m) { return parts.every(function (p) { return m.indexOf(p) >= 0; }); });
+    }
+
+    // Takes a rule out of her style.css while fn runs, then puts it back where it was.
+    function withoutCss(selector, fn) {
+      var sheet = [].filter.call(document.styleSheets, function (s) { return /\/style\.css$/.test(s.href || ""); })[0];
+      ok(sheet, "style.css is on the page");
+      var i = [].map.call(sheet.cssRules, function (r) { return r.selectorText; }).indexOf(selector);
+      ok(i >= 0, selector + " is in style.css");
+      var text = sheet.cssRules[i].cssText;
+      sheet.deleteRule(i);
+      try { fn(); } finally { sheet.insertRule(text, i); }
+    }
+
+    // Moves a button with a style of its own while fn runs.
+    function placed(id, css, fn) {
+      var b = document.getElementById(id);
+      var old = b.getAttribute("style");
+      b.style.cssText += css;
+      try { fn(); } finally { if (old === null) b.removeAttribute("style"); else b.setAttribute("style", old); }
+    }
+
+    test("layout: every button in the game sits fine (door-open over door-closed is fine: it starts hidden)", function () {
+      eq(Check.layout().warnings, []);
+    });
+
+    test("layout: a button with no line in style.css", function () {
+      withoutCss("#fridge", function () {
+        var w = Check.layout().warnings;
+        ok(says(w, ["style.css", "#fridge", "no size", "#fridge { left"]), w.join("|"));
+      });
+    });
+
+    test("layout: a button that forgot left:", function () {
+      placed("fridge", "left: -100%;", function () {  // where engine.css puts a button with no left:
+        var w = Check.layout().warnings;
+        ok(says(w, ["style.css", "#fridge", "outside the picture", "left:", "}"]), w.join("|"));
+      });
+    });
+
+    test("layout: a button completely under a later one", function () {
+      placed("sofa", "left: 20%; top: 20%; width: 20%; height: 60%;", function () {  // over the whole fridge
+        var w = Check.layout().warnings;
+        ok(says(w, ["style.css", "#fridge", "completely under #sofa"]), w.join("|"));
+      });
+    });
+
+    test("layout: a button down where the room buttons cover it", function () {
+      placed("coats", "top: 90%; height: 5%;", function () {
+        var w = Check.layout().warnings;
+        ok(says(w, ["style.css", "#coats", "87%"]), w.join("|"));
+      });
+    });
+
+    test("layout puts every room and button back as it was", function () {
+      inRoom("living");
+      function snapshot() {
+        return [].map.call(document.querySelectorAll("section.room, section.room > button, section.room > a"), function (n) {
+          return [n.id, n.className, n.getAttribute("style"), n.hidden];
+        });
+      }
+      var before = snapshot();
+      Check.layout();
+      eq(snapshot(), before);
+    });
+
     // ---- the game's own UI: view.js builds it, index.html holds only her content ----
 
     // index.html as it is on disk (builder-only, over http), before any script changed the page.

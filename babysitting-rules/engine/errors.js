@@ -158,6 +158,13 @@ var ROOMS = {};  // the drawings: each file in engine/drawings/ adds one
     return true;
   }
 
+  // A check message as the page shows it: its tags as text (Did you forget </section>?), and the file
+  // it starts with in bold.
+  function asText(message) {
+    return String(message).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/^([\w.\/-]+\.(?:html|js|css))/, "<b>$1</b>");
+  }
+
   // "Fix it in index.html, then reload the page.": the files the check's messages start with.
   function fixIn(messages) {
     var files = [];
@@ -172,12 +179,12 @@ var ROOMS = {};  // the drawings: each file in engine/drawings/ adds one
     Loader.read(document.body);  // the rooms, notes and endings in index.html
     var found = Check.run();
     if (found.errors.length) {
-      showProblem("The story has a mistake", found.errors.concat([fixIn(found.errors)]));
+      showProblem("The story has a mistake", found.errors.map(asText).concat([fixIn(found.errors)]));
       return;
     }
     var warnings = found.warnings;
-    if (Check.layout) warnings = warnings.concat(Check.layout().warnings);  // where the buttons sit
-    if (warnings.length) showWarnings(warnings);
+    if (Check.layout) warnings = warnings.concat(Check.layout().warnings);  // where the buttons sit (style.css)
+    if (warnings.length) showWarnings(warnings.map(asText));
     document.body.classList.add("ready");
     View.boot();
     removeUnzip();

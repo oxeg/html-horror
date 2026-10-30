@@ -226,8 +226,8 @@ test("pretend gives a rule's danger and ending, and puts the game back", functio
   var home = when("21:00", function () { endGame("WIN"); });
   Game.newGame();
   var before = JSON.stringify(Game.state);
-  eq(Toolbox.pretend(rule), { danger: { deadline: 3, steps: [{ room: "b" }], late: "X2" }, ending: null });
-  eq(Toolbox.pretend(home), { danger: null, ending: "WIN" });
+  eq(Toolbox.pretend(rule), { danger: { deadline: 3, steps: [{ room: "b" }], late: "X2" }, ending: null, problems: [] });
+  eq(Toolbox.pretend(home), { danger: null, ending: "WIN", problems: [] });
   eq(JSON.stringify(Game.state), before, "the game is just as it was");
   var keep = Game.state;
   Game.state = null; // before the first game, which is when check.js runs
@@ -337,4 +337,52 @@ test("a block used outside a script says so", function () {
     message = e.message;
   }
   ok(message && message.indexOf("say()") === 0, message);
+});
+
+test("pretend gives the mistakes a script made, with their lines", function () {
+  Toolbox.reset();
+  var rule = when("19:05", function () {
+    say("Run!");
+    sya("Run!");
+  });
+  var got = Toolbox.pretend(rule);
+  eq(got.problems.length, 1);
+  eq(got.problems[0].file, "rules.js");
+  eq(got.problems[0].line, rule.line + 2, "the line of the mistake");
+  ok(got.problems[0].message.indexOf("sya") >= 0, got.problems[0].message);
+});
+
+test("a rule remembers every trigger it was given", function () {
+  Toolbox.reset();
+  when("21:00", inRoom("c"), notIn("a"), lightFinds("face", 3), function () {});
+  when("21:10", function () {});
+  var r = Toolbox.rules();
+  eq(r[0].triggers, ["inRoom", "beam"]);
+  eq(r[1].triggers, []);
+});
+
+test("the list of blocks is every block there is", function () {
+  ok(Toolbox.blocks.length > 20, "blocks: " + Toolbox.blocks.length);
+  Toolbox.blocks.forEach(function (name) { eq(typeof globalThis[name], "function", name); });
+  ["when", "whenClicked", "say", "show", "danger", "beIn", "afterRule"].forEach(function (name) {
+    ok(Toolbox.blocks.indexOf(name) >= 0, name);
+  });
+});
+
+test("calls reads a script's calls without running it", function () {
+  var calls = Toolbox.calls(function () {
+    show("a", ["b"]);   // "say(not a call)"
+    x.hide(isShown("c") ? "d" : 'e');
+    function own() {}
+    /* sya(
+       */ say(`f`, `g ${1}`);
+  });
+  eq(calls.map(function (c) { return [c.name, c.line, c.method, c.declared, c.words]; }), [
+    ["function", 1, false, false, []],
+    ["show", 2, false, false, ["a", "b"]],
+    ["hide", 3, true, false, ["d", "e"]],
+    ["isShown", 3, false, false, ["c"]],
+    ["own", 4, false, true, []],
+    ["say", 6, false, false, ["f"]],
+  ]);
 });
