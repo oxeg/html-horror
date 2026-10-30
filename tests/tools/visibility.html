@@ -1,0 +1,85 @@
+<!doctype html>
+<!-- Builder-only, one-off: records which drawing parts show after every step of every playthrough,
+     before the restructure. Open over http (python3 tests/tools/serve.py); the result is saved to
+     tests/tools/out/visible-parts.js, then copied to tests/fixtures/visible-parts.js. -->
+<meta charset="utf-8">
+<title>visibility: running...</title>
+<iframe id="game" src="../../babysitting-rules/index.html" style="width: 1600px; height: 900px; border: 0"></iframe>
+<pre id="out"></pre>
+<script>
+  var frame = document.getElementById("game");
+
+  function addScript(w, src) {
+    return new Promise(function (resolve, reject) {
+      var s = w.document.createElement("script");
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error("could not load " + src)); };
+      w.document.body.appendChild(s);
+    });
+  }
+
+  function wait(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+
+  // the same steps as playStep in tests/game.test.js
+  function playStep(Game, step) {
+    var p = step.split(" ");
+    if (p[0] === "go") return Game.go(p[1]);
+    if (p[0] === "click") return Game.click(p[1]);
+    if (p[0] === "wait") return Game.wait();
+    if (p[0] === "beam") return Game.beamTouched(p[1]);
+    if (p[0] === "close") return Game.closeCamera();
+    if (p[0] === "jump") return Game.editJump(p[2], p[1]);
+    if (p[0] === "flag") return Game.setFlag(p[1], p[2] === "on");
+    throw new Error("unknown step: " + step);
+  }
+
+  // a part shows when neither it nor anything above it (inside its box) has display: none
+  function shows(w, part, box) {
+    for (var n = part; n && n !== box; n = n.parentNode) {
+      if (w.getComputedStyle(n).display === "none") return false;
+    }
+    return true;
+  }
+
+  function visibleParts(w) {
+    var d = w.document, names = [];
+    var boxes = [d.getElementById("scene")];
+    if (d.getElementById("camera").classList.contains("on")) boxes.push(d.getElementById("camera-art"));
+    boxes.forEach(function (box) {
+      Array.prototype.forEach.call(box.querySelectorAll("[data-name], [data-hotspot]"), function (part) {
+        if (shows(w, part, box)) names.push(part.getAttribute("data-name") || part.getAttribute("data-hotspot"));
+      });
+    });
+    return names.sort();
+  }
+
+  frame.addEventListener("load", function () {
+    var w = frame.contentWindow, records = [];
+    addScript(w, "../tests/playthroughs.js").then(function () {
+      return w.PLAYTHROUGHS.reduce(function (chain, pt) {
+        return chain.then(function () {
+          w.Game.useStorage(false);
+          w.Game.newGame();
+          w.document.getElementById("title-start").click();
+          pt.steps.forEach(function (step, i) {
+            playStep(w.Game, step);
+            w.View.render();
+            records.push({ run: pt.name, step: i, parts: visibleParts(w) });
+          });
+          if (w.Game.state.ending !== pt.ending) throw new Error(pt.name + " ended " + w.Game.state.ending);
+          return wait(400);   // View.act ignores a second Start within 0.35 s
+        });
+      }, Promise.resolve());
+    }).then(function () {
+      var text = "var VISIBLE_PARTS = [\n" + records.map(function (r) { return "  " + JSON.stringify(r) + ","; }).join("\n") + "\n];\n";
+      document.getElementById("out").textContent = records.length + " steps recorded";
+      return fetch("/tests/tools/out/visible-parts.js", { method: "PUT", body: text });
+    }).then(function () {
+      document.title = "visibility: done";
+    }).catch(function (e) {
+      document.getElementById("out").textContent = String(e && e.stack || e);
+      document.title = "visibility: FAILED";
+    });
+  });
+</script>

@@ -1,0 +1,80 @@
+<!doctype html>
+<!-- Builder-only, one-off: measures every clickable drawing part before the restructure.
+     Open over http (python3 tests/tools/serve.py), then copy #out into tests/fixtures/hotspot-boxes.js. -->
+<meta charset="utf-8">
+<title>measure</title>
+<style>
+  #stage { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; }
+  #stage svg { width: 1600px; height: 900px; display: block; }
+  pre { position: absolute; top: 920px; }
+</style>
+<div id="stage"></div>
+<pre id="out"></pre>
+<script>var ROOMS = {};</script>
+<script src="../../babysitting-rules/rooms/entrance.js"></script>
+<script src="../../babysitting-rules/rooms/living.js"></script>
+<script src="../../babysitting-rules/rooms/my-room.js"></script>
+<script src="../../babysitting-rules/rooms/sister-room.js"></script>
+<script src="../../babysitting-rules/rooms/master-door.js"></script>
+<script src="../../babysitting-rules/rooms/master.js"></script>
+<script src="../../babysitting-rules/rooms/walk-in.js"></script>
+<script src="../../babysitting-rules/rooms/bath-washer.js"></script>
+<script src="../../babysitting-rules/rooms/bath.js"></script>
+<script src="../../babysitting-rules/rooms/doorbell-camera.js"></script>
+<script>
+  var SHAPES = "rect, circle, ellipse, polygon, polyline, path, line, use, text";
+  var stage = document.getElementById("stage");
+  var boxes = {}, overlaps = [];
+
+  function round1(n) { return Math.round(n * 10) / 10; }
+
+  // the union of the shapes that belong to this hotspot, leaving out nested named parts
+  function measure(h, origin) {
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    Array.prototype.forEach.call(h.querySelectorAll(SHAPES), function (s) {
+      var owner = s.parentNode.closest("[data-name], [data-hotspot]");
+      if (owner !== h) return;
+      var r = s.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return;
+      x0 = Math.min(x0, r.left); y0 = Math.min(y0, r.top);
+      x1 = Math.max(x1, r.right); y1 = Math.max(y1, r.bottom);
+    });
+    return [round1(x0 - origin.left), round1(y0 - origin.top), round1(x1 - x0), round1(y1 - y0)];
+  }
+
+  function overlap(a, b) {
+    var w = Math.min(a[0] + a[2], b[0] + b[2]) - Math.max(a[0], b[0]);
+    var h = Math.min(a[1] + a[3], b[1] + b[3]) - Math.max(a[1], b[1]);
+    return w > 0 && h > 0 ? w * h : 0;
+  }
+
+  Object.keys(ROOMS).forEach(function (id) {
+    stage.innerHTML = ROOMS[id];
+    var svg = stage.querySelector("svg"), origin = svg.getBoundingClientRect();
+    var room = boxes[id] = {}, names = [];
+    Array.prototype.forEach.call(svg.querySelectorAll("[data-hotspot]"), function (h) {
+      var name = h.getAttribute("data-hotspot");
+      room[name] = measure(h, origin);
+      names.push(name);
+    });
+    names.forEach(function (a, i) {
+      names.slice(i + 1).forEach(function (b) {
+        var o = overlap(room[a], room[b]);
+        if (!o) return;
+        var smaller = Math.min(room[a][2] * room[a][3], room[b][2] * room[b][3]);
+        overlaps.push(id + ": " + a + " / " + b + " overlap " + Math.round(100 * o / smaller) + "% of the smaller");
+      });
+    });
+  });
+
+  var lines = ["var HOTSPOT_BOXES = {"];
+  Object.keys(boxes).forEach(function (id) {
+    lines.push("  " + JSON.stringify(id) + ": {");
+    Object.keys(boxes[id]).forEach(function (n) {
+      lines.push("    " + JSON.stringify(n) + ": [" + boxes[id][n].join(", ") + "],");
+    });
+    lines.push("  },");
+  });
+  lines.push("};");
+  document.getElementById("out").textContent = lines.join("\n") + "\n\n/* overlaps:\n" + overlaps.join("\n") + "\n*/";
+</script>
