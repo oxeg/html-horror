@@ -114,7 +114,7 @@ var Toolbox = (function () {
     var said = first("say");
     if (said) {
       var words = said.replace(/<[^>]*>/g, " ").trim().split(/\s+/);
-      return words.slice(0, 7).join(" ") + (words.length > 7 ? "…" : "");
+      return words.length > 7 ? words.slice(0, 7).join(" ").replace(/[.,;:!?…]+$/, "") + "…" : words.join(" ");
     }
     return first("show") || "the rule at " + rule.time;
   };

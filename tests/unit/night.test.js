@@ -87,11 +87,13 @@ test("labelOf: the start of what a rule says without tags, else the first name i
   when("19:10", function () { show("glow"); playSound("click"); say("Somewhere in the flat,<br>a door clicks shut. Then nothing."); });
   when("19:20", function () { lightsOut(); });
   when("19:30", function () { say("Short."); });
+  when("19:40", function () { say("Upstairs, someone knocks on the floor. Twice. Then nothing."); });
   var r = Toolbox.rules();
   eq(Toolbox.labelOf(r[0]), "door-open");
   eq(Toolbox.labelOf(r[1]), "Somewhere in the flat, a door clicks…");
   eq(Toolbox.labelOf(r[2]), "the rule at 19:20");
   eq(Toolbox.labelOf(r[3]), "Short.");
+  eq(Toolbox.labelOf(r[4]), "Upstairs, someone knocks on the floor. Twice…", "no full stop before the …");
 });
 
 // ---- the engine: the night it plays ----
