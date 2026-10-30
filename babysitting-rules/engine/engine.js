@@ -150,15 +150,17 @@ var Game = (function () {
   }
 
   // Ticks off as many steps as this action finished; starts the hold or resolves at the end.
+  // A danger with no steps (check.js says it needs some) is over at once.
   function advanceSteps(r, act) {
     var d = G.state.danger;
     var D = dangerDef();
-    while (d.step < D.steps.length && stepDone(D.steps[d.step], act)) {
-      applyMoment(D.steps[d.step].then, r);
+    var steps = D.steps || [];
+    while (d.step < steps.length && stepDone(steps[d.step], act)) {
+      applyMoment(steps[d.step].then, r);
       d.step++;
       act = {};
     }
-    if (d.step < D.steps.length) return false;
+    if (d.step < steps.length) return false;
     if (D.hold) d.holding = true;
     else resolve(r);
     return true;

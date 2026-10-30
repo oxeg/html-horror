@@ -132,6 +132,23 @@ test("endure resolves after N actions or one Wait", function () {
   eq(Game.state.danger, null);
 });
 
+test("a danger with no safe and no lasts never throws: it ends at the next action", function () {
+  var rule = when("19:05", function () { danger({}); });
+  EVENTS.unshift(rule);
+  try {
+    Game.newGame();
+    Game.wait();
+    eq(Game.state.danger && Game.state.danger.id, "19:05");
+    Game.click("rug");
+    eq(Game.state.danger, null, "it's over");
+    eq(Game.state.ending, null);
+  } finally {
+    EVENTS.splice(EVENTS.indexOf(rule), 1);
+    Toolbox.reset();
+    fixtureRules();
+  }
+});
+
 test("room-only fatal matches any hotspot there", function () {
   Game.newGame();
   Game.editJump("c", "20:40");

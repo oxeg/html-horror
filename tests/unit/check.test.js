@@ -444,6 +444,47 @@ test("check: a plain word where a danger needs a block", function () {
   ok(mentions(r.errors, ["rules.js (line ", "the 20:40 danger", 'safe: "b"', 'did you mean beIn("b")?']), r.errors.join("|"));
 });
 
+test("check: a danger with neither safe nor lasts never ends", function () {
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("20:20", function () { danger({ clicks: 3, ending: "X1", deadly: click("trap") }); });
+    when("20:30", function () { danger({}); });
+  });
+  ok(mentions(r.errors, ["rules.js (line ", "the 20:20 danger needs safe: … or lasts: …", "never ends"]), r.errors.join("|"));
+  ok(mentions(r.errors, ["rules.js (line ", "the 20:30 danger needs safe: … or lasts: …"]), r.errors.join("|"));
+});
+
+test("check: a danger with clicks but no ending", function () {
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("20:20", function () { danger({ clicks: 6, safe: beIn("closet") }); });
+  });
+  ok(mentions(r.errors, ["rules.js (line ", "the 20:20 danger has clicks: 6 but no ending", 'ending: "…"']), r.errors.join("|"));
+});
+
+test("check: lasts together with safe or thenWait", function () {
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("20:20", function () { danger({ lasts: 3, safe: beIn("closet"), ending: "X1" }); });
+    when("20:30", function () { danger({ lasts: 3, ending: "X1", thenWait: { steps: ["1"] } }); });
+  });
+  eq(r.errors, []);
+  ok(mentions(r.warnings, ["rules.js (line ", "the 20:20 danger has lasts: and safe:", "over after 3 clicks", "safe: does nothing"]), r.warnings.join("|"));
+  ok(mentions(r.warnings, ["rules.js (line ", "the 20:30 danger has lasts: and thenWait:", "thenWait: never happens"]), r.warnings.join("|"));
+});
+
+test("check: a deadly click with no ending anywhere", function () {
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    when("20:20", function () { danger({ lasts: 3, deadly: [click("trap"), anythingIn("c")] }); });
+    when("20:30", function () { danger({ lasts: 3, deadly: click("lamp", { ending: "X1" }) }); });
+  });
+  eq(r.errors, []);
+  ok(mentions(r.warnings, ["rules.js (line ", 'the 20:20 danger\'s deadly click("trap") has no ending', 'click("trap", { ending: "…" })']), r.warnings.join("|"));
+  ok(mentions(r.warnings, ["rules.js (line ", 'the 20:20 danger\'s deadly anythingIn("c") has no ending', 'ending: "…"']), r.warnings.join("|"));
+  ok(!mentions(r.warnings, ["20:30"]), "a deadly click with its own ending is fine: " + r.warnings.join("|"));
+});
+
 test("check: a danger shows or hides a name that isn't there", function () {
   var r = world(FIXTURE_HTML, function () {
     startInA();

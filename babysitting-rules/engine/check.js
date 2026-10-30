@@ -472,9 +472,26 @@ var Check = (function () {
     ending(" has ending:", d.late);
     if (d.hold && d.hold.fatal !== d.late) ending("'s thenWait has ending:", d.hold.fatal);
 
+    // how it ends: safe: (or thenWait:) and clicks:, or lasts:
+    if (d.steps === undefined && d.endure === undefined) {
+      out.errors.push(at + ' needs safe: … or lasts: …, or it never ends. Like safe: beIn("walk-in") (you\'re safe there) or lasts: 3 (it\'s over after 3 clicks).');
+    }
+    if (d.deadline !== undefined && d.late === undefined) {
+      out.errors.push(at + " has clicks: " + d.deadline + ' but no ending: …, so nothing happens when the clicks run out. Add ending: "…" with the id of one of the endings in index.html.');
+    }
+    if (d.endure !== undefined && d.steps !== undefined) {
+      out.warnings.push(at + " has lasts: and safe:, but with lasts: it's over after " + clicks(d.endure) + " whatever you do, so safe: does nothing. Take one of them out.");
+    }
+    if (d.endure !== undefined && d.hold) {
+      out.warnings.push(at + " has lasts: and thenWait:, but with lasts: it's over after " + clicks(d.endure) + ", so thenWait: never happens. Take one of them out.");
+    }
+
     (d.fatal || []).forEach(function (f) {
       if (!f || typeof f !== "object") return out.errors.push(notABlock(at, "deadly", f, n));
       var what = "'s deadly " + (f.hotspot !== undefined ? 'click("' + f.hotspot + '")' : 'anythingIn("' + f.room + '")');
+      if (f.ending === undefined) {
+        out.warnings.push(at + what + " has no ending, so " + (f.hotspot !== undefined ? 'clicking it does nothing. Add ending: "…" to the danger, or write click("' + f.hotspot + '", { ending: "…" }).' : 'touching things there does nothing. Add ending: "…" to the danger.'));
+      }
       if (f.ending !== d.late) ending(what + " ends with", f.ending);
       if (f.room !== undefined && !room(what, f.room)) return;
       if (f.hotspot !== undefined && !(f.room !== undefined ? spotNamed(f.room, f.hotspot) : stepRooms(f).length)) {
