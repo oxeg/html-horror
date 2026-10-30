@@ -537,6 +537,28 @@ if (typeof document !== "undefined") {
       });
     });
 
+    test("edit mode's Tonight list gives tonight's times and skips; a click puts the time in the Time box", function () {
+      var night = classicNight();
+      night["21:35"] = Game.parseTime("22:25");  // the cat comes after the face tonight
+      night["21:20"] = null;                       // and there's no reflection
+      Game.useStorage(false);
+      Game.newGame(night);
+      Game.editJump("entrance", "21:00");
+      View.render();
+      withEditMode(function (panel) {
+        var lines = Array.prototype.map.call(panel.querySelectorAll("#edit-night li"), function (li) { return li.textContent; });
+        eq(lines.length, EVENTS.length, "one line a rule");
+        function find(words) { return lines.filter(function (l) { return l.indexOf(words) >= 0; })[0] || ""; }
+        ok(/^22:25 · line \d+ · /.test(find("The cat is outside")), find("The cat is outside"));
+        ok(/^skipped · line \d+ · In the dark glass/.test(find("In the dark glass")), find("In the dark glass"));
+        ok(lines.indexOf(find("The cat is outside")) > lines.indexOf(find("A face. In the window")), "in tonight's order: the face (22:20) before the cat");
+        ok(panel.querySelector("#edit-night li.done"), "what happened already is marked done");
+        var cat = panel.querySelectorAll("#edit-night li")[lines.indexOf(find("The cat is outside"))];
+        cat.click();
+        eq(panel.querySelector("#edit-time").value, "22:25");
+      });
+    });
+
     test("the readout gives the pointer's place in % of the picture", function () {
       inRoom("living");
       withEditMode(function (panel) {

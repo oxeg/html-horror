@@ -89,6 +89,16 @@ copy("story", function (dir) {
   editLine(path.join(dir, "index.html"), /<button id="coats"/, function (l) { return l.replace('<button id="coats"', '<button id="coats" data-ending="no-such-ending"'); });
 });
 
+// Her random-night blocks written wrong: the doorbell's window the wrong way round, and the cat on
+// 11 nights out of 10.
+copy("random", function (dir) {
+  var rules = path.join(dir, "rules.js");
+  return {
+    window: editLine(rules, /between\("22:00", "22:50"\)/, function (l) { return l.replace('between("22:00", "22:50")', 'between("22:50", "22:00")'); }),
+    odds: editLine(rules, /between\("21:35", "22:40"\)/, function (l) { return l.replace("onSomeNights(9, 10)", "onSomeNights(11, 10)"); }),
+  };
+});
+
 // Notepad saved her style sheet as style.css.txt: there's no style.css.
 copy("style", function (dir) {
   fs.renameSync(path.join(dir, "style.css"), path.join(dir, "style.css.txt"));

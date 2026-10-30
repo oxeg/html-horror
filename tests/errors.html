@@ -133,6 +133,12 @@
           says(d, "no-such-ending");
           says(d, "Fix it in index.html, then reload the page.");
         } },
+      { name: "between() the wrong way round and onSomeNights(11, 10): the message says so in her words", src: copyOf("random"),
+        check: function (w, d) {
+          says(d, "rules.js (line " + BROKEN.random.window + '): between("22:50", "22:00"): the first time has to be the earlier one.');
+          says(d, "rules.js (line " + BROKEN.random.odds + "): onSomeNights(11, 10) needs two whole numbers, the first one no bigger");
+          says(d, "Fix it in rules.js, then reload the page.");
+        } },
       { name: "a forgotten </section>: the message says so, and shows the tag", src: copyOf("unclosed"),
         check: function (w, d) {
           says(d, "The story has a mistake");

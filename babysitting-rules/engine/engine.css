@@ -257,6 +257,11 @@ body.playing #ui-popup.on { display: block; }
 body.editing #edit-panel { display: block; }
 #edit-panel select, #edit-panel input[size] { font: inherit; color: #000; }
 #edit-panel button { padding: 2px 12px; font-size: 13px; }
+#edit-tonight summary { cursor: pointer; }
+#edit-night { margin: 2px 0 0; padding: 0; list-style: none; max-height: 30vh; overflow: auto; font: 12px/1.6 monospace; }
+#edit-night li { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#edit-night li:hover { color: #7dffa0; }
+#edit-night li.done { opacity: 0.45; }
 #edit-flags { display: flex; flex-wrap: wrap; gap: 0 12px; max-height: 40vh; overflow: auto; margin-top: 6px; }
 #edit-boxes { position: fixed; inset: 0; z-index: 15; pointer-events: none; }
 .edit-box { position: fixed; border: 1px dashed #7dffa0; color: #7dffa0; font: 11px/1 monospace; padding: 2px; text-shadow: 0 0 3px #000; }

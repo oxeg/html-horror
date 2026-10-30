@@ -1,7 +1,8 @@
 // editmode.js: press E while playing to see behind the scenes.
 // The flashlight turns off, every clickable thing gets a box with its id, and a panel
-// lets you jump to any room and time, show or hide things by name, turn the lights off, and
-// see where the pointer is on the picture (in %, for placing buttons in style.css).
+// lets you jump to any room and time, see tonight's times for every rule, show or hide things
+// by name, turn the lights off, and see where the pointer is on the picture (in %, for placing
+// buttons in style.css).
 // You don't need to change this file.
 
 var EditMode = (function () {
@@ -44,7 +45,8 @@ var EditMode = (function () {
     });
     html += '</select></label> <label>Time <input id="edit-time" size="5" value="21:30"></label> ';
     html += '<button id="edit-go">Go</button>';
-    html += '<div>Pointer: <span id="edit-where">move it over the picture</span></div><div id="edit-flags">';
+    html += '<div>Pointer: <span id="edit-where">move it over the picture</span></div>';
+    html += '<details id="edit-tonight"><summary>Tonight</summary><ol id="edit-night"></ol></details><div id="edit-flags">';
     html += '<label><input type="checkbox" id="edit-dark"> lights out</label>';
     allNames().forEach(function (n) {
       html += '<label><input type="checkbox" data-shown="' + n + '"> ' + n + "</label>";
@@ -61,6 +63,10 @@ var EditMode = (function () {
       if (isNaN(Game.parseTime(time))) return markBadTime();
       Game.editJump(panel.querySelector("#edit-room").value, time);
       View.render();
+    });
+    panel.querySelector("#edit-night").addEventListener("click", function (e) {
+      var line = e.target.closest("li[data-time]");
+      if (line) panel.querySelector("#edit-time").value = line.getAttribute("data-time");
     });
     panel.querySelector("#edit-flags").addEventListener("change", function (e) {
       var name = e.target.getAttribute("data-shown");
@@ -81,6 +87,21 @@ var EditMode = (function () {
     var left = (e.clientX - r.left) / r.width * 100;
     var down = (e.clientY - r.top) / r.height * 100;
     panel.querySelector("#edit-where").textContent = "left: " + left.toFixed(1) + "%  top: " + down.toFixed(1) + "%";
+  }
+
+  // Tonight's rules in order: when each one comes (or "skipped" when it doesn't come tonight),
+  // its line in rules.js, and what it is. The ones that happened already are greyed out.
+  function listTonight() {
+    var list = panel.querySelector("#edit-night");
+    list.innerHTML = "";
+    Toolbox.inTonightsOrder(EVENTS, Game.state).forEach(function (ev) {
+      var t = Toolbox.tonight(ev, Game.state);
+      var line = document.createElement("li");
+      line.textContent = (t === null ? "skipped" : Game.formatTime(t)) + " · line " + ev.line + " · " + Toolbox.labelOf(ev);
+      if (t !== null) line.setAttribute("data-time", Game.formatTime(t));
+      if (Game.state.fired[ev.id]) line.className = "done";
+      list.appendChild(line);
+    });
   }
 
   function markBadTime() {
@@ -115,6 +136,7 @@ var EditMode = (function () {
     panel.querySelector("#edit-dark").checked = !!s.dark;
     var checks = panel.querySelectorAll("[data-shown]");
     for (var i = 0; i < checks.length; i++) checks[i].checked = Game.isShown(checks[i].getAttribute("data-shown"));
+    listTonight();
   }
 
   M.toggle = function () {
