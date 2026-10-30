@@ -32,11 +32,11 @@ test("check: unknown goTo", function () {
   } finally { ROOM_INFO.b.hotspots.door.goTo = old; }
 });
 
-test("check: story hotspot missing from SVG", function () {
+test("check: a button with nothing drawn for it is fine (the view gives it the plain look)", function () {
   var old = ROOMS.c;
   try {
-    ROOMS.c = old.replace('data-hotspot="lamp"', 'data-x="lamp"');
-    checked(function (r) { ok(mentions(r.errors, ["rooms/c.js", "lamp"]), r.errors.join("|")); });
+    ROOMS.c = old.replace('data-name="lamp"', 'data-x="lamp"');
+    checked(function (r) { eq(r.errors, []); eq(r.warnings, []); });
   } finally { ROOMS.c = old; }
 });
 
@@ -127,17 +127,6 @@ test("check: real note without Love you gives a warning", function () {
     NOTES.n1.html = "<ol><li>Rule one.</li></ol>";
     checked(function (r) { ok(mentions(r.warnings, ["n1", "Love you"]), r.warnings.join("|")); });
   } finally { NOTES.n1.html = old; }
-});
-
-test("check: a hotspot is in its drawing when any of its names is", function () {
-  var lamp = ROOM_INFO.c.hotspots.lamp; // names ["lamp", "light"]
-  var old = ROOMS.c;
-  try {
-    ROOMS.c = old.replace('data-hotspot="lamp"', 'data-hotspot="light"');
-    checked(function (r) { eq(r.errors, [], "found by its class"); });
-    lamp.names = ["lamp"];
-    checked(function (r) { ok(mentions(r.errors, ["rooms/c.js", "lamp"]), r.errors.join("|")); });
-  } finally { ROOMS.c = old; lamp.names = ["lamp", "light"]; }
 });
 
 test("check: danger steps and deadly clicks find hotspots by name", function () {

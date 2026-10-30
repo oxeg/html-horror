@@ -1,6 +1,6 @@
 // The doorbell's video screen, opened up close. It glows by itself, even in the dark.
 // The camera shows the building's front door downstairs (feed-empty, feed-mom)... or something else (feed-hallway).
-// The two buttons are clickable: data-hotspot="talk" and "open", the same names as in story.js.
+// The two buttons you can click are in index.html: their parts here have data-name="talk" and "open".
 ROOMS["doorbell-camera"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <clipPath id="doorbell-camera-screen"><rect x="200" y="96" width="980" height="628" rx="10"/></clipPath>
@@ -177,7 +177,7 @@ ROOMS["doorbell-camera"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMi
   </g>
 
   <!-- TALK button -->
-  <g data-hotspot="talk">
+  <g data-name="talk">
     <circle cx="1330" cy="360" r="64" fill="var(--accent)"/>
     <circle cx="1330" cy="360" r="54" fill="var(--furniture)"/>
     <rect x="1302" y="334" width="56" height="40" rx="12" fill="var(--skin)" opacity="0.85"/>
@@ -188,7 +188,7 @@ ROOMS["doorbell-camera"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMi
   </g>
 
   <!-- OPEN button: opens the building's door downstairs -->
-  <g data-hotspot="open">
+  <g data-name="open">
     <circle cx="1330" cy="580" r="64" fill="var(--accent)"/>
     <circle cx="1330" cy="580" r="54" fill="var(--furniture)"/>
     <circle cx="1308" cy="580" r="16" fill="var(--skin)" opacity="0.85"/>

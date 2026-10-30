@@ -1,6 +1,7 @@
 // The walk-in closet in Mom and Dad's bedroom. There's no light in here: only a thin line
 // of light under the door. Rule 1 says: hide in here and wait until it stops calling your name.
-// Clickable things have data-hotspot="...", the same names as in story.js.
+// Things you can click are buttons in index.html. The part here with the same data-name
+// (the button's id or class) glows when you point at it.
 ROOMS["walk-in"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <!-- one of each piece of clothing, hanging from the rail at 0,0. They're drawn again and again below, smaller further away. -->
@@ -76,7 +77,7 @@ ROOMS["walk-in"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   </g>
 
   <!-- the thin line of light under the door -->
-  <g data-hotspot="door-light">
+  <g data-name="door-light">
     <rect x="688" y="590" width="224" height="100" fill="var(--void)" opacity="0"/>
     <g fill="var(--glow)">
       <polygon points="704,640 896,640 1010,740 590,740" opacity="0.025"/>
@@ -97,7 +98,7 @@ ROOMS["walk-in"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   <polygon points="455,263 455,268 113,204 113,196" fill="var(--accent)" opacity="0.6"/>
   <polygon points="1145,263 1145,268 1487,204 1487,196" fill="var(--accent)" opacity="0.6"/>
   <!-- Mom's dresses and Dad's shirts (left wall) -->
-  <g data-hotspot="clothes" opacity="0.75">
+  <g data-name="clothes" opacity="0.75">
     <use href="#walk-in-dress" transform="translate(442.9 263.3) scale(1 1)" fill="var(--accent)"/>
     <use href="#walk-in-shirt" transform="translate(418.8 258.6) scale(1.1 1.1)" fill="var(--furniture)"/>
     <use href="#walk-in-coat" transform="translate(394.7 254) scale(1.1 1.1)" fill="var(--furniture)"/>

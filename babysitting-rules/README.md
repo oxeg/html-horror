@@ -18,7 +18,7 @@ code, and **you can change all of it.**
 |---|---|
 | `index.html` | The page you open. It loads everything else. |
 | `story.js` | ✏️ **The story.** Every text, every room, every scary event, every ending. Start here! |
-| `style.css` | ✏️ The colors and the look of the buttons. |
+| `style.css` | ✏️ The colors, the look of the buttons, and where each thing you can click sits on the picture. |
 | `rooms/` | ✏️ One drawing per room. They're made of shapes (SVG), not pictures. |
 | `sounds/` | ✏️ Put your own sound files here (see below). |
 | `engine.js`, `view.js`, `check.js`, `sound.js`, `editmode.js` | The machinery. You don't need to touch these. |
@@ -105,7 +105,7 @@ at once. (Look up "color picker" to find the code for any color.)
 ## Press E: edit mode
 
 While you're playing, press **E**. The lights come on, every clickable thing gets a green
-box with its name, and a panel lets you:
+box with its id, and a panel lets you:
 
 - jump to any room and any time (type a time like `22:05`, then press Go)
 - show or hide things by their names: tick `cat-outside` and the cat appears on the
@@ -118,27 +118,37 @@ Press **E** again to go back to playing.
 
 Say you want a poster in your room that you can click.
 
-**1. Draw it.** Open `rooms/my-room.js`. Find a good spot (inside the `<svg ...>` and
-before the last `</svg>`), and add a shape with a `data-hotspot` name:
+**1. Add a button.** In `index.html`, find `<section class="room" id="my-room"` and add
+a line inside it. `title` is the name you see when your light is on it, and the words
+inside pop up when you click it:
+
+```html
+<button id="poster" title="My new poster">A giant spider. You love it.</button>
+```
+
+**2. Put it on the picture.** In `style.css`, next to the other "My room" lines:
+
+```css
+#poster { left: 62.5%; top: 26.7%; width: 6.9%; height: 15.6%; }
+```
+
+`left` and `top` say where its top-left corner goes, `width` and `height` how big it is,
+all in % of the picture. Until you draw it, it shows as a dashed box.
+
+**3. Draw it.** Open `rooms/my-room.js`. Find a good spot (inside the `<svg ...>` and
+before the last `</svg>`), and add a shape with the same name in `data-name`:
 
 ```html
 <!-- my new poster -->
-<g data-hotspot="poster">
+<g data-name="poster">
   <rect x="1000" y="240" width="110" height="140" fill="var(--accent)"/>
 </g>
 ```
 
-The picture is 1600 wide and 900 tall. `x` and `y` say where the top-left corner goes,
+The drawing is 1600 wide and 900 tall. `x` and `y` say where the top-left corner goes,
 `width` and `height` how big it is. Use the color names from `style.css`.
 
-**2. Tell the story about it.** In `story.js`, find `"my-room"` and add your poster to
-its `hotspots`:
-
-```js
-"poster": { label: "My new poster", text: "A giant spider. You love it." },
-```
-
-Save both files and reload. Press E to check that your poster has a green box.
+Save the files and reload. Press E to check that your poster has a green box.
 
 ## Add a new room
 
@@ -147,7 +157,7 @@ Save both files and reload. Press E to check that your poster has a green box.
 ```js
 ROOMS["attic"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <rect width="1600" height="900" fill="var(--wall)"/>
-  <g data-hotspot="old-box">
+  <g data-name="old-box">
     <rect x="700" y="500" width="200" height="140" fill="var(--furniture)"/>
   </g>
 </svg>`;
@@ -159,20 +169,23 @@ ROOMS["attic"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slic
 <script src="rooms/attic.js"></script>
 ```
 
-**3.** In `story.js`, add the room to `ROOM_INFO`:
+**3.** In `index.html`, add the room next to the other rooms, and put its button on the
+picture in `style.css`:
 
-```js
-attic: {
-  name: "Attic",
-  exits: ["entrance"],
-  hotspots: {
-    "old-box": { label: "Old box", text: "It's full of old photos. Who are these people?" },
-  },
-},
+```html
+<section class="room" id="attic" title="Attic">
+  <nav>Go to: <a href="#entrance">Hallway</a></nav>
+  <button id="old-box" title="Old box">It's full of old photos. Who are these people?</button>
+</section>
 ```
 
-**4.** Add `"attic"` to the `exits` of a room you want to reach it from, for example
-the hallway's (`entrance`). Save, reload, and there's a new button at the bottom!
+```css
+#old-box { left: 43.8%; top: 55.6%; width: 12.5%; height: 15.6%; }
+```
+
+**4.** Add `<a href="#attic">Attic</a>` to the `<nav>` of a room you want to reach it
+from, for example the hallway's (`entrance`). Save, reload, and there's a new button at
+the bottom!
 
 ## When something goes wrong
 
@@ -181,7 +194,8 @@ which file has a mistake, and often the line number. Most mistakes are:
 
 - a missing quote `"` or backtick `` ` ``
 - a missing comma `,` at the end of a line inside a list
-- a name in `story.js` that doesn't match a `data-hotspot="..."` in the drawing
+- a name in `story.js` that doesn't match a button's id in `index.html` or a
+  `data-name="..."` in the drawing
 
 Undo your last change, or press **Ctrl+Shift+J** to see the exact line.
 

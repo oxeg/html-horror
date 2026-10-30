@@ -1,6 +1,7 @@
 // The living room with the open kitchen. This is the "reference room": the other rooms copy
 // its perspective (back wall in the middle, horizon at y=405) and its colors.
-// Clickable things have data-hotspot="...", the same names as in story.js.
+// Things you can click are buttons in index.html. The part here with the same data-name
+// (the button's id or class) glows when you point at it.
 ROOMS["living"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="living-lamp-light">
@@ -23,7 +24,7 @@ ROOMS["living"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   <polygon points="150,172 300,208 300,705 150,802" fill="var(--void)"/>
 
   <!-- the not-sister, standing in the doorway. Too still. -->
-  <g data-hotspot="not-sister" data-hidden>
+  <g data-name="not-sister" data-hidden>
     <rect x="178" y="450" width="96" height="300" fill="var(--void)" opacity="0"/>
     <path d="M192,472 Q194,438 226,436 Q258,438 260,472 L262,520 L190,520 Z" fill="var(--void)"/>
     <ellipse cx="226" cy="482" rx="28" ry="33" fill="var(--skin)"/>
@@ -43,7 +44,7 @@ ROOMS["living"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   <rect x="608" y="276" width="6" height="14" fill="var(--accent)"/>
   <rect x="631" y="276" width="6" height="14" fill="var(--accent)"/>
   <rect x="701" y="276" width="6" height="14" fill="var(--accent)"/>
-  <g data-hotspot="counter">
+  <g data-name="counter">
     <rect x="550" y="500" width="215" height="140" fill="var(--furniture)"/>
     <rect x="545" y="492" width="225" height="12" fill="var(--accent)"/>
     <rect x="562" y="516" width="90" height="112" fill="var(--void)" opacity="0.25"/>
@@ -52,13 +53,13 @@ ROOMS["living"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   </g>
 
   <!-- fridge, with the note on it -->
-  <g data-hotspot="fridge">
+  <g data-name="fridge">
     <rect x="420" y="228" width="122" height="412" rx="6" fill="var(--furniture)"/>
     <rect x="420" y="330" width="122" height="5" fill="var(--void)" opacity="0.5"/>
     <rect x="526" y="250" width="6" height="60" rx="3" fill="var(--accent)"/>
     <rect x="526" y="350" width="6" height="90" rx="3" fill="var(--accent)"/>
   </g>
-  <g data-hotspot="fridge-note" transform="rotate(-4 475 420)">
+  <g data-name="fridge-note" transform="rotate(-4 475 420)">
     <rect x="448" y="388" width="56" height="70" fill="var(--glow)" opacity="0.55"/>
     <rect x="456" y="402" width="38" height="3" fill="var(--void)" opacity="0.5"/>
     <rect x="456" y="412" width="32" height="3" fill="var(--void)" opacity="0.5"/>
@@ -68,13 +69,13 @@ ROOMS["living"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   </g>
 
   <!-- the cat's bowl -->
-  <g data-hotspot="cat-bowl">
+  <g data-name="cat-bowl">
     <ellipse cx="640" cy="708" rx="42" ry="13" fill="var(--accent)"/>
     <ellipse cx="640" cy="704" rx="30" ry="7" fill="var(--void)" opacity="0.5"/>
   </g>
 
   <!-- window above the sofa: night city far below -->
-  <g data-hotspot="window">
+  <g data-name="window">
     <rect x="818" y="198" width="244" height="244" fill="var(--furniture)"/>
     <rect x="830" y="210" width="220" height="220" fill="var(--accent)" opacity="0.45"/>
     <rect x="830" y="350" width="48" height="80" fill="var(--void)" opacity="0.6"/>
@@ -118,7 +119,7 @@ ROOMS["living"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   </g>
 
   <!-- sofa -->
-  <g data-hotspot="sofa">
+  <g data-name="sofa">
     <rect x="822" y="500" width="246" height="76" rx="12" fill="var(--furniture)"/>
     <rect x="822" y="500" width="246" height="8" rx="4" fill="var(--accent)" opacity="0.6"/>
     <rect x="800" y="568" width="290" height="70" rx="10" fill="var(--furniture)"/>
@@ -138,7 +139,7 @@ ROOMS["living"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   <polygon points="1106,352 1174,352 1192,400 1088,400" fill="var(--accent)"/>
 
   <!-- glass balcony door (right wall), a mirror after dark -->
-  <g data-hotspot="balcony-door">
+  <g data-name="balcony-door">
     <polygon points="1220,204 1440,150 1440,797 1220,664" fill="var(--furniture)"/>
     <polygon points="1240,218 1420,170 1420,780 1240,654" fill="var(--accent)" opacity="0.4"/>
     <rect x="1262" y="300" width="7" height="9" fill="var(--glow)" opacity="0.6"/>
@@ -154,7 +155,7 @@ ROOMS["living"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   </g>
 
   <!-- the cat on the balcony (rule 5). Her eyes catch your light. -->
-  <g data-hotspot="cat-outside" data-hidden>
+  <g data-name="cat-outside" data-hidden>
     <path d="M1262,680 Q1258,628 1286,612 Q1312,628 1310,684 Z" fill="var(--void)"/>
     <circle cx="1286" cy="600" r="20" fill="var(--void)"/>
     <polygon points="1270,590 1272,566 1284,584" fill="var(--void)"/>
@@ -166,7 +167,7 @@ ROOMS["living"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   </g>
 
   <!-- your reflection in the glass (rule 2). It moves when you don't. -->
-  <g data-hotspot="reflection" data-hidden opacity="0.8">
+  <g data-name="reflection" data-hidden opacity="0.8">
     <circle cx="1352" cy="442" r="24" fill="var(--void)"/>
     <path d="M1330,440 Q1352,410 1374,440 L1378,480 L1326,480 Z" fill="var(--void)"/>
     <polygon points="1330,474 1374,474 1388,640 1318,640" fill="var(--void)"/>

@@ -1,6 +1,7 @@
 // Mom and Dad's bedroom: the big bed, the window with no curtains, the cat's tree house
 // (she's asleep inside), and the door to the walk-in closet on the right.
-// Clickable things have data-hotspot="...", the same names as in story.js.
+// Things you can click are buttons in index.html. The part here with the same data-name
+// (the button's id or class) glows when you point at it.
 ROOMS["master"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="master-lamp-light">
@@ -23,7 +24,7 @@ ROOMS["master"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   <polygon points="450,700 1150,700 1200,780 400,780" fill="var(--accent)" opacity="0.3"/>
 
   <!-- the window over the bed. No curtains. Just glass, and the night. -->
-  <g data-hotspot="window">
+  <g data-name="window">
     <rect x="678" y="190" width="244" height="244" fill="var(--furniture)"/>
     <rect x="690" y="202" width="220" height="220" fill="var(--accent)" opacity="0.45"/>
     <rect x="690" y="342" width="48" height="80" fill="var(--void)" opacity="0.6"/>
@@ -83,7 +84,7 @@ ROOMS["master"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   <rect x="1024" y="580" width="62" height="28" fill="var(--void)" opacity="0.25"/>
 
   <!-- the big bed, neatly made -->
-  <g data-hotspot="bed">
+  <g data-name="bed">
     <polygon points="600,640 1000,640 1100,757 500,757" fill="var(--void)" opacity="0.35"/>
     <rect x="588" y="452" width="424" height="124" rx="14" fill="var(--furniture)"/>
     <rect x="588" y="452" width="424" height="8" rx="4" fill="var(--accent)" opacity="0.6"/>
@@ -121,7 +122,7 @@ ROOMS["master"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   <polygon points="1033,494 1077,494 1089,530 1021,530" fill="var(--accent)"/>
 
   <!-- the cat's tree house: scratching posts, a perch, and a little house with a round door -->
-  <g data-hotspot="tree-house">
+  <g data-name="tree-house">
     <rect x="232" y="722" width="216" height="28" rx="6" fill="var(--furniture)"/>
     <rect x="232" y="722" width="216" height="5" rx="2" fill="var(--accent)" opacity="0.5"/>
     <rect x="296" y="600" width="30" height="124" fill="var(--accent)"/>
@@ -149,7 +150,7 @@ ROOMS["master"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   </g>
 
   <!-- the walk-in closet door (right wall) -->
-  <g data-hotspot="walk-in-door">
+  <g data-name="walk-in-door">
     <polygon points="1250,209 1400,170 1400,770 1250,673" fill="var(--accent)" opacity="0.5"/>
     <polygon points="1262,217 1388,186 1388,762 1262,680" fill="var(--furniture)"/>
     <polygon points="1280,246 1372,230 1372,421 1280,410" fill="var(--void)" opacity="0.25"/>

@@ -1,6 +1,7 @@
 // The bathroom with the washing machine. It looks just like the other bathroom, except for
 // the machine with the big round window. Rule 3 says: NOT this one.
-// Clickable things have data-hotspot="...", the same names as in story.js.
+// Things you can click are buttons in index.html. The part here with the same data-name
+// (the button's id or class) glows when you point at it.
 ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="bath-washer-light">
@@ -48,7 +49,7 @@ ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- the lock: a big sliding bolt, and the door handle under it -->
-  <g data-hotspot="lock">
+  <g data-name="lock">
     <rect x="252" y="336" width="96" height="108" fill="var(--void)" opacity="0"/>
     <rect x="262" y="358" width="58" height="22" rx="3" fill="var(--accent)"/>
     <rect x="296" y="363" width="50" height="12" rx="4" fill="var(--accent)"/>
@@ -65,7 +66,7 @@ ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
     <circle cx="560" cy="226" r="210" fill="url(#bath-washer-light)"/>
   </g>
   <rect x="500" y="208" width="120" height="10" rx="5" fill="var(--accent)"/>
-  <g data-hotspot="mirror">
+  <g data-name="mirror">
     <rect x="466" y="232" width="188" height="206" rx="6" fill="var(--furniture)"/>
     <rect x="476" y="242" width="168" height="186" rx="3" fill="var(--accent)" opacity="0.45"/>
     <polygon points="520,242 546,242 492,428 476,428 476,396" fill="var(--glow)" opacity="0.06"/>
@@ -73,7 +74,7 @@ ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- the sink: cupboard, basin, tap, toothbrushes, toothpaste -->
-  <g data-hotspot="sink">
+  <g data-name="sink">
     <rect x="450" y="500" width="220" height="140" fill="var(--furniture)"/>
     <rect x="462" y="516" width="94" height="112" fill="var(--void)" opacity="0.25"/>
     <rect x="564" y="516" width="94" height="112" fill="var(--void)" opacity="0.25"/>
@@ -100,7 +101,7 @@ ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   <rect x="925" y="274" width="14" height="12" rx="2" fill="var(--accent)"/>
 
   <!-- the washing machine. Its round window looks like a big glass eye. -->
-  <g data-hotspot="washer">
+  <g data-name="washer">
     <rect x="785" y="440" width="190" height="200" rx="8" fill="var(--furniture)"/>
     <rect x="785" y="478" width="190" height="4" fill="var(--void)" opacity="0.4"/>
     <rect x="797" y="450" width="48" height="18" rx="3" fill="var(--accent)" opacity="0.5"/>
@@ -149,7 +150,7 @@ ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   <rect x="1068" y="444" width="68" height="6" fill="var(--void)" opacity="0.25"/>
 
   <!-- the shower (right wall), curtain pulled to one side -->
-  <g data-hotspot="shower">
+  <g data-name="shower">
     <polygon points="1225,185 1405,127 1405,766 1225,651" fill="var(--furniture)"/>
     <polygon points="1235,192 1395,144 1395,746 1235,647" fill="var(--void)" opacity="0.5"/>
     <g fill="var(--accent)" opacity="0.15">

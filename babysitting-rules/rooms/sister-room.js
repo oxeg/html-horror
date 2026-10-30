@@ -1,6 +1,7 @@
 // Your little sister's room: her bed, her toys, the moon night-light and a window (no curtains, like everywhere in the apartment).
 // Your sister is drawn three ways: awake and playing, asleep under the blanket, or gone (the empty bed).
-// Clickable things have data-hotspot="...", the same names as in story.js.
+// Things you can click are buttons in index.html. The part here with the same data-name
+// (the button's id or class) glows when you point at it.
 ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="sister-room-night-light">
@@ -47,7 +48,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- the window: bare glass, no curtains. Just the dark out there. -->
-  <g data-hotspot="window">
+  <g data-name="window">
     <rect x="450" y="198" width="244" height="244" fill="var(--furniture)"/>
     <rect x="462" y="210" width="220" height="220" fill="var(--accent)" opacity="0.45"/>
     <rect x="462" y="350" width="48" height="80" fill="var(--void)" opacity="0.6"/>
@@ -103,7 +104,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   <!-- nightstand, and the little moon night-light on it -->
   <rect x="714" y="566" width="78" height="80" fill="var(--furniture)"/><rect x="708" y="558" width="90" height="9" fill="var(--accent)"/>
   <rect x="722" y="580" width="62" height="28" fill="var(--void)" opacity="0.25"/><rect x="744" y="590" width="18" height="5" rx="2" fill="var(--accent)"/>
-  <g data-hotspot="night-light">
+  <g data-name="night-light">
     <rect x="716" y="480" width="76" height="82" fill="var(--void)" opacity="0"/>
     <rect x="732" y="550" width="44" height="9" rx="4" fill="var(--accent)"/>
     <rect x="749" y="538" width="10" height="14" fill="var(--furniture)"/>
@@ -132,7 +133,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- your sister asleep: a little head on the pillow, the rest of her under the blanket -->
-  <g data-hotspot="sister-asleep" data-hidden>
+  <g data-name="sister-asleep" data-hidden>
     <ellipse cx="872" cy="537" rx="26" ry="17" fill="var(--furniture)"/><ellipse cx="872" cy="537" rx="26" ry="17" fill="var(--glow)" opacity="0.5"/>
     <ellipse cx="885" cy="543" rx="15" ry="14" fill="var(--skin)"/>
     <path d="M876,543 Q880,547 884,543 Q880,545 876,543 Z" fill="var(--void)"/><path d="M888,543 Q892,547 896,543 Q892,545 888,543 Z" fill="var(--void)"/>
@@ -152,7 +153,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- your sister, awake: sitting on the rug in her pajamas, playing a board game -->
-  <g data-hotspot="sister-awake">
+  <g data-name="sister-awake">
     <use href="#sister-room-lap" fill="var(--accent)"/><use href="#sister-room-lap" fill="var(--void)" opacity="0.2"/>
     <ellipse cx="570" cy="703" rx="12" ry="7" fill="var(--glow)" opacity="0.45"/><ellipse cx="650" cy="704" rx="12" ry="7" fill="var(--glow)" opacity="0.45"/>
     <path d="M588,612 Q610,604 632,612 L642,682 L578,682 Z" fill="var(--accent)"/>
@@ -181,7 +182,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- the toys: a teddy (missing an eye), a bunny, a ball and blocks -->
-  <g data-hotspot="toys">
+  <g data-name="toys">
     <ellipse cx="1268" cy="650" rx="40" ry="40" fill="var(--accent)"/>
     <ellipse cx="1268" cy="658" rx="22" ry="20" fill="var(--glow)" opacity="0.12"/>
     <ellipse cx="1228" cy="642" rx="12" ry="22" fill="var(--accent)" transform="rotate(20 1228 642)"/><ellipse cx="1308" cy="642" rx="12" ry="22" fill="var(--accent)" transform="rotate(-20 1308 642)"/>

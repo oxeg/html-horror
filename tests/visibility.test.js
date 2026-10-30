@@ -1,7 +1,7 @@
 // Browser only, inside the real game page (tests/playtest.html adds it there; tests/run-node.js
 // doesn't load it): replays every playthrough the way tests/tools/visibility.html recorded it before
 // the restructure, with the real View.render(), and checks that the same drawing parts show in
-// #scene and #camera-art after every step (VISIBLE_PARTS in tests/fixtures/visible-parts.js).
+// the room on screen and the open camera after every step (VISIBLE_PARTS in tests/fixtures/visible-parts.js).
 // The one allowed difference: feed-empty may also show in the camera, where the feeds cover it.
 if (typeof document !== "undefined") {
   (function () {
@@ -15,9 +15,9 @@ if (typeof document !== "undefined") {
 
     function partsIn(box) {
       var names = [];
-      var parts = box.querySelectorAll("[data-name], [data-hotspot]");
+      var parts = box ? box.querySelectorAll("[data-name]") : [];
       for (var i = 0; i < parts.length; i++) {
-        if (shows(parts[i], box)) names.push(parts[i].getAttribute("data-name") || parts[i].getAttribute("data-hotspot"));
+        if (shows(parts[i], box)) names.push(parts[i].getAttribute("data-name"));
       }
       return names;
     }
@@ -39,8 +39,6 @@ if (typeof document !== "undefined") {
       ok(document.body.classList.contains("playing"), "the game must be playing: tests/playtest.html presses Start first");
       // The recorder's light sat in the middle of the picture: put it back there.
       document.dispatchEvent(new PointerEvent("pointermove", { clientX: innerWidth / 2, clientY: innerHeight / 2 }));
-      var scene = document.getElementById("scene");
-      var cameraArt = document.getElementById("camera-art");
       var problems = [];
       var at = 0;
       PLAYTHROUGHS.forEach(function (pt) {
@@ -50,13 +48,14 @@ if (typeof document !== "undefined") {
         pt.steps.forEach(function (step, i) {
           playStep(step);
           View.render();
-          var inCamera = document.getElementById("camera").classList.contains("on") ? partsIn(cameraArt) : [];
+          var inCamera = partsIn(document.querySelector("section.room.camera.here"));
+          var inRoom = partsIn(document.querySelector("section.room.here:not(.camera)"));
           var record = VISIBLE_PARTS[at++] || {};
           if (record.run !== pt.name || record.step !== i) {
             problems.push(pt.name + " step " + i + " (" + step + "): no recording for this step");
             return;
           }
-          var diff = compare(record.parts, partsIn(scene).concat(inCamera).sort(), inCamera);
+          var diff = compare(record.parts, inRoom.concat(inCamera).sort(), inCamera);
           if (diff.missing.length || diff.extra.length) {
             problems.push(pt.name + " step " + i + " (" + step + "): missing " + JSON.stringify(diff.missing) + ", extra " + JSON.stringify(diff.extra));
           }

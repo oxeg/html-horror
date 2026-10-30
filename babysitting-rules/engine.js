@@ -66,11 +66,11 @@ var Game = (function () {
     return undefined;
   }
 
-  // Does this room have something with this name: a hotspot, or a part of its drawing?
+  // Does this room have something with this name: a button, or a part of its drawing (data-name)?
   function roomHas(roomId, name) {
     if (findHotspot(roomId, name)) return true;
     var svg = (typeof ROOMS !== "undefined" && ROOMS[roomId]) || "";
-    return svg.indexOf('data-name="' + name + '"') >= 0 || svg.indexOf('data-hotspot="' + name + '"') >= 0;
+    return svg.indexOf('data-name="' + name + '"') >= 0;
   }
 
   // ---- showing and hiding, by name ----

@@ -20,12 +20,6 @@ var Check = (function () {
     return id ? ROOM_INFO[roomId].hotspots[id] : null;
   }
 
-  // Is a part with this name in the room's drawing?
-  function drawingHas(roomId, name) {
-    var svg = ROOMS[roomId] || "";
-    return svg.indexOf('data-name="' + name + '"') >= 0 || svg.indexOf('data-hotspot="' + name + '"') >= 0;
-  }
-
   // ---- the walking graph: exits plus hotspots that move you (goTo) ----
 
   function neighbours(roomId) {
@@ -136,9 +130,6 @@ var Check = (function () {
         if (spot.note && !NOTES[spot.note]) errors.push(where + ' gives the note "' + spot.note + '", but there is no note "' + spot.note + '".');
         if (spot.ending) checkEnding(where, spot.ending);
         if (spot.notBefore) checkTime(where + " notBefore", spot.notBefore);
-        if (hasDrawing(id) && !(spot.names || [h]).some(function (name) { return drawingHas(id, name); })) {
-          errors.push('rooms/' + id + '.js: the drawing has no part marked data-hotspot="' + h + '", but index.html has that button. Add it to the drawing or remove it from index.html.');
-        }
       });
       if (!hasDrawing(id)) errors.push('rooms/' + id + '.js is missing: room "' + id + '" is in index.html but has no drawing. Make rooms/' + id + '.js and add it to index.html.');
     });

@@ -102,10 +102,15 @@ test("actions after an ending do nothing", function () {
   eq(JSON.stringify(Game.state), before);
 });
 
-test("roomHas finds data-name and data-hotspot", function () {
-  eq(Game.roomHas("b", "ghost"), true);
-  eq(Game.roomHas("b", "door"), true);
+test("roomHas finds buttons and drawing parts (data-name)", function () {
+  eq(Game.roomHas("b", "ghost"), true, "a drawing part");
+  eq(Game.roomHas("b", "door"), true, "a button");
   eq(Game.roomHas("a", "ghost"), false);
+  var old = ROOMS.a;
+  try {
+    ROOMS.a = '<svg><g data-hotspot="old-mark"></g></svg>';
+    eq(Game.roomHas("a", "old-mark"), false, "data-hotspot is gone: drawings name their parts with data-name");
+  } finally { ROOMS.a = old; }
 });
 
 test("names: the first stored name decides, id first", function () {

@@ -69,18 +69,182 @@ if (typeof document !== "undefined") {
       eq(n, 1);
     });
 
-    test("touch: the first tap arms a hotspot, the second tap uses it", function () {
-      var a = document.createElement("div");
-      var b = document.createElement("div");
-      eq(View.touchTap(a), false, "first tap only looks");
-      ok(a.classList.contains("armed"), "a glows");
-      eq(View.touchTap(a), true, "second tap uses");
-      ok(!a.classList.contains("armed"), "glow goes away");
-      View.touchTap(a);
-      eq(View.touchTap(b), false, "tapping something else only looks at it");
-      ok(!a.classList.contains("armed") && b.classList.contains("armed"), "the glow moves to b");
+    // ---- the buttons over the picture ----
+
+    // View.act ignores clicks for 0.35 s after one. The tests can't wait, so they move the clock on.
+    var realNow = Date.now;
+    var skipped = 0;
+    function cooldownOver() {
+      skipped += 1000;
+      Date.now = function () { return realNow.call(Date) + skipped; };
+    }
+
+    // A fresh game in this room with the lights on, drawn by the real view.
+    function inRoom(roomId) {
+      Game.useStorage(false);
+      Game.newGame();
+      Game.editJump(roomId, "19:30");
+      View.render();
+      cooldownOver();
+    }
+
+    // Counts what reaches Game.click until stop().
+    function clickCounter() {
+      var real = Game.click;
+      var counter = { n: 0, stop: function () { Game.click = real; } };
+      Game.click = function (name) { counter.n++; return real(name); };
+      return counter;
+    }
+
+    function middleOf(el) {
+      var r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+
+    // Runs fn as if the last thing that touched the screen was a finger, then puts the mouse back.
+    function withFinger(fn) {
+      var wasTouch = document.documentElement.classList.contains("touch");
+      var at = middleOf(document.querySelector("section.room.here"));
+      document.dispatchEvent(new PointerEvent("pointerdown", { pointerType: "touch", clientX: at.x, clientY: at.y }));
+      try {
+        fn();
+      } finally {
+        document.dispatchEvent(new PointerEvent("pointerdown", { pointerType: "mouse", clientX: at.x, clientY: at.y }));
+        if (!wasTouch) document.documentElement.classList.remove("touch");
+      }
+    }
+
+    // A tap with a finger: pointerdown, then the click the browser makes (detail 1).
+    function tap(el) {
+      var at = middleOf(el);
+      el.dispatchEvent(new PointerEvent("pointerdown", { pointerType: "touch", bubbles: true, clientX: at.x, clientY: at.y }));
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1, clientX: at.x, clientY: at.y }));
+    }
+
+    function drawingPart(roomId, name) { return document.querySelector("#" + roomId + ' .drawing [data-name="' + name + '"]'); }
+
+    test("the buttons are named for screen readers, with no tooltips, and each has its drawing", function () {
+      ok(!document.querySelector("section.room[title], section.room [title]"), "a title would pop up a tooltip that gives things away in the dark");
+      eq(document.getElementById("living").getAttribute("aria-label"), "Living room");
+      eq(document.getElementById("fridge").getAttribute("aria-label"), "Fridge");
+      ok(drawingPart("living", "fridge"), "the living room's drawing is in its section");
+      eq(document.querySelectorAll("section.room > .plain").length, 0, "every button in the game has a part in its drawing");
+    });
+
+    test("touch: the first tap arms a button, the second uses it", function () {
+      inRoom("living");
+      var fridge = document.getElementById("fridge");
+      var counter = document.getElementById("counter");
+      var clicks = clickCounter();
+      withFinger(function () {
+        try {
+          tap(fridge);
+          eq(clicks.n, 0, "the first tap only looks");
+          ok(fridge.classList.contains("armed"), "the fridge is armed");
+          ok(drawingPart("living", "fridge").classList.contains("lit"), "its drawing glows");
+          eq(document.getElementById("ui-label").textContent, "Fridge", "its name shows");
+          tap(fridge);
+          eq(clicks.n, 1, "the second tap uses it");
+          ok(!fridge.classList.contains("armed"), "the glow goes away");
+        } finally {
+          clicks.stop();
+        }
+      });
+      View.touchTap(fridge);
+      eq(View.touchTap(counter), false, "tapping something else only looks at it");
+      ok(!fridge.classList.contains("armed") && counter.classList.contains("armed"), "the glow moves to the counter");
       View.touchTap(null);
-      ok(!b.classList.contains("armed"), "tapping nothing clears the glow");
+      ok(!counter.classList.contains("armed"), "tapping nothing clears the glow");
+    });
+
+    test("Enter on a focused button acts once", function () {
+      inRoom("living");
+      var fridge = document.getElementById("fridge");
+      fridge.focus();
+      ok(document.activeElement === fridge, "the fridge takes the focus");
+      var clicks = clickCounter();
+      // even right after a finger touched the screen: a keyboard click is never the first of two taps
+      withFinger(function () {
+        try {
+          fridge.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+          eq(clicks.n, 0, "the key itself does nothing: the click the browser makes for it does");
+          fridge.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 0 }));
+          eq(clicks.n, 1);
+        } finally {
+          clicks.stop();
+          fridge.blur();
+        }
+      });
+    });
+
+    test("a link over the picture never changes the page", function () {
+      inRoom("master");
+      var hash = location.hash;
+      document.getElementById("walk-in-door").click();
+      eq(location.hash, hash, "the page didn't jump");
+      eq(Game.state.room, "walk-in");
+    });
+
+    test("a hidden button can't be used even if CSS shows it", function () {
+      inRoom("living");
+      var reflection = document.getElementById("reflection");
+      ok(reflection.hidden, "the reflection starts hidden");
+      reflection.style.setProperty("display", "block", "important");
+      try {
+        reflection.click();
+        eq(Game.state.ending, null);
+      } finally {
+        reflection.style.removeProperty("display");
+      }
+    });
+
+    test("the beam is sized by the picture, not the window", function () {
+      inRoom("living");
+      var stage = document.querySelector("section.room.here");
+      ok(stage, "the room you're in shows");
+      stage.style.width = "800px";  // black bars at the sides: the picture is narrower than the window
+      try {
+        eq(Math.round(View.beamRadius()), Math.round(800 * SETTINGS.flashlightSize / 100));
+      } finally {
+        stage.style.width = "";
+      }
+    });
+
+    test("in the dark, only the buttons in the light take the focus", function () {
+      inRoom("living");
+      Game.setDark(true);
+      var fridge = document.getElementById("fridge");
+      var sofa = document.getElementById("sofa");
+      var at = middleOf(fridge);
+      document.dispatchEvent(new PointerEvent("pointermove", { clientX: at.x, clientY: at.y }));
+      View.render();
+      eq(fridge.getAttribute("tabindex"), "0", "the fridge is in the light");
+      eq(sofa.getAttribute("tabindex"), "-1", "the sofa is in the dark");
+      at = middleOf(sofa);
+      document.dispatchEvent(new PointerEvent("pointermove", { clientX: at.x, clientY: at.y }));
+      View.render();
+      eq(fridge.getAttribute("tabindex"), "-1", "the light moved away from the fridge");
+      eq(sofa.getAttribute("tabindex"), "0", "and onto the sofa");
+      Game.setDark(false);
+      View.render();
+    });
+
+    test("pointing at a button lights its drawing", function () {
+      inRoom("living");
+      function point(el, on) {
+        el.dispatchEvent(new MouseEvent(on ? "mouseover" : "mouseout", { bubbles: true }));
+        el.dispatchEvent(new MouseEvent(on ? "mouseenter" : "mouseleave"));
+      }
+      var fridge = document.getElementById("fridge");
+      point(fridge, true);
+      ok(drawingPart("living", "fridge").classList.contains("lit"), "the fridge glows");
+      point(fridge, false);
+      ok(!drawingPart("living", "fridge").classList.contains("lit"), "and stops when the mouse leaves");
+      var win = document.getElementById("living-window");
+      point(win, true);
+      ok(drawingPart("living", "window").classList.contains("lit"), "a class works too: #living-window lights the window");
+      point(win, false);
+      ok(!document.querySelector(".lit"), "nothing glows once the mouse is gone");
     });
 
     // ---- parity: the browser and minidom read the same world out of index.html ----

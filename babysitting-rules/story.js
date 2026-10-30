@@ -24,7 +24,7 @@ const SETTINGS = {
   moveMinutes: 10,        // minutes it takes to walk to another room
   lookMinutes: 10,        // minutes it takes to look at something
   waitMinutes: 15,        // minutes the Wait button skips
-  flashlightSize: 22,     // how big your phone light is (percent of the screen width)
+  flashlightSize: 22,     // how big your phone light is (percent of the picture's width)
 };
 
 // ---------------------------------------------------------------------

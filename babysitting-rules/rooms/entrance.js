@@ -1,6 +1,7 @@
 // The hallway by the front door, where the night starts. Same perspective as the living room.
 // The living room is through the doorway on the left, the bedrooms and bathrooms down the corridor on the right.
-// Clickable things have data-hotspot="...", the same names as in story.js.
+// Things you can click are buttons in index.html. The part here with the same data-name
+// (the button's id or class) glows when you point at it.
 ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="entrance-lamp-light">
@@ -37,7 +38,7 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
   <polygon points="1392,300 1428,292 1428,640 1392,620" fill="var(--furniture)" opacity="0.35"/>
 
   <!-- the not-sister, standing in the corridor. Too still. -->
-  <g data-hotspot="not-sister" data-hidden>
+  <g data-name="not-sister" data-hidden>
     <rect x="1326" y="450" width="96" height="300" fill="var(--void)" opacity="0"/>
     <path d="M1408,472 Q1406,438 1374,436 Q1342,438 1340,472 L1338,520 L1410,520 Z" fill="var(--void)"/>
     <ellipse cx="1374" cy="482" rx="28" ry="33" fill="var(--skin)"/>
@@ -51,7 +52,7 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
   </g>
 
   <!-- coat hooks: your jacket, your sister's little coat, and two empty hooks in between -->
-  <g data-hotspot="coats">
+  <g data-name="coats">
     <rect x="422" y="280" width="184" height="16" rx="3" fill="var(--furniture)"/>
     <rect x="422" y="280" width="184" height="4" fill="var(--accent)" opacity="0.5"/>
     <g fill="var(--accent)">
@@ -92,14 +93,14 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
   <rect x="570" y="606" width="14" height="34" rx="4" fill="var(--furniture)"/>
 
   <!-- light switch -->
-  <g data-hotspot="light-switch">
+  <g data-name="light-switch">
     <rect x="628" y="390" width="38" height="62" rx="5" fill="var(--accent)" opacity="0.75"/>
     <rect x="638" y="402" width="18" height="38" rx="3" fill="var(--furniture)"/>
     <rect x="638" y="402" width="18" height="16" rx="3" fill="var(--accent)" opacity="0.6"/>
   </g>
 
   <!-- the front door. The stairwell light shows in the crack under it. -->
-  <g data-hotspot="front-door">
+  <g data-name="front-door">
     <rect x="684" y="226" width="232" height="414" fill="var(--accent)" opacity="0.5"/>
     <rect x="700" y="242" width="200" height="398" fill="var(--furniture)"/>
     <rect x="722" y="268" width="156" height="150" rx="3" fill="var(--void)" opacity="0.25"/>
@@ -125,7 +126,7 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
   </g>
 
   <!-- the note that slides under the door (rule 7) -->
-  <g data-hotspot="fake-note" data-hidden>
+  <g data-name="fake-note" data-hidden>
     <polygon points="742,644 852,638 868,674 736,682" fill="var(--glow)" opacity="0.6"/>
     <polygon points="760,652 836,648 837,652 761,656" fill="var(--void)" opacity="0.5"/>
     <polygon points="758,662 846,657 847,661 759,666" fill="var(--void)" opacity="0.5"/>
@@ -133,7 +134,7 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
   </g>
 
   <!-- the doorbell: a little screen that shows the camera downstairs -->
-  <g data-hotspot="doorbell">
+  <g data-name="doorbell">
     <rect x="946" y="328" width="70" height="136" rx="8" fill="var(--furniture)"/>
     <rect x="950" y="330" width="62" height="4" rx="2" fill="var(--accent)" opacity="0.6"/>
     <rect x="956" y="344" width="50" height="46" rx="3" fill="var(--void)"/>

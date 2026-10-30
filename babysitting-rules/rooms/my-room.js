@@ -1,6 +1,7 @@
 // Your own room: your bed, your desk, the scary book covers on the wall, and a window on the city.
 // The door to the hallway is on the left. Same perspective and colors as the living room.
-// Clickable things have data-hotspot="...", the same names as in story.js.
+// Things you can click are buttons in index.html. The part here with the same data-name
+// (the button's id or class) glows when you point at it.
 ROOMS["my-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <radialGradient id="my-room-lamp-light">
@@ -23,7 +24,7 @@ ROOMS["my-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   <polygon points="150,172 300,208 300,705 150,802" fill="var(--void)"/>
 
   <!-- the not-sister, standing in the doorway. Too still. -->
-  <g data-hotspot="not-sister" data-hidden>
+  <g data-name="not-sister" data-hidden>
     <rect x="178" y="450" width="96" height="300" fill="var(--void)" opacity="0"/>
     <path d="M192,472 Q194,438 226,436 Q258,438 260,472 L262,520 L190,520 Z" fill="var(--void)"/>
     <ellipse cx="226" cy="482" rx="28" ry="33" fill="var(--skin)"/>
@@ -37,7 +38,7 @@ ROOMS["my-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   </g>
 
   <!-- posters: your favorite book covers. A haunted house, an eye, a ghost. -->
-  <g data-hotspot="posters">
+  <g data-name="posters">
     <g transform="rotate(-2 480 276)">
       <rect x="432" y="208" width="96" height="136" fill="var(--accent)"/>
       <rect x="440" y="216" width="80" height="14" fill="var(--void)" opacity="0.5"/>
@@ -72,7 +73,7 @@ ROOMS["my-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   </g>
 
   <!-- the desk with your homework, and the chair pushed in -->
-  <g data-hotspot="desk">
+  <g data-name="desk">
     <rect x="428" y="506" width="104" height="134" fill="var(--furniture)"/>
     <rect x="436" y="516" width="88" height="36" fill="var(--void)" opacity="0.25"/>
     <rect x="436" y="560" width="88" height="36" fill="var(--void)" opacity="0.25"/>
@@ -107,7 +108,7 @@ ROOMS["my-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   <polygon points="612,428 660,416 668,436 622,450" fill="var(--accent)"/>
 
   <!-- the window: the other buildings, most of their windows dark -->
-  <g data-hotspot="window">
+  <g data-name="window">
     <rect x="698" y="198" width="244" height="244" fill="var(--furniture)"/>
     <rect x="710" y="210" width="220" height="220" fill="var(--accent)" opacity="0.45"/>
     <rect x="710" y="350" width="48" height="80" fill="var(--void)" opacity="0.6"/>
@@ -159,7 +160,7 @@ ROOMS["my-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   <polygon points="1346,312 1362,300 1396,362 1380,370" fill="var(--furniture)"/>
 
   <!-- your bed in the corner, with a book you didn't finish. Nothing under it. Probably. -->
-  <g data-hotspot="bed">
+  <g data-name="bed">
     <polygon points="975,640 1200,640 1382,746 1052,746" fill="var(--void)" opacity="0.35"/>
     <rect x="972" y="466" width="228" height="112" rx="8" fill="var(--furniture)"/>
     <rect x="972" y="466" width="228" height="7" rx="3" fill="var(--accent)" opacity="0.6"/>

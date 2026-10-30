@@ -25,10 +25,11 @@ function attr(value) { return String(value).replace(/&/g, "&amp;").replace(/"/g,
 function text(value) { return String(value || "").replace(/&(?![a-z#0-9]+;)/gi, "&amp;"); }
 function renamed(map, id) { return (map && map[id]) || id; }
 
-// The old hotspot ids in the order the drawing has them (later ones sit on top).
+// The old hotspot ids in the order the drawing has them (later ones sit on top). The drawings
+// name them with data-name now (data-hotspot before Task 7); the filter below keeps only hotspots.
 function drawingOrder(roomId) {
   var seen = [];
-  var re = /data-hotspot="([^"]+)"/g;
+  var re = /data-(?:name|hotspot)="([^"]+)"/g;
   var m;
   while ((m = re.exec(old.drawings[roomId] || ""))) if (seen.indexOf(m[1]) < 0) seen.push(m[1]);
   Object.keys(old.rooms[roomId].hotspots).forEach(function (id) { if (seen.indexOf(id) < 0) seen.push(id); });

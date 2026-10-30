@@ -1,5 +1,5 @@
 // editmode.js: press E while playing to see behind the scenes.
-// The flashlight turns off, every clickable thing gets a box with its name, and a panel
+// The flashlight turns off, every clickable thing gets a box with its id, and a panel
 // lets you jump to any room and time, show or hide things by name, and turn the lights off.
 // You don't need to change this file.
 
@@ -16,7 +16,7 @@ var EditMode = (function () {
     function moment(m) { add((m || {}).show); add((m || {}).hide); }
     Object.keys(ROOMS).forEach(function (id) {
       (ROOMS[id].match(/<[^>]*\sdata-hidden(?=[\s>\/=])[^>]*>/g) || []).forEach(function (tag) {
-        var m = /data-(?:name|hotspot)="([^"]+)"/.exec(tag);
+        var m = /data-name="([^"]+)"/.exec(tag);
         if (m) add([m[1]]);
       });
     });
@@ -77,10 +77,12 @@ var EditMode = (function () {
     panel.querySelector("#edit-time").style.outline = "2px solid var(--danger)";
   }
 
-  // Draw a box with its name around every clickable thing you can see.
+  // Draw a box with its id around every button and link you can see: the open camera's, or else
+  // the room's.
   function drawBoxes() {
     boxes.innerHTML = "";
-    var spots = document.querySelectorAll("#scene [data-hotspot], #camera.on [data-hotspot]");
+    var top = document.querySelector("section.room.camera.here") || document.querySelector("section.room.here");
+    var spots = top ? top.querySelectorAll(":scope > button, :scope > a") : [];
     for (var i = 0; i < spots.length; i++) {
       var r = spots[i].getBoundingClientRect();
       if (!r.width || !r.height) continue;
@@ -90,7 +92,7 @@ var EditMode = (function () {
       b.style.top = r.top + "px";
       b.style.width = r.width + "px";
       b.style.height = r.height + "px";
-      b.textContent = spots[i].getAttribute("data-hotspot");
+      b.textContent = spots[i].id;
       boxes.appendChild(b);
     }
   }
