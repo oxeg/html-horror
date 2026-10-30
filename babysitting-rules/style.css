@@ -81,7 +81,11 @@ body.dark #grain { opacity: 0.1; }
 /* named decorations (glows, faces, footprints...) never catch clicks: only data-hotspot things do */
 [data-name] { pointer-events: none; }
 [data-name] [data-hotspot] { pointer-events: auto; }
-[data-hotspot]:hover, [data-hotspot]:focus { filter: brightness(1.35) drop-shadow(0 0 6px var(--glow)); }
+/* the glow on the thing you're pointing at (mouse), focusing (keyboard) or tapped once (phone) */
+[data-hotspot]:focus-visible, [data-hotspot].armed { filter: brightness(1.35) drop-shadow(0 0 6px var(--glow)); }
+@media (hover: hover) {
+  [data-hotspot]:hover { filter: brightness(1.35) drop-shadow(0 0 6px var(--glow)); }
+}
 
 button {
   font: inherit;
@@ -212,3 +216,53 @@ body.editing #edit-panel { display: block; }
 #edit-flags { display: flex; flex-wrap: wrap; gap: 0 12px; max-height: 40vh; overflow: auto; margin-top: 6px; }
 #edit-boxes { position: fixed; inset: 0; z-index: 15; pointer-events: none; }
 .edit-box { position: fixed; border: 1px dashed #7dffa0; color: #7dffa0; font: 11px/1 monospace; padding: 2px; text-shadow: 0 0 3px #000; }
+
+/* ---------- phones ---------- */
+
+/* no zooming, scrolling or text selection while playing with a finger */
+html, body { overscroll-behavior: none; }
+body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+button { touch-action: manipulation; }
+
+/* the tap hint on the title screen, only on phones */
+.touch-hint { display: none; font-size: 13px; opacity: 0.6; }
+html.touch .touch-hint { display: block; }
+
+/* held upright: ask to turn the phone sideways */
+#rotate { display: none; position: fixed; inset: 0; z-index: 200; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: var(--void); color: var(--ui); font-size: 18px; text-align: center; }
+#rotate .phone { width: 46px; height: 80px; border: 3px solid var(--ui); border-radius: 9px; animation: turn-sideways 2.4s ease-in-out infinite; }
+@keyframes turn-sideways {
+  0%, 30% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(-90deg); }
+}
+@media (orientation: portrait) {
+  html.touch #rotate { display: flex; }
+}
+
+/* phones are slower: calmer grain, no blur behind buttons */
+html.touch #grain { animation-duration: 1.4s; }
+html.touch button, html.touch #ui-popup { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(7, 7, 13, 0.78); }
+
+/* the name label sits above the finger, not under it */
+html.touch #ui-label { transform: translate(-50%, calc(-100% - 40px)); }
+
+/* short screens (a phone held sideways): everything smaller, one row of room buttons */
+@media (max-height: 500px) {
+  button { font-size: 13px; padding: 5px 10px; }
+  #ui-clock { top: max(8px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); font-size: 16px; }
+  #ui-mute { top: max(5px, env(safe-area-inset-top)); left: calc(max(12px, env(safe-area-inset-left)) + 58px); padding: 4px 9px; }
+  #ui-mute svg { width: 16px; height: 16px; }
+  #ui-notes-btn, #camera-close { top: max(5px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); padding: 4px 10px; }
+  #ui-bar { bottom: max(6px, env(safe-area-inset-bottom)); gap: 6px; max-width: calc(100vw - 16px); }
+  #ui-nav { flex-wrap: nowrap; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  #ui-nav::-webkit-scrollbar { display: none; }
+  #ui-nav button, #ui-wait { white-space: nowrap; flex: none; }
+  #ui-popup { bottom: 46px; font-size: 14px; padding: 7px 14px; max-width: 80vw; }
+  #ui-label { font-size: 13px; }
+  .menu { gap: 8px; padding: 12px; }
+  .menu h1 { font-size: min(6vw, 10vh); margin-bottom: 2px; }
+  .menu p { font-size: 15px; }
+  #ending-buttons { margin-top: 4px; }
+  #notes .panel { max-height: 98vh; gap: 6px; }
+  #notes-list { max-height: 90vh; padding: 8px; }
+}

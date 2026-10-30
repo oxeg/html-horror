@@ -49,6 +49,20 @@ if (typeof document !== "undefined") {
       eq(n, 1);
     });
 
+    test("touch: the first tap arms a hotspot, the second tap uses it", function () {
+      var a = document.createElement("div");
+      var b = document.createElement("div");
+      eq(View.touchTap(a), false, "first tap only looks");
+      ok(a.classList.contains("armed"), "a glows");
+      eq(View.touchTap(a), true, "second tap uses");
+      ok(!a.classList.contains("armed"), "glow goes away");
+      View.touchTap(a);
+      eq(View.touchTap(b), false, "tapping something else only looks at it");
+      ok(!a.classList.contains("armed") && b.classList.contains("armed"), "the glow moves to b");
+      View.touchTap(null);
+      ok(!b.classList.contains("armed"), "tapping nothing clears the glow");
+    });
+
     var box100 = { left: 0, top: 0, right: 100, bottom: 100 };
 
     test("circleHitsRect inside", function () {

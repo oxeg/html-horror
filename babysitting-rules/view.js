@@ -69,6 +69,7 @@ var View = (function () {
 
   // Put a drawing in a box, and make its hotspots reachable with the keyboard too.
   function inject(box, roomId) {
+    armedSpot = null;
     box.innerHTML = ROOMS[roomId] || "";
     var spots = box.querySelectorAll("[data-hotspot]");
     for (var i = 0; i < spots.length; i++) {
@@ -92,6 +93,22 @@ var View = (function () {
 
   function hideLabel() { el.label.className = ""; }
 
+  // On a touch screen the first tap only looks (the thing glows and shows its name);
+  // tapping the same thing again uses it. Returns true when the tap should use it.
+  V.touchTap = function (spot) {
+    if (spot && armedSpot === spot) {
+      spot.classList.remove("armed");
+      armedSpot = null;
+      return true;
+    }
+    if (armedSpot) armedSpot.classList.remove("armed");
+    armedSpot = spot || null;
+    if (spot) spot.classList.add("armed");
+    return false;
+  };
+
+  function isTouch() { return document.documentElement.classList.contains("touch"); }
+
   function bindHotspots(box) {
     box.addEventListener("mousemove", function (e) {
       var spot = hotspotOf(e.target);
@@ -108,11 +125,10 @@ var View = (function () {
     box.addEventListener("click", function (e) {
       var spot = hotspotOf(e.target);
       if (!spot || !inBeam(spot)) {
-        armedSpot = null;
+        V.touchTap(null);
         return hideLabel();
       }
-      if (lastPointer === "touch" && armedSpot !== spot) {
-        armedSpot = spot;
+      if (lastPointer === "touch" && !V.touchTap(spot)) {
         var r = spot.getBoundingClientRect();
         return showLabel(spot, e.clientX || r.left + r.width / 2, e.clientY || r.top);
       }
@@ -273,9 +289,10 @@ var View = (function () {
   function fitNotes() {
     var list = el.notesList;
     var notes = list.querySelectorAll(".note");
-    var maxH = window.innerHeight * 0.82;
+    var maxH = window.innerHeight * (isTouch() ? 0.86 : 0.82);
     var maxW = window.innerWidth * 0.94;
-    for (var size = 20; size > 9; size -= 0.5) {
+    var smallest = isTouch() ? 10 : 9;
+    for (var size = 20; size > smallest; size -= 0.5) {
       list.style.fontSize = size + "px";
       var top = Infinity, bottom = -Infinity, left = Infinity, right = -Infinity;
       for (var i = 0; i < notes.length; i++) {
@@ -311,7 +328,20 @@ var View = (function () {
   }
 
   // Called by the Start and Continue clicks: browsers only allow sound after a click.
+  // On a phone: full screen (no browser bar) and locked sideways. Browsers may say no; that's fine.
+  function goFullScreen() {
+    if (!isTouch()) return;
+    try {
+      var root = document.documentElement;
+      var asked = root.requestFullscreen ? root.requestFullscreen({ navigationUI: "hide" }) : null;
+      Promise.resolve(asked).then(function () {
+        if (screen.orientation && screen.orientation.lock) return screen.orientation.lock("landscape");
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   function startPlaying(result) {
+    goFullScreen();
     sound("unlock");
     sound("loop", "ambient");
     playing = true;
@@ -371,7 +401,7 @@ var View = (function () {
     }
 
     el.clock.textContent = Game.clock();
-    el.notesBtn.style.display = s.notes.length ? "" : "none";
+    el.notesBtn.style.display = s.notes.length && !s.camera ? "" : "none";  // the camera's Close button sits there
     el.wait.textContent = Game.waitLabel();
 
     el.nav.innerHTML = "";
@@ -433,8 +463,10 @@ var View = (function () {
 
     bindHotspots(el.scene);
     bindHotspots(el.cameraArt);
+    if (window.matchMedia && matchMedia("(pointer: coarse)").matches) document.documentElement.classList.add("touch");
     document.addEventListener("pointerdown", function (e) {
       lastPointer = e.pointerType || "mouse";
+      if (lastPointer === "touch") document.documentElement.classList.add("touch");
       if (lastPointer === "touch") moveBeam(e.clientX, e.clientY);
     });
     document.addEventListener("pointermove", function (e) {

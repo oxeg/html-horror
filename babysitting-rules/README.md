@@ -3,6 +3,10 @@
 **Play it first!** Double-click `index.html`. It opens in your browser, and that's it.
 No internet needed.
 
+**On a phone:** open the game's web address in Chrome and turn the phone sideways. Tap
+something once to look at it, tap it again to use it, and drag your finger to move the
+flashlight. Tip: in Chrome's menu, choose "Add to Home screen" to get the game as an app.
+
 Done playing? (Did you find all 10 endings?) Then read on: this whole game is made of
 code, and **you can change all of it.**
 
