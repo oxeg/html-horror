@@ -18,8 +18,6 @@ var View = (function () {
 
   function $(id) { return document.getElementById(id); }
 
-  function words(text) { return text ? text.split(/\s+/).filter(Boolean) : []; }
-
   // A double-click must never count twice: after one action, ignore clicks for a moment,
   // or the second click lands on whatever the first one just put under the mouse.
   var busyUntil = 0;
@@ -51,17 +49,19 @@ var View = (function () {
     el.mute.title = m ? "Sound is off" : "Sound is on";
   }
 
-  // ---- flags: show or hide parts of a drawing ----
+  // ---- showing and hiding parts of a drawing, by name ----
 
-  // data-show-if="a b": visible only when ALL the flags are on.
-  // data-hide-if="a b": hidden when ANY of the flags is on.
-  V.applyFlags = function (root, flags) {
-    var parts = root.querySelectorAll("[data-show-if], [data-hide-if]");
+  // A part shows when the game says its name is showing (Game.partVisible: the hotspot with
+  // that name, or else its own data-hidden), and data-light-only / data-dark-only match the lights.
+  V.applyVisibility = function (box, roomId) {
+    var dark = !!Game.state.dark;
+    var parts = box.querySelectorAll("[data-name], [data-hotspot], [data-light-only], [data-dark-only]");
     for (var i = 0; i < parts.length; i++) {
-      var show = words(parts[i].getAttribute("data-show-if"));
-      var hide = words(parts[i].getAttribute("data-hide-if"));
-      var hidden = show.some(function (f) { return !flags[f]; }) || hide.some(function (f) { return flags[f]; });
-      parts[i].style.display = hidden ? "none" : "";
+      var p = parts[i];
+      var name = p.getAttribute("data-name") || p.getAttribute("data-hotspot");
+      var on = (!name || Game.partVisible(roomId, name, p.hasAttribute("data-hidden")))
+        && !(dark && p.hasAttribute("data-light-only")) && !(!dark && p.hasAttribute("data-dark-only"));
+      p.style.display = on ? "" : "none";
     }
   };
 
@@ -163,11 +163,11 @@ var View = (function () {
 
   function editing() { return typeof EditMode !== "undefined" && EditMode.on; }
 
-  function isDark() { return playing && !!Game.state.flags.dark && !editing(); }
+  function isDark() { return playing && !!Game.state.dark && !editing(); }
 
   function beamRadius() { return window.innerWidth * SETTINGS.flashlightSize / 100; }
 
-  // Is this part of the drawing showing? (applyFlags hides parts with display: none)
+  // Is this part of the drawing showing? (applyVisibility hides parts with display: none)
   function isShown(node) {
     for (var n = node; n && n.nodeType === 1; n = n.parentNode) if (n.style && n.style.display === "none") return false;
     return true;
@@ -386,14 +386,14 @@ var View = (function () {
       inject(el.scene, room);
       drawn = room;
     }
-    V.applyFlags(el.scene, s.flags);
+    V.applyVisibility(el.scene, room);
 
     if (s.camera) {
       if (!drawnCamera) {
         inject(el.cameraArt, Game.scene());
         drawnCamera = true;
       }
-      V.applyFlags(el.cameraArt, s.flags);
+      V.applyVisibility(el.cameraArt, Game.scene());
       el.camera.className = "on";
     } else {
       el.camera.className = "";

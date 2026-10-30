@@ -45,10 +45,11 @@ const ROOM_INFO = {
     exits: ["a"],
     hotspots: {
       trap: { label: "Trap", ending: "X1" },
-      lamp: { label: "Lamp", names: ["lamp", "light"], text: "Click.", setFlags: ["lit"] },
-      kid: { label: "Kid", text: "Goodnight.", notBefore: "19:30", tooEarly: "Too early", setFlags: ["asleep"] },
+      lamp: { label: "Lamp", names: ["lamp", "light"], text: "Click.", show: ["lit"] },
+      kid: { label: "Kid", text: "Goodnight.", notBefore: "19:30", tooEarly: "Too early", show: ["asleep"] },
       cam: { label: "Camera", action: "camera" },
       clock: { label: "Clock", text: "Tick.", minutes: 0 },
+      ghostly: { label: "Ghostly", text: "Boo.", hidden: true },
     },
   },
   feed: {
@@ -62,16 +63,16 @@ const ROOM_INFO = {
 };
 
 const EVENTS = [
-  { id: "e1", time: "19:20", trigger: "now", text: "E1 text", setFlags: ["x"], sound: "click" },
+  { id: "e1", time: "19:20", trigger: "now", text: "E1 text", show: ["x"], lightsOut: true, sound: "click" },
   { id: "e2", time: "19:20", trigger: "now", text: "E2 text" },
-  { id: "late", time: "19:30", trigger: "now", after: "ghost", setFlags: ["lateOn"] },
-  { id: "bed", time: "19:40", trigger: "now", unlessFlag: "asleep", setFlags: ["asleep"], text: "Bed" },
-  { id: "ghost", time: "19:50", trigger: "nextEntry", group: "ghost", notIn: ["closet"], setFlags: ["ghostOn"] },
+  { id: "late", time: "19:30", trigger: "now", after: "ghost", show: ["lateOn"] },
+  { id: "bed", time: "19:40", trigger: "now", unlessShown: "asleep", show: ["asleep"], text: "Bed" },
+  { id: "ghost", time: "19:50", trigger: "nextEntry", group: "ghost", notIn: ["closet"], show: ["ghost"] },
   { id: "glass", time: "20:00", trigger: "inRoom", room: "c", text: "Glass", textAway: "Away" },
-  { id: "stay", time: "20:00", trigger: "now", notIn: ["closet"], setFlags: ["open"] },
+  { id: "stay", time: "20:00", trigger: "now", notIn: ["closet"], show: ["open"] },
   { id: "meow", time: "20:05", trigger: "now", room: "c", text: "Here", textAway: "Away" },
   {
-    id: "peek", time: "20:10", trigger: "beam", group: "face", armFlags: ["face"], setFlags: ["faceClose"],
+    id: "peek", time: "20:10", trigger: "beam", group: "face", armShow: ["face"], show: ["face-close"],
     fallback: 3, fallbackText: "Knock", fallbackSound: "knock", scare: true,
   },
   {
@@ -85,12 +86,12 @@ const EVENTS = [
       labels: { lamp: "Run" },
       hold: {
         button: "Count",
-        steps: [{ text: "1" }, { text: "2", sound: "knock", scare: true }],
+        steps: [{ text: "1" }, { text: "2", sound: "knock", shake: true }],
         labels: { coat: "Open it" },
         keep: "Keep counting",
         fatal: "X3",
       },
-      whenSafe: { text: "Safe", clearFlags: ["x"] },
+      whenSafe: { text: "Safe", hide: ["x"] },
     },
   },
   {
@@ -100,10 +101,10 @@ const EVENTS = [
   {
     id: "pick", time: "20:50", trigger: "now",
     danger: {
-      steps: [{ room: "c", hotspot: "kid", setFlags: ["carry"] }, { room: ["b", "closet"] }],
+      steps: [{ room: "c", hotspot: "kid", then: { show: ["carry"] } }, { room: ["b", "closet"] }],
       deadline: 7,
       late: "X2",
-      fatal: [{ hotspot: "door", unlessFlag: "carry", ending: "X3" }, { hotspot: "kid", ending: "X1" }],
+      fatal: [{ hotspot: "door", unlessShown: "carry", ending: "X3" }, { hotspot: "kid", ending: "X1" }],
     },
   },
   {

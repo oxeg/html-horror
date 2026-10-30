@@ -8,30 +8,50 @@ if (typeof document !== "undefined") {
     }
     function hidden(g) { return g.style.display === "none"; }
 
-    test("applyFlags show-if needs all flags", function () {
-      var p = part('data-show-if="a b"');
-      View.applyFlags(p.box, { a: true });
-      ok(hidden(p.g), "hidden with only a");
-      View.applyFlags(p.box, { a: true, b: true });
-      ok(!hidden(p.g), "shown with a and b");
+    // "test-thing" is a name no hotspot in the real story has, so its data-hidden decides.
+    test("applyVisibility: data-hidden starts hidden, show and hide change it", function () {
+      Game.useStorage(false);
+      Game.newGame();
+      var p = part('data-name="test-thing" data-hidden');
+      View.applyVisibility(p.box, "entrance");
+      ok(hidden(p.g), "hidden at the start");
+      Game.setShown("test-thing", true);
+      View.applyVisibility(p.box, "entrance");
+      ok(!hidden(p.g), "shown");
+      Game.setShown("test-thing", false);
+      View.applyVisibility(p.box, "entrance");
+      ok(hidden(p.g), "hidden again");
+      var q = part('data-name="test-thing"');
+      View.applyVisibility(q.box, "entrance");
+      ok(hidden(q.g), "a part without data-hidden hides too");
     });
 
-    test("applyFlags hide-if hides on any flag", function () {
-      var p = part('data-hide-if="a b"');
-      View.applyFlags(p.box, {});
-      ok(!hidden(p.g), "shown with none");
-      View.applyFlags(p.box, { b: true });
-      ok(hidden(p.g), "hidden with b");
+    test("applyVisibility: data-light-only goes when the lights go out", function () {
+      Game.useStorage(false);
+      Game.newGame();
+      var p = part('data-name="test-glow" data-light-only');
+      View.applyVisibility(p.box, "entrance");
+      ok(!hidden(p.g), "shown while the lights are on");
+      Game.setDark(true);
+      View.applyVisibility(p.box, "entrance");
+      ok(hidden(p.g), "hidden in the dark");
+      Game.setDark(false);
+      View.applyVisibility(p.box, "entrance");
+      ok(!hidden(p.g), "back when the lights come on");
     });
 
-    test("applyFlags handles both on one element", function () {
-      var p = part('data-show-if="a" data-hide-if="b"');
-      View.applyFlags(p.box, { a: true });
-      ok(!hidden(p.g), "shown with a");
-      View.applyFlags(p.box, { a: true, b: true });
-      ok(hidden(p.g), "hidden with a and b");
-      View.applyFlags(p.box, { b: true });
-      ok(hidden(p.g), "hidden without a");
+    test("applyVisibility: data-dark-only shows only in the dark", function () {
+      Game.useStorage(false);
+      Game.newGame();
+      var p = part('data-name="test-marks" data-dark-only');
+      View.applyVisibility(p.box, "entrance");
+      ok(hidden(p.g), "hidden while the lights are on");
+      Game.setDark(true);
+      View.applyVisibility(p.box, "entrance");
+      ok(!hidden(p.g), "shown in the dark");
+      Game.setShown("test-marks", false);
+      View.applyVisibility(p.box, "entrance");
+      ok(hidden(p.g), "hide still wins in the dark");
     });
 
     test("capitalize starts a sentence with a capital letter", function () {

@@ -69,7 +69,7 @@ first letter big by itself when a sentence starts with a name.
 Everything scary is in the `EVENTS` list in `story.js`. Each event has a `time`:
 
 ```js
-id: "lightsOut", time: "21:00", trigger: "now", setFlags: ["dark"], sound: "click",
+id: "lightsOut", time: "21:00", trigger: "now", lightsOut: true, sound: "click",
 ```
 
 Change `"21:00"` to `"20:45"` and the lights go out earlier! (Times use the 24-hour
@@ -108,9 +108,9 @@ While you're playing, press **E**. The lights come on, every clickable thing get
 box with its name, and a panel lets you:
 
 - jump to any room and any time (type a time like `22:05`, then press Go)
-- switch flags on and off. Flags are the switches that show or hide things: tick
-  `catOutside` and the cat appears on the balcony, tick `masterOpen` and the bedroom door
-  opens.
+- show or hide things by their names: tick `cat-outside` and the cat appears on the
+  balcony, tick `door-open` (and untick `door-closed`) and the bedroom door opens, tick
+  `lights out` and the lamps go off.
 
 Press **E** again to go back to playing.
 

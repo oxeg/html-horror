@@ -28,7 +28,7 @@ test("look costs lookMinutes and returns text", function () {
   Game.go("c");
   var r = Game.click("lamp");
   ok(r.texts.indexOf("Click.") >= 0, "lamp text");
-  eq(Game.state.flags.lit, true);
+  eq(Game.state.shown.lit, true);
   eq(Game.state.time, 1160);
 });
 
@@ -66,7 +66,7 @@ test("notBefore shows tooEarly and applies nothing", function () {
   var r = Game.click("kid");
   eq(r.texts[0], "Too early");
   ok(r.texts.indexOf("Goodnight.") < 0, "no goodnight text");
-  eq(Game.state.flags.asleep, undefined);
+  eq(Game.state.shown.asleep, undefined);
 });
 
 test("camera opens overlay scene", function () {
@@ -106,6 +106,46 @@ test("roomHas finds data-name and data-hotspot", function () {
   eq(Game.roomHas("b", "ghost"), true);
   eq(Game.roomHas("b", "door"), true);
   eq(Game.roomHas("a", "ghost"), false);
+});
+
+test("names: the first stored name decides, id first", function () {
+  Game.newGame();
+  eq(Game.isVisible(["a", "b"], true), false);
+  Game.setShown("b", true);  eq(Game.isVisible(["a", "b"], true), true);
+  Game.setShown("a", false); eq(Game.isVisible(["a", "b"], true), false);
+});
+
+test("a hidden hotspot can't be used", function () {
+  Game.newGame(); Game.go("c");
+  var t = Game.state.time;
+  eq(Game.click("ghostly").texts, []);
+  eq(Game.state.time, t);
+});
+
+test("a drawing part follows the hotspot with its name", function () {
+  Game.newGame();
+  eq(Game.partVisible("c", "ghostly", false), false);
+  Game.setShown("ghostly", true);
+  eq(Game.partVisible("c", "ghostly", false), true);
+});
+
+test("a drawing part with no hotspot follows its data-hidden", function () {
+  Game.newGame();
+  eq(Game.partVisible("b", "ghost", true), false);
+  eq(Game.partVisible("b", "picture", false), true);
+  Game.setShown("ghost", true);
+  eq(Game.partVisible("b", "ghost", true), true);
+});
+
+test("isShown: the stored value, then the hotspot, then a hidden drawing part, else shown", function () {
+  Game.newGame();
+  eq(Game.isShown("ghostly"), false, "a hidden hotspot");
+  eq(Game.isShown("light"), true, "a hotspot by one of its names");
+  eq(Game.isShown("ghost"), false, "a data-hidden drawing part");
+  eq(Game.isShown("anything"), true, "a name nothing hides");
+  Game.setShown("ghost", true);
+  Game.setShown("light", false);
+  eq([Game.isShown("ghost"), Game.isShown("light")], [true, false], "the stored value wins");
 });
 
 test("formatTime/parseTime round-trip", function () {

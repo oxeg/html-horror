@@ -7,7 +7,7 @@ function playStep(step) {
   if (p[0] === "beam") return Game.beamTouched(p[1]);
   if (p[0] === "close") return Game.closeCamera();
   if (p[0] === "jump") return Game.editJump(p[2], p[1]);
-  if (p[0] === "flag") return Game.setFlag(p[1], p[2] === "on");
+  if (p[0] === "show") return Game.setShown(p[1], p[2] === "on");
   throw new Error("unknown step: " + step);
 }
 
@@ -62,10 +62,10 @@ test("rule 1 is still survivable when it first happens after 21:50", function ()
   Game.newGame();
   ["jump 21:05 bath", "wait", "wait", "wait", "go entrance"].forEach(playStep);
   eq(Game.state.danger && Game.state.danger.id, "rule1", "rule 1 starts in the hallway");
-  eq(Game.state.flags.masterOpen, undefined, "the bedroom door is still closed");
+  eq(Game.state.shown["door-open"], undefined, "the bedroom door is still closed");
   ["go master-door", "click door-closed", "click walk-in-door", "wait", "wait", "wait"].forEach(playStep);
   eq(Game.state.ending, null, "made it to the walk-in");
   ["go master", "go master-door", "wait", "wait"].forEach(playStep);
   eq(Game.state.ending, null);
-  eq(Game.state.flags.masterOpen, true, "afterwards the door is found open");
+  eq(Game.state.shown["door-open"], true, "afterwards the door is found open");
 });

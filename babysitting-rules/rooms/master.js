@@ -40,14 +40,14 @@ ROOMS["master"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   </g>
 
   <!-- the face in the window (rule 3). Far away first... -->
-  <g data-name="face" data-show-if="face">
+  <g data-name="face" data-hidden>
     <ellipse cx="852" cy="292" rx="30" ry="40" fill="var(--skin)" opacity="0.55"/>
     <ellipse cx="841" cy="286" rx="5" ry="8" fill="var(--void)"/>
     <ellipse cx="863" cy="286" rx="5" ry="8" fill="var(--void)"/>
     <rect x="843" y="310" width="18" height="3" fill="var(--void)" opacity="0.8"/>
   </g>
   <!-- ...then pressed right against the glass -->
-  <g data-name="face-close" data-show-if="faceClose" data-scare>
+  <g data-name="face-close" data-hidden data-scare>
     <ellipse cx="800" cy="298" rx="50" ry="88" fill="var(--skin)"/>
     <ellipse cx="781" cy="282" rx="9" ry="15" fill="var(--void)"/>
     <ellipse cx="819" cy="284" rx="9" ry="13" fill="var(--void)"/>
@@ -109,7 +109,7 @@ ROOMS["master"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sli
   </g>
 
   <!-- bedside lamps, and their light while the lights still work -->
-  <g data-name="lamp-glow" data-hide-if="dark">
+  <g data-name="lamp-glow" data-light-only>
     <circle cx="545" cy="512" r="160" fill="url(#master-lamp-light)"/>
     <circle cx="1055" cy="512" r="160" fill="url(#master-lamp-light)"/>
   </g>

@@ -78,7 +78,7 @@ test("hold steps play texts sounds and shake, then resolve", function () {
   eq(r.shake, true);
   ok(contains(r.sounds, "knock"), "knock");
   eq(Game.state.danger, null);
-  eq(Game.state.flags.x, undefined);
+  eq(Game.state.shown.x, false, "whenSafe hides x");
 });
 
 test("any other action during hold is hold.fatal", function () {
@@ -140,18 +140,18 @@ test("room-only fatal matches any hotspot there", function () {
   eq(Game.click("kid").ending, "X1");
 });
 
-test("step setFlags and array rooms", function () {
+test("a step's then and array rooms", function () {
   Game.newGame();
   Game.editJump("c", "20:50");
   Game.click("lamp");
   Game.click("kid");
-  eq(Game.state.flags.carry, true);
+  eq(Game.state.shown.carry, true);
   Game.go("a");
   Game.go("b");
   eq(Game.state.danger, null);
 });
 
-test("unlessFlag fatal", function () {
+test("unlessShown fatal", function () {
   Game.newGame();
   Game.editJump("b", "20:50");
   Game.click("note");
@@ -180,17 +180,17 @@ test("armed trigger waits for the danger to end", function () {
   Game.newGame();
   Game.editJump("a", "20:19");
   delete Game.state.fired.ghost;
-  Game.setFlag("ghostOn", false);
+  Game.setShown("ghost", false);
   Game.wait();
   eq(Game.state.danger.id, "hide");
   Game.go("b");
-  eq(Game.state.flags.ghostOn, undefined);
+  eq(Game.state.shown.ghost, false);
   Game.click("door");
   Game.wait();
   Game.wait();
   eq(Game.state.danger, null);
   Game.go("b");
-  eq(Game.state.flags.ghostOn, true);
+  eq(Game.state.shown.ghost, true);
 });
 
 test("dangerLevel rises with used actions", function () {
@@ -266,6 +266,18 @@ test("load ignores a save that names an unknown room", function () {
     storage.data["babysitting-rules:save"] = JSON.stringify(bad);
     eq(Game.hasSave(), false);
     eq(Game.continueGame(), false);
+  });
+});
+
+test("load ignores an old save with flags instead of shown", function () {
+  var storage = fakeStorage(false);
+  withStorage(storage, function () {
+    Game.newGame();
+    var old = JSON.parse(storage.data["babysitting-rules:save"]);
+    old.state.flags = {};
+    delete old.state.shown;
+    storage.data["babysitting-rules:save"] = JSON.stringify(old);
+    eq(Game.hasSave(), false);
   });
 });
 

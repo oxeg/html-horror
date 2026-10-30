@@ -1,5 +1,5 @@
-// engine.js: the game machine. It keeps track of the clock, the room, the flags,
-// the events and the dangers. It never draws anything (view.js does that), so the
+// engine.js: the game machine. It keeps track of the clock, the room, what is shown
+// or hidden, the events and the dangers. It never draws anything (view.js does that), so the
 // tests can play the whole game without a browser. You don't need to change this
 // file: everything you'd want to change lives in story.js.
 
@@ -26,13 +26,6 @@ var Game = (function () {
   function emptyResult() { return { texts: [], sounds: [], shake: false, ending: null }; }
   function copy(value) { return JSON.parse(JSON.stringify(value)); }
 
-  function setFlags(list, on) {
-    (list || []).forEach(function (name) {
-      if (on) G.state.flags[name] = true;
-      else delete G.state.flags[name];
-    });
-  }
-
   function eventById(id) {
     return EVENTS.filter(function (ev) { return ev.id === id; })[0] || null;
   }
@@ -45,16 +38,18 @@ var Game = (function () {
     return G.state.camera ? overlayRoom() : G.state.room;
   }
 
-  // The id of the hotspot a name points at in this scene: the exact id first,
+  // The id of the hotspot a name points at in a room: the exact id first,
   // then the first hotspot whose "names" list has it.
-  function hotspotId(name) {
-    var info = ROOM_INFO[scene()];
+  function findHotspot(roomId, name) {
+    var info = ROOM_INFO[roomId];
     var all = info && info.hotspots;
     if (!all) return null;
     if (all[name]) return name;
     for (var id in all) if (namesOf(id, all[id]).indexOf(name) >= 0) return id;
     return null;
   }
+
+  function hotspotId(name) { return findHotspot(scene(), name); }
 
   function namesOf(id, h) { return h.names || [id]; }
 
@@ -74,12 +69,60 @@ var Game = (function () {
     return svg.indexOf('data-name="' + name + '"') >= 0 || svg.indexOf('data-hotspot="' + name + '"') >= 0;
   }
 
+  // ---- showing and hiding, by name ----
+
+  function mark(list, on) {
+    (list || []).forEach(function (name) { G.state.shown[name] = on; });
+  }
+
+  // The first of these names that was shown or hidden decides; if none was, the default does.
+  function isVisible(names, hiddenByDefault) {
+    for (var i = 0; i < names.length; i++) if (G.state.shown[names[i]] !== undefined) return G.state.shown[names[i]];
+    return !hiddenByDefault;
+  }
+
+  // A drawing part follows the hotspot with its name in that room, or else its own data-hidden.
+  function partVisible(roomId, name, hiddenAttr) {
+    var id = findHotspot(roomId, name);
+    var h = id && ROOM_INFO[roomId].hotspots[id];
+    return h ? isVisible(namesOf(id, h), h.hidden) : isVisible([name], hiddenAttr);
+  }
+
+  // Is this name showing? What show/hide stored, else the first hotspot with that name,
+  // else not if a drawing marks that part data-hidden, else yes.
+  function isShown(name) {
+    if (G.state.shown[name] !== undefined) return G.state.shown[name];
+    for (var room in ROOM_INFO) {
+      var id = findHotspot(room, name);
+      if (id) return !ROOM_INFO[room].hotspots[id].hidden;
+    }
+    var drawings = typeof ROOMS !== "undefined" ? ROOMS : {};
+    for (var d in drawings) {
+      var tags = String(drawings[d]).match(/<[^>]+>/g) || [];
+      for (var i = 0; i < tags.length; i++) {
+        if (tags[i].indexOf('data-name="' + name + '"') >= 0 && /\sdata-hidden[\s>\/=]/.test(tags[i])) return false;
+      }
+    }
+    return true;
+  }
+
+  // A moment: { text, sound, shake, show: [names], hide: [names] }. Without r it only shows and hides.
+  function applyMoment(m, r) {
+    if (!m) return;
+    if (r && m.text) r.texts.push(m.text);
+    if (r && m.sound) r.sounds.push(m.sound);
+    if (r && m.shake) r.shake = true;
+    mark(m.show, true);
+    mark(m.hide, false);
+  }
+
   function freshState() {
     return {
       time: parseTime(SETTINGS.startTime),
       room: SETTINGS.startRoom,
       camera: false,
-      flags: {},
+      shown: {},
+      dark: false,
       notes: [],
       fired: {},
       armed: {},
@@ -109,7 +152,7 @@ var Game = (function () {
 
   // A save from before she edited story.js may name things that no longer exist.
   function validState(s) {
-    if (!s || typeof s.time !== "number" || !ROOM_INFO[s.room] || !s.flags || !s.fired) return false;
+    if (!s || typeof s.time !== "number" || !ROOM_INFO[s.room] || !s.shown || !s.fired) return false;
     for (var id in s.fired) if (!eventById(id)) return false;
     if (s.danger && !(s.danger.def && (eventById(s.danger.id) || {}).danger)) return false;
     if (s.ending && !ENDINGS[s.ending]) return false;
@@ -152,10 +195,7 @@ var Game = (function () {
   }
 
   function resolve(r) {
-    var safe = dangerDef().whenSafe || {};
-    if (safe.text) r.texts.push(safe.text);
-    setFlags(safe.setFlags, true);
-    setFlags(safe.clearFlags, false);
+    applyMoment(dangerDef().whenSafe, r);
     G.state.danger = null;
   }
 
@@ -164,9 +204,7 @@ var Game = (function () {
     var d = G.state.danger;
     var D = dangerDef();
     while (d.step < D.steps.length && stepDone(D.steps[d.step], act)) {
-      var step = D.steps[d.step];
-      setFlags(step.setFlags, true);
-      if (step.text) r.texts.push(step.text);
+      applyMoment(D.steps[d.step].then, r);
       d.step++;
       act = {};
     }
@@ -188,7 +226,7 @@ var Game = (function () {
       var f = list[i];
       if (f.hotspot && names.indexOf(f.hotspot) < 0) continue;
       if (f.room && f.room !== roomId) continue;
-      if (f.unlessFlag && G.state.flags[f.unlessFlag]) continue;
+      if (f.unlessShown && isShown(f.unlessShown)) continue;
       return f.ending;
     }
     return null;
@@ -209,11 +247,7 @@ var Game = (function () {
   function holdStep(r) {
     var d = G.state.danger;
     var hold = dangerDef().hold;
-    var step = hold.steps[d.held] || {};
-    if (step.text) r.texts.push(step.text);
-    if (step.sound) r.sounds.push(step.sound);
-    if (step.scare) r.shake = true;
-    setFlags(step.setFlags, true);
+    applyMoment(hold.steps[d.held], r);
     d.held++;
     if (d.held >= hold.steps.length) resolve(r);
   }
@@ -226,18 +260,15 @@ var Game = (function () {
   function fire(ev, r, byFallback) {
     G.checkpoint = { eventId: ev.id, state: copy(G.state) };
     G.state.fired[ev.id] = true;
-    if (ev.unlessFlag && G.state.flags[ev.unlessFlag]) return;
-    setFlags(ev.setFlags, true);
-    setFlags(ev.clearFlags, false);
+    if (ev.unlessShown && isShown(ev.unlessShown)) return;
+    if (ev.lightsOut) G.state.dark = true;
     var text = ev.room && ev.textAway && G.state.room !== ev.room ? ev.textAway : ev.text;
     var sound = ev.sound;
     if (byFallback) {
       text = ev.fallbackText || text;
       sound = ev.fallbackSound || sound;
     }
-    if (text) r.texts.push(text);
-    if (sound) r.sounds.push(sound);
-    if (ev.scare) r.shake = true;
+    applyMoment({ text: text, sound: sound, shake: ev.scare, show: ev.show, hide: ev.hide }, r);
     if (ev.ending) endGame(ev.ending, r);
     else if (ev.danger) startDanger(ev, r);
   }
@@ -262,7 +293,7 @@ var Game = (function () {
         if (!G.state.armed[ev.id]) {
           G.state.armed[ev.id] = true;
           G.state.actionsHere = 0;
-          setFlags(ev.armFlags, true);
+          mark(ev.armShow, true);
         } else if (!blocked && ev.fallback && roomHas(G.state.room, ev.group) && G.state.actionsHere >= ev.fallback) {
           fire(ev, r, true);
         }
@@ -293,8 +324,8 @@ var Game = (function () {
     return r;
   }
 
-  // Edit mode: jump to a time. Earlier events count as done (their flags are
-  // applied, but no texts, sounds or dangers); later ones will happen again.
+  // Edit mode: jump to a time. Earlier events count as done (what they show and hide
+  // is applied, but no texts, sounds or dangers); later ones will happen again.
   function editJump(roomId, time) {
     var t = parseTime(time);
     var s = G.state;
@@ -308,14 +339,10 @@ var Game = (function () {
       if (parseTime(ev.time) < t) {
         if (s.fired[ev.id]) return;
         s.fired[ev.id] = true;
-        setFlags(ev.armFlags, true);
-        setFlags(ev.setFlags, true);
-        setFlags(ev.clearFlags, false);
-        var safe = ev.danger && ev.danger.whenSafe;
-        if (safe) {
-          setFlags(safe.setFlags, true);
-          setFlags(safe.clearFlags, false);
-        }
+        mark(ev.armShow, true);
+        if (ev.lightsOut) s.dark = true;
+        applyMoment(ev);
+        applyMoment(ev.danger && ev.danger.whenSafe);
       } else {
         delete s.fired[ev.id];
         delete s.armed[ev.id];
@@ -357,8 +384,8 @@ var Game = (function () {
   function click(name) {
     var r = emptyResult();
     var id = hotspotId(name);
-    if (G.state.ending || !id) return r;
-    var h = hotspot(id);
+    var h = id && hotspot(id);
+    if (G.state.ending || !h || !isVisible(namesOf(id, h), h.hidden)) return r;  // you can't use what you can't see
     var names = namesOf(id, h);
     var room = G.state.room;
     var act = { hotspot: id, names: names, room: room };
@@ -384,10 +411,8 @@ var Game = (function () {
       spend(minutes);
       return after(r, false, act);
     }
-    var said = D && byName(D.say, names);
-    if (said || h.text) r.texts.push(said || h.text);
     if (h.note && G.state.notes.indexOf(h.note) < 0) G.state.notes.push(h.note);
-    setFlags(h.setFlags, true);
+    applyMoment({ text: (D && byName(D.say, names)) || h.text, show: h.show, hide: h.hide }, r);
     if (h.action === "camera") G.state.camera = true;
     if (h.goTo) enter(h.goTo);
     spend(minutes);
@@ -454,7 +479,11 @@ var Game = (function () {
   G.hasSave = function () { return !!loadSave(); };
   G.exits = function () { return (ROOM_INFO[G.state.room].exits || []).slice(); };
   G.clock = function () { return formatTime(G.state.time); };
-  G.setFlag = function (name, on) { setFlags([name], on); };
+  G.setShown = function (name, on) { G.state.shown[name] = !!on; };
+  G.setDark = function (on) { G.state.dark = !!on; };
+  G.isShown = isShown;
+  G.isVisible = isVisible;
+  G.partVisible = partVisible;
   G.useStorage = function (on) { storageOn = on; };
   G.go = go;
   G.click = click;

@@ -37,7 +37,7 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
   <polygon points="1392,300 1428,292 1428,640 1392,620" fill="var(--furniture)" opacity="0.35"/>
 
   <!-- the not-sister, standing in the corridor. Too still. -->
-  <g data-hotspot="not-sister" data-show-if="notSister">
+  <g data-hotspot="not-sister" data-hidden>
     <rect x="1326" y="450" width="96" height="300" fill="var(--void)" opacity="0"/>
     <path d="M1408,472 Q1406,438 1374,436 Q1342,438 1340,472 L1338,520 L1410,520 Z" fill="var(--void)"/>
     <ellipse cx="1374" cy="482" rx="28" ry="33" fill="var(--skin)"/>
@@ -116,7 +116,7 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
     <rect x="702" y="635" width="196" height="5" fill="var(--glow)" opacity="0.35"/>
     <polygon points="702,640 898,640 912,654 688,654" fill="var(--glow)" opacity="0.07"/>
     <!-- while "Mom" rings downstairs, two shadows stand outside this door -->
-    <g data-name="feet" data-show-if="feedMom" fill="var(--void)" opacity="0.9">
+    <g data-name="feet" data-hidden fill="var(--void)" opacity="0.9">
       <rect x="758" y="635" width="30" height="5"/>
       <rect x="812" y="635" width="30" height="5"/>
       <polygon points="758,640 788,640 792,654 752,654"/>
@@ -125,7 +125,7 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
   </g>
 
   <!-- the note that slides under the door (rule 7) -->
-  <g data-hotspot="fake-note" data-show-if="fakeNote">
+  <g data-hotspot="fake-note" data-hidden>
     <polygon points="742,644 852,638 868,674 736,682" fill="var(--glow)" opacity="0.6"/>
     <polygon points="760,652 836,648 837,652 761,656" fill="var(--void)" opacity="0.5"/>
     <polygon points="758,662 846,657 847,661 759,666" fill="var(--void)" opacity="0.5"/>
@@ -142,7 +142,7 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
     <rect x="964" y="443" width="34" height="3" rx="1.5" fill="var(--void)" opacity="0.6"/>
     <rect x="964" y="450" width="34" height="3" rx="1.5" fill="var(--void)" opacity="0.6"/>
     <!-- ...and when it rings, the screen lights up the wall -->
-    <g data-name="doorbell-glow" data-show-if="ringing">
+    <g data-name="doorbell-glow" data-hidden>
       <circle cx="981" cy="367" r="140" fill="url(#entrance-doorbell-light)" pointer-events="none"/>
       <rect x="956" y="344" width="50" height="46" rx="3" fill="var(--skin)" opacity="0.8"/>
       <rect x="956" y="356" width="50" height="2" fill="var(--void)" opacity="0.3"/>
@@ -161,7 +161,7 @@ ROOMS["entrance"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid s
   </g>
 
   <!-- lamp on the shoe cabinet, and its light while the lights still work -->
-  <g data-name="lamp-glow" data-hide-if="dark" pointer-events="none">
+  <g data-name="lamp-glow" data-light-only pointer-events="none">
     <circle cx="1112" cy="468" r="190" fill="url(#entrance-lamp-light)"/>
     <ellipse cx="1112" cy="664" rx="140" ry="26" fill="var(--glow)" opacity="0.1"/>
   </g>

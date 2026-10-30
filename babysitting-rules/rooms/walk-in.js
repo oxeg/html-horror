@@ -55,7 +55,7 @@ ROOMS["walk-in"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   <rect x="874.5" y="444" width="3" height="8" fill="var(--glow)" opacity="0.7"/>
 
   <!-- scratched into the door, low down, where a kid would sit. Only your flashlight finds it. -->
-  <g data-name="scratches" data-show-if="dark" fill="var(--accent)" opacity="0.8">
+  <g data-name="scratches" data-dark-only fill="var(--accent)" opacity="0.8">
     <polygon points="734,498 732.3,522 735,546 736.7,522"/>
     <polygon points="733,499 739.9,503.1 748,503 741.1,498.9"/>
     <polygon points="748,503 750.6,512.5 757,520 754.4,510.5"/>
@@ -86,7 +86,7 @@ ROOMS["walk-in"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
     <rect x="704" y="634" width="192" height="6" fill="var(--glow)" opacity="0.7"/>
   </g>
   <!-- something is standing right outside the door (rule 1) -->
-  <g data-name="shadow" data-show-if="shadow" fill="var(--void)">
+  <g data-name="shadow" data-hidden fill="var(--void)">
     <rect x="756" y="634" width="32" height="6"/>
     <rect x="812" y="634" width="32" height="6"/>
     <polygon points="756,640 788,640 774,740 694,740" opacity="0.7"/>

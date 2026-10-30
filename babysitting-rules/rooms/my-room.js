@@ -23,7 +23,7 @@ ROOMS["my-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   <polygon points="150,172 300,208 300,705 150,802" fill="var(--void)"/>
 
   <!-- the not-sister, standing in the doorway. Too still. -->
-  <g data-hotspot="not-sister" data-show-if="notSister">
+  <g data-hotspot="not-sister" data-hidden>
     <rect x="178" y="450" width="96" height="300" fill="var(--void)" opacity="0"/>
     <path d="M192,472 Q194,438 226,436 Q258,438 260,472 L262,520 L190,520 Z" fill="var(--void)"/>
     <ellipse cx="226" cy="482" rx="28" ry="33" fill="var(--skin)"/>
@@ -99,7 +99,7 @@ ROOMS["my-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   </g>
 
   <!-- desk lamp, and its light while the lights still work -->
-  <g data-name="lamp-glow" data-hide-if="dark">
+  <g data-name="lamp-glow" data-light-only>
     <circle cx="640" cy="440" r="180" fill="url(#my-room-lamp-light)"/>
   </g>
   <ellipse cx="660" cy="492" rx="18" ry="4" fill="var(--furniture)"/>
@@ -123,14 +123,14 @@ ROOMS["my-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid sl
   </g>
 
   <!-- the face in the window (rule 3). Far away first... -->
-  <g data-name="face" data-show-if="face">
+  <g data-name="face" data-hidden>
     <ellipse cx="872" cy="300" rx="30" ry="40" fill="var(--skin)" opacity="0.55"/>
     <ellipse cx="861" cy="294" rx="5" ry="8" fill="var(--void)"/>
     <ellipse cx="883" cy="294" rx="5" ry="8" fill="var(--void)"/>
     <rect x="863" y="318" width="18" height="3" fill="var(--void)" opacity="0.8"/>
   </g>
   <!-- ...then pressed right against the glass -->
-  <g data-name="face-close" data-show-if="faceClose" data-scare>
+  <g data-name="face-close" data-hidden data-scare>
     <ellipse cx="820" cy="306" rx="50" ry="88" fill="var(--skin)"/>
     <ellipse cx="801" cy="290" rx="9" ry="15" fill="var(--void)"/>
     <ellipse cx="839" cy="292" rx="9" ry="13" fill="var(--void)"/>

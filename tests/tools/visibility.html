@@ -30,7 +30,7 @@
     if (p[0] === "beam") return Game.beamTouched(p[1]);
     if (p[0] === "close") return Game.closeCamera();
     if (p[0] === "jump") return Game.editJump(p[2], p[1]);
-    if (p[0] === "flag") return Game.setFlag(p[1], p[2] === "on");
+    if (p[0] === "show") return Game.setShown(p[1], p[2] === "on");
     throw new Error("unknown step: " + step);
   }
 

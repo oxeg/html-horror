@@ -75,7 +75,8 @@ Mom & Dad`,
 //    goTo:   a room it takes you to
 //    note:   a note it lets you read
 //    ending: an ending it causes (careful!)
-//    setFlags: switches it turns on, like ["sisterAsleep"]
+//    show / hide: things it shows or hides, by their names, like ["sister-asleep"]
+//    hidden: true = it starts hidden (an event or a click shows it)
 //    minutes:  how long it takes (instead of lookMinutes)
 //    notBefore + tooEarly: it only works after that time
 // ---------------------------------------------------------------------
@@ -88,8 +89,8 @@ const ROOM_INFO = {
       "doorbell": { label: "Doorbell screen", action: "camera" },
       "light-switch": { label: "Light switch", text: "Click. Click." },
       "coats": { label: "Coat hooks", text: "Mom's red coat is gone. So is Dad's." },
-      "fake-note": { label: "A note under the door", note: "fake" },
-      "not-sister": { label: `${SISTER_NAME}?`, ending: "E1" },
+      "fake-note": { label: "A note under the door", note: "fake", hidden: true },
+      "not-sister": { label: `${SISTER_NAME}?`, ending: "E1", hidden: true },
     },
   },
   living: {
@@ -103,9 +104,9 @@ const ROOM_INFO = {
       "cat-bowl": { label: "Cat bowl", text: `You fill ${CAT_NAME}'s bowl. She's asleep in her tree house and doesn't come.` },
       "window": { label: "Window", text: "The city lights, far away." },
       "balcony-door": { label: "Balcony door", text: "Locked. It's cold out there, and there's no balcony light." },
-      "reflection": { label: "Your reflection", ending: "E2" },
-      "cat-outside": { label: `${CAT_NAME}?`, text: "She stares at you through the glass. Her eyes shine in your light." },
-      "not-sister": { label: `${SISTER_NAME}?`, ending: "E1" },
+      "reflection": { label: "Your reflection", ending: "E2", hidden: true },
+      "cat-outside": { label: `${CAT_NAME}?`, text: "She stares at you through the glass. Her eyes shine in your light.", hidden: true },
+      "not-sister": { label: `${SISTER_NAME}?`, ending: "E1", hidden: true },
     },
   },
   "my-room": {
@@ -116,7 +117,7 @@ const ROOM_INFO = {
       "desk": { label: "Desk", text: "Homework. It can wait until tomorrow." },
       "posters": { label: "Posters", text: "Your favorite book covers. The scary ones." },
       "window": { label: "Window", text: "Other buildings, other windows. Most of them are dark." },
-      "not-sister": { label: `${SISTER_NAME}?`, ending: "E1" },
+      "not-sister": { label: `${SISTER_NAME}?`, ending: "E1", hidden: true },
     },
   },
   "sister-room": {
@@ -126,11 +127,12 @@ const ROOM_INFO = {
       "sister-awake": {
         label: SISTER_NAME,
         text: `You tuck ${SISTER_NAME} in. "Night night." She's asleep in seconds.`,
-        setFlags: ["sisterAsleep"],
+        hide: ["sister-awake", "blanket"],
+        show: ["sister-asleep"],
         notBefore: "20:00",
         tooEarly: `You play a board game with ${SISTER_NAME}. She wins. Twice.`,
       },
-      "sister-asleep": { label: `${SISTER_NAME} (asleep)`, text: `${SISTER_NAME} is fast asleep.` },
+      "sister-asleep": { label: `${SISTER_NAME} (asleep)`, text: `${SISTER_NAME} is fast asleep.`, hidden: true },
       "toys": { label: "Toys", text: "A pile of stuffed animals. One of them is missing an eye." },
       "night-light": { label: "Night-light", text: "A little moon. It keeps the monsters away. Supposedly." },
       "window": { label: "Window", text: "Just the dark, and your own face in the glass." },
@@ -141,8 +143,8 @@ const ROOM_INFO = {
     exits: ["entrance"],
     hotspots: {
       "door-closed": { label: "Parents' bedroom", text: "You slip inside.", goTo: "master" },
-      "door-open": { label: "Go in", ending: "E3" },
-      "not-sister": { label: `${SISTER_NAME}?`, ending: "E1" },
+      "door-open": { label: "Go in", ending: "E3", hidden: true },
+      "not-sister": { label: `${SISTER_NAME}?`, ending: "E1", hidden: true },
     },
   },
   master: {
@@ -207,7 +209,9 @@ const ROOM_INFO = {
 //           "inRoom"    = when you are in (or walk into) the room named in room
 //           "beam"      = when your flashlight finds the drawing named in group
 //  text:    what pops up.  sound: a sound to play
-//  setFlags / clearFlags: switches to turn on or off
+//  show / hide: things to show or hide, by their names, like ["cat-outside"]
+//  lightsOut: true = the lights go out (and you need your flashlight)
+//  unlessShown: skip the event if that thing is already showing
 //  after:   the id of another event that has to happen first
 //
 //  A danger is the scary part. You have a few clicks (the deadline) to do
@@ -215,7 +219,7 @@ const ROOM_INFO = {
 //  hold is what you have to keep doing once you're safe (Wait, or Count).
 //  During a hold, leaving (or clicking what its labels name, like the door) ends the game;
 //  clicking anything else just shows its keep text.
-//  whenSafe is what happens when you make it.
+//  whenSafe is what happens when you make it. A step's then is what happens when you do it.
 // ---------------------------------------------------------------------
 const EVENTS = [
   {
@@ -223,17 +227,18 @@ const EVENTS = [
     text: "Mom and Dad just left. The door clicks shut behind them.<br>Mom said to read the note on the fridge.",
   },
   {
-    id: "bedtime", time: "20:30", trigger: "now", unlessFlag: "sisterAsleep", setFlags: ["sisterAsleep"],
+    id: "bedtime", time: "20:30", trigger: "now", unlessShown: "sister-asleep",
+    hide: ["sister-awake", "blanket"], show: ["sister-asleep"],
     text: `${SISTER_NAME} yawns and goes to bed on her own.`,
   },
   {
-    id: "lightsOut", time: "21:00", trigger: "now", setFlags: ["dark"], sound: "click",
+    id: "lightsOut", time: "21:00", trigger: "now", lightsOut: true, sound: "click",
     text: "The lights flicker and die. The switch clicks. Nothing.<br>You turn on your phone's flashlight.",
   },
 
   // Rule 1: the not-sister in a doorway
   {
-    id: "rule1", time: "21:20", trigger: "nextEntry", group: "not-sister", setFlags: ["notSister"],
+    id: "rule1", time: "21:20", trigger: "nextEntry", group: "not-sister", show: ["not-sister"],
     text: `${SISTER_NAME} is standing in the doorway. She doesn't move.<br>"Can you come here?"<br>Then it calls your name.`,
     danger: {
       steps: [{ room: "walk-in" }],
@@ -243,36 +248,36 @@ const EVENTS = [
         button: "Wait",
         steps: [
           { text: "It calls your name." },
-          { text: "Closer. It calls your name again.", setFlags: ["shadow"] },
+          { text: "Closer. It calls your name again.", show: ["shadow"] },
           { text: "Right outside the door. Your name, one last time." },
         ],
         keep: "Stay still. Wait until it stops.",
         fatal: "E1",
       },
-      whenSafe: { text: "It stops. Silence.", clearFlags: ["notSister", "shadow"] },
+      whenSafe: { text: "It stops. Silence.", hide: ["not-sister", "shadow"] },
     },
   },
 
   // Rule 2: the reflection in the balcony door
   {
-    id: "rule2", time: "21:40", trigger: "inRoom", room: "living", setFlags: ["reflection"],
+    id: "rule2", time: "21:40", trigger: "inRoom", room: "living", show: ["reflection"],
     text: "In the dark glass of the balcony door, your reflection is moving.<br>You aren't.",
     danger: {
       steps: [{ leave: "living" }],
       deadline: 2,
       late: "E2",
       fatal: [{ room: "living", ending: "E2" }],
-      whenSafe: { text: "You don't look back.", clearFlags: ["reflection"] },
+      whenSafe: { text: "You don't look back.", hide: ["reflection"] },
     },
   },
 
   // Rule 6: the bedroom door opens by itself
   // (after: "rule1" means it waits until rule 1 has happened, so you can always reach the walk-in for rule 1)
-  { id: "rule6", time: "21:50", trigger: "now", after: "rule1", notIn: ["master", "walk-in"], setFlags: ["masterOpen"] },
+  { id: "rule6", time: "21:50", trigger: "now", after: "rule1", notIn: ["master", "walk-in"], hide: ["door-closed"], show: ["door-open"] },
 
   // Rule 5: the cat on the balcony
   {
-    id: "rule5", time: "22:00", trigger: "now", room: "living", setFlags: ["catOutside"], sound: "meow",
+    id: "rule5", time: "22:00", trigger: "now", room: "living", show: ["cat-outside"], sound: "meow",
     text: `${CAT_NAME} is outside on the balcony, scratching at the glass. Meow.`,
     textAway: "From the living room: scratching on glass. Then a meow.",
     danger: {
@@ -280,14 +285,14 @@ const EVENTS = [
       waitEnds: true,
       fatal: [{ hotspot: "balcony-door", ending: "E4" }],
       labels: { "balcony-door": "Open the balcony door" },
-      whenSafe: { text: "The scratching stops. The balcony is empty.", clearFlags: ["catOutside"] },
+      whenSafe: { text: "The scratching stops. The balcony is empty.", hide: ["cat-outside"] },
     },
   },
 
   // Rule 3: the face in the window
   {
     id: "rule3", time: "22:20", trigger: "beam", group: "face",
-    armFlags: ["face"], setFlags: ["faceClose", "washerSpin"],
+    armShow: ["face"], show: ["face-close", "washer-spin", "washer-on"],
     text: "A face. In the window. Looking at you.",
     fallback: 3,
     fallbackText: "Knock. Knock. A face is pressed against the window.",
@@ -304,7 +309,7 @@ const EVENTS = [
           { text: "20…" },
           { text: "30…" },
           { text: "40…" },
-          { text: `50… Knock knock knock.<br>"Sweetie, it's Dad, open up."`, sound: "knock", scare: true },
+          { text: `50… Knock knock knock.<br>"Sweetie, it's Dad, open up."`, sound: "knock", shake: true },
           { text: "60…" },
           { text: "70…" },
           { text: "80…" },
@@ -315,25 +320,25 @@ const EVENTS = [
         keep: "Keep counting...",
         fatal: "E6",
       },
-      whenSafe: { text: "Silence. The knocking has stopped.", clearFlags: ["face", "faceClose", "washerSpin"] },
+      whenSafe: { text: "Silence. The knocking has stopped.", hide: ["face", "face-close", "washer-spin", "washer-on"] },
     },
   },
 
   // Rule 4: nobody at the doorbell
   {
-    id: "rule4a", time: "22:40", trigger: "now", setFlags: ["ringing"], sound: "doorbell",
+    id: "rule4a", time: "22:40", trigger: "now", show: ["doorbell-glow"], sound: "doorbell",
     text: "Ding-dong. The doorbell.",
     danger: {
       endure: 3,
       waitEnds: true,
       fatal: [{ hotspot: "talk", ending: "E7" }, { hotspot: "open", ending: "E7" }],
-      whenSafe: { text: "The doorbell stops ringing.", clearFlags: ["ringing"] },
+      whenSafe: { text: "The doorbell stops ringing.", hide: ["doorbell-glow"] },
     },
   },
 
   // Rule 7: "Mom" at the door, and a note slides under it
   {
-    id: "rule7", time: "23:00", trigger: "now", setFlags: ["ringing", "feedMom", "fakeNote"], sound: "doorbell", scare: true,
+    id: "rule7", time: "23:00", trigger: "now", show: ["doorbell-glow", "feed-mom", "feet", "fake-note"], sound: "doorbell", scare: true,
     text: "Ding-dong. The doorbell again.<br>Something slides under the front door.",
     danger: {
       endure: 4,
@@ -341,22 +346,25 @@ const EVENTS = [
       fatal: [{ hotspot: "open", ending: "E8" }],
       say: { talk: `"We lost our keys! Let us in, it's freezing!"` },
       labels: { open: "Let them in" },
-      whenSafe: { text: "The doorbell stops. On the screen, the entrance is empty again.", clearFlags: ["ringing", "feedMom"] },
+      whenSafe: { text: "The doorbell stops. On the screen, the entrance is empty again.", hide: ["doorbell-glow", "feed-mom", "feet"] },
     },
   },
 
   // Rule 4 again: the camera shows the inside of the apartment
   {
-    id: "rule4b", time: "23:10", trigger: "now", setFlags: ["ringing", "feedHallway"],
+    id: "rule4b", time: "23:10", trigger: "now", show: ["doorbell-glow", "feed-hallway"],
     text: "Out in the hallway, the doorbell screen lights up. No sound.",
     danger: {
       steps: [
-        { room: "sister-room", hotspot: "sister-asleep", setFlags: ["sisterWithYou"], text: `You pick ${SISTER_NAME} up. She doesn't wake.` },
+        {
+          room: "sister-room", hotspot: "sister-asleep",
+          then: { text: `You pick ${SISTER_NAME} up. She doesn't wake.`, hide: ["sister-asleep"], show: ["bed-empty"] },
+        },
         { room: ["bath", "bath-washer"], hotspot: "lock" },
       ],
       deadline: 9,
       late: "E9",
-      fatal: [{ hotspot: "lock", unlessFlag: "sisterWithYou", ending: "E9" }],
+      fatal: [{ hotspot: "lock", unlessShown: "bed-empty", ending: "E9" }],
       labels: { "sister-asleep": `Take ${SISTER_NAME}` },
       hold: {
         button: "Wait",
@@ -368,7 +376,7 @@ const EVENTS = [
         keep: "Stay quiet. Wait.",
         fatal: "E9",
       },
-      whenSafe: { text: "Then… silence.", clearFlags: ["ringing", "feedHallway"] },
+      whenSafe: { text: "Then… silence.", hide: ["doorbell-glow", "feed-hallway"] },
     },
   },
 

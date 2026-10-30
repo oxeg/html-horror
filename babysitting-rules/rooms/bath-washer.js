@@ -43,7 +43,7 @@ ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   <polygon points="187,174 333,213 333,683 187,778" fill="var(--furniture)"/>
   <polygon points="205,219 318,240 318,382 205,390" fill="var(--void)" opacity="0.25"/>
   <polygon points="205,459 318,439 318,625 205,685" fill="var(--void)" opacity="0.25"/>
-  <g data-name="hall-glow" data-hide-if="dark">
+  <g data-name="hall-glow" data-light-only>
     <polygon points="187,774 333,679 333,684 187,779" fill="var(--glow)" opacity="0.35"/>
   </g>
 
@@ -61,7 +61,7 @@ ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- mirror over the sink, and its light while the lights still work -->
-  <g data-name="light-glow" data-hide-if="dark">
+  <g data-name="light-glow" data-light-only>
     <circle cx="560" cy="226" r="210" fill="url(#bath-washer-light)"/>
   </g>
   <rect x="500" y="208" width="120" height="10" rx="5" fill="var(--accent)"/>
@@ -118,7 +118,7 @@ ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
     <rect x="943" y="636" width="22" height="6" fill="var(--void)" opacity="0.5"/>
   </g>
   <!-- when it starts by itself: the drum spins (rule 3), and the little screen lights up -->
-  <g data-name="washer-spin" data-show-if="washerSpin">
+  <g data-name="washer-spin" data-hidden>
     <circle cx="880" cy="556" r="56" fill="var(--void)" opacity="0"/>
     <circle cx="880" cy="556" r="52" fill="var(--void)"/>
     <path d="M846,526 Q858,512 880,510 Q890,516 884,526 Q864,526 852,538 Z" fill="var(--accent)" opacity="0.7"/>
@@ -128,7 +128,7 @@ ROOMS["bath-washer"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
     <rect x="918" y="572" width="12" height="8" rx="2" fill="var(--furniture)"/>
     <rect x="832" y="572" width="12" height="8" rx="2" fill="var(--furniture)"/>
   </g>
-  <g data-name="washer-on" data-show-if="washerSpin">
+  <g data-name="washer-on" data-hidden>
     <rect x="870" y="455" width="14" height="10" fill="var(--glow)" opacity="0.75"/>
     <rect x="888" y="455" width="14" height="10" fill="var(--glow)" opacity="0.75"/>
   </g>

@@ -42,7 +42,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   <polygon points="205,459 318,439 318,625 205,685" fill="var(--void)" opacity="0.25"/>
   <use href="#sister-room-star" transform="translate(262 304) scale(2.4)" fill="var(--glow)" opacity="0.35"/>
   <circle cx="318" cy="414" r="10" fill="var(--accent)"/><rect x="270" y="409" width="50" height="10" rx="5" fill="var(--accent)"/>
-  <g data-name="hall-glow" data-hide-if="dark">
+  <g data-name="hall-glow" data-light-only>
     <polygon points="187,774 333,679 333,684 187,779" fill="var(--glow)" opacity="0.35"/>
   </g>
 
@@ -61,14 +61,14 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- the face in the window (rule 3). Far away first... -->
-  <g data-name="face" data-show-if="face">
+  <g data-name="face" data-hidden>
     <ellipse cx="624" cy="300" rx="30" ry="40" fill="var(--skin)" opacity="0.55"/>
     <ellipse cx="613" cy="294" rx="5" ry="8" fill="var(--void)"/>
     <ellipse cx="635" cy="294" rx="5" ry="8" fill="var(--void)"/>
     <rect x="615" y="318" width="18" height="3" fill="var(--void)" opacity="0.8"/>
   </g>
   <!-- ...then pressed right against the glass -->
-  <g data-name="face-close" data-show-if="faceClose" data-scare>
+  <g data-name="face-close" data-hidden data-scare>
     <ellipse cx="572" cy="306" rx="50" ry="88" fill="var(--skin)"/>
     <ellipse cx="553" cy="290" rx="9" ry="15" fill="var(--void)"/>
     <ellipse cx="591" cy="292" rx="9" ry="13" fill="var(--void)"/>
@@ -109,7 +109,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
     <rect x="749" y="538" width="10" height="14" fill="var(--furniture)"/>
     <path d="M749.4,486.2 A30,30 0 1 0 780.6,527.8 A26,26 0 0 1 749.4,486.2 Z" fill="var(--accent)"/>
   </g>
-  <g data-name="night-glow" data-hide-if="dark">
+  <g data-name="night-glow" data-light-only>
     <circle cx="755" cy="516" r="230" fill="url(#sister-room-night-light)"/>
     <ellipse cx="752" cy="660" rx="96" ry="13" fill="var(--glow)" opacity="0.07"/>
     <path d="M749.4,486.2 A30,30 0 1 0 780.6,527.8 A26,26 0 0 1 749.4,486.2 Z" fill="var(--glow)" opacity="0.9"/>
@@ -123,7 +123,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   <rect x="836" y="556" width="308" height="30" rx="6" fill="var(--furniture)"/><rect x="836" y="556" width="308" height="30" rx="6" fill="var(--glow)" opacity="0.15"/>
   <rect x="846" y="534" width="76" height="24" rx="11" fill="var(--accent)"/><rect x="846" y="534" width="76" height="24" rx="11" fill="var(--glow)" opacity="0.15"/>
   <!-- the blanket, neatly made while she's still up -->
-  <g data-name="blanket" data-hide-if="sisterAsleep">
+  <g data-name="blanket">
     <rect x="902" y="548" width="238" height="64" rx="6" fill="var(--accent)"/>
     <rect x="902" y="548" width="16" height="64" fill="var(--glow)" opacity="0.18"/>
     <g fill="var(--glow)" opacity="0.3">
@@ -132,7 +132,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- your sister asleep: a little head on the pillow, the rest of her under the blanket -->
-  <g data-hotspot="sister-asleep" data-show-if="sisterAsleep" data-hide-if="sisterWithYou">
+  <g data-hotspot="sister-asleep" data-hidden>
     <ellipse cx="872" cy="537" rx="26" ry="17" fill="var(--furniture)"/><ellipse cx="872" cy="537" rx="26" ry="17" fill="var(--glow)" opacity="0.5"/>
     <ellipse cx="885" cy="543" rx="15" ry="14" fill="var(--skin)"/>
     <path d="M876,543 Q880,547 884,543 Q880,545 876,543 Z" fill="var(--void)"/><path d="M888,543 Q892,547 896,543 Q892,545 888,543 Z" fill="var(--void)"/>
@@ -144,7 +144,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- the empty bed: the blanket thrown back, nobody there -->
-  <g data-name="bed-empty" data-show-if="sisterWithYou">
+  <g data-name="bed-empty" data-hidden>
     <ellipse cx="884" cy="548" rx="24" ry="6" fill="var(--void)" opacity="0.2"/>
     <path d="M1030,612 L1030,560 Q1040,528 1076,526 Q1110,520 1128,540 L1140,550 L1140,612 Z" fill="var(--accent)"/>
     <path d="M1044,560 Q1070,540 1110,546 Q1072,548 1046,566 Z" fill="var(--void)" opacity="0.3"/>
@@ -152,7 +152,7 @@ ROOMS["sister-room"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- your sister, awake: sitting on the rug in her pajamas, playing a board game -->
-  <g data-hotspot="sister-awake" data-hide-if="sisterAsleep">
+  <g data-hotspot="sister-awake">
     <use href="#sister-room-lap" fill="var(--accent)"/><use href="#sister-room-lap" fill="var(--void)" opacity="0.2"/>
     <ellipse cx="570" cy="703" rx="12" ry="7" fill="var(--glow)" opacity="0.45"/><ellipse cx="650" cy="704" rx="12" ry="7" fill="var(--glow)" opacity="0.45"/>
     <path d="M588,612 Q610,604 632,612 L642,682 L578,682 Z" fill="var(--accent)"/>

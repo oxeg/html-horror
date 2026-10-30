@@ -1,6 +1,6 @@
 // editmode.js: press E while playing to see behind the scenes.
 // The flashlight turns off, every clickable thing gets a box with its name, and a panel
-// lets you jump to any room and time, and switch any flag on or off.
+// lets you jump to any room and time, show or hide things by name, and turn the lights off.
 // You don't need to change this file.
 
 var EditMode = (function () {
@@ -8,28 +8,32 @@ var EditMode = (function () {
   var panel = null;
   var boxes = null;
 
-  // Every flag the game knows: the ones the drawings react to, and the ones story.js sets.
-  function allFlags() {
+  // Every name worth a checkbox: the parts the drawings hide (data-hidden), the hidden
+  // hotspots, and everything story.js shows or hides.
+  function allNames() {
     var found = {};
-    function add(list) { (list || []).forEach(function (f) { found[f] = true; }); }
+    function add(list) { (list || []).forEach(function (n) { found[n] = true; }); }
+    function moment(m) { add((m || {}).show); add((m || {}).hide); }
     Object.keys(ROOMS).forEach(function (id) {
-      var re = /data-(?:show|hide)-if="([^"]+)"/g;
-      var m;
-      while ((m = re.exec(ROOMS[id]))) add(m[1].split(/\s+/));
+      (ROOMS[id].match(/<[^>]*\sdata-hidden(?=[\s>\/=])[^>]*>/g) || []).forEach(function (tag) {
+        var m = /data-(?:name|hotspot)="([^"]+)"/.exec(tag);
+        if (m) add([m[1]]);
+      });
     });
     Object.keys(ROOM_INFO).forEach(function (id) {
       var spots = ROOM_INFO[id].hotspots || {};
-      Object.keys(spots).forEach(function (h) { add(spots[h].setFlags); });
+      Object.keys(spots).forEach(function (h) {
+        if (spots[h].hidden) add([h]);
+        moment(spots[h]);
+      });
     });
     EVENTS.forEach(function (ev) {
-      add(ev.setFlags);
-      add(ev.armFlags);
-      add(ev.clearFlags);
+      moment(ev);
+      add(ev.armShow);
       var d = ev.danger || {};
-      (d.steps || []).forEach(function (s) { add(s.setFlags); });
-      ((d.hold || {}).steps || []).forEach(function (s) { add(s.setFlags); });
-      add((d.whenSafe || {}).setFlags);
-      add((d.whenSafe || {}).clearFlags);
+      (d.steps || []).forEach(function (s) { moment(s.then); });
+      ((d.hold || {}).steps || []).forEach(moment);
+      moment(d.whenSafe);
     });
     return Object.keys(found).sort();
   }
@@ -43,8 +47,9 @@ var EditMode = (function () {
     rooms.forEach(function (id) { html += '<option value="' + id + '">' + id + "</option>"; });
     html += '</select></label> <label>Time <input id="edit-time" size="5" value="21:30"></label> ';
     html += '<button id="edit-go">Go</button><div id="edit-flags">';
-    allFlags().forEach(function (f) {
-      html += '<label><input type="checkbox" data-flag="' + f + '"> ' + f + "</label>";
+    html += '<label><input type="checkbox" id="edit-dark"> lights out</label>';
+    allNames().forEach(function (n) {
+      html += '<label><input type="checkbox" data-shown="' + n + '"> ' + n + "</label>";
     });
     html += "</div>";
     panel.innerHTML = html;
@@ -60,9 +65,10 @@ var EditMode = (function () {
       View.render();
     });
     panel.querySelector("#edit-flags").addEventListener("change", function (e) {
-      var flag = e.target.getAttribute("data-flag");
-      if (!flag) return;
-      Game.setFlag(flag, e.target.checked);
+      var name = e.target.getAttribute("data-shown");
+      if (e.target.id === "edit-dark") Game.setDark(e.target.checked);
+      else if (name) Game.setShown(name, e.target.checked);
+      else return;
       View.render();
     });
   }
@@ -94,8 +100,9 @@ var EditMode = (function () {
     panel.querySelector("#edit-room").value = s.room;
     panel.querySelector("#edit-time").value = Game.clock();
     panel.querySelector("#edit-time").style.outline = "";
-    var checks = panel.querySelectorAll("[data-flag]");
-    for (var i = 0; i < checks.length; i++) checks[i].checked = !!s.flags[checks[i].getAttribute("data-flag")];
+    panel.querySelector("#edit-dark").checked = !!s.dark;
+    var checks = panel.querySelectorAll("[data-shown]");
+    for (var i = 0; i < checks.length; i++) checks[i].checked = Game.isShown(checks[i].getAttribute("data-shown"));
   }
 
   M.toggle = function () {

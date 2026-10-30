@@ -38,7 +38,7 @@ ROOMS["master-door"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   <polygon points="1450,172 1300,208 1300,705 1450,802" fill="var(--void)"/>
 
   <!-- the not-sister, standing in that doorway. Too still. -->
-  <g data-hotspot="not-sister" data-show-if="notSister">
+  <g data-hotspot="not-sister" data-hidden>
     <rect x="1326" y="450" width="96" height="300" fill="var(--void)" opacity="0"/>
     <path d="M1408,472 Q1406,438 1374,436 Q1342,438 1340,472 L1338,520 L1410,520 Z" fill="var(--void)"/>
     <ellipse cx="1374" cy="482" rx="28" ry="33" fill="var(--skin)"/>
@@ -58,7 +58,7 @@ ROOMS["master-door"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   <circle cx="552" cy="294" r="9" fill="var(--glow)" opacity="0.35"/>
 
   <!-- the hall table with a lamp, and its light while the lights still work -->
-  <g data-name="lamp-glow" data-hide-if="dark">
+  <g data-name="lamp-glow" data-light-only>
     <circle cx="520" cy="470" r="190" fill="url(#master-door-lamp-light)"/>
     <ellipse cx="520" cy="664" rx="140" ry="24" fill="var(--glow)" opacity="0.1"/>
   </g>
@@ -73,7 +73,7 @@ ROOMS["master-door"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   <rect x="462" y="584" width="40" height="16" rx="3" fill="var(--accent)" opacity="0.6"/>
 
   <!-- the bedroom door, closed, with the heart sign we made for Mom and Dad -->
-  <g data-hotspot="door-closed" data-hide-if="masterOpen">
+  <g data-hotspot="door-closed">
     <rect x="684" y="226" width="232" height="414" fill="var(--accent)" opacity="0.5"/>
     <rect x="700" y="242" width="200" height="398" fill="var(--furniture)"/>
     <rect x="722" y="264" width="156" height="160" rx="3" fill="var(--void)" opacity="0.25"/>
@@ -90,7 +90,7 @@ ROOMS["master-door"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMi
   </g>
 
   <!-- ...and open. It swung in by itself. Behind it: nothing but black. -->
-  <g data-hotspot="door-open" data-show-if="masterOpen">
+  <g data-hotspot="door-open" data-hidden>
     <rect x="684" y="226" width="232" height="414" fill="var(--accent)" opacity="0.5"/>
     <rect x="700" y="242" width="200" height="398" fill="var(--void)"/>
     <polygon points="700,242 824,270 824,600 700,640" fill="var(--furniture)"/>

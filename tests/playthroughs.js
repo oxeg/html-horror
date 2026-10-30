@@ -1,5 +1,5 @@
 // Scripted runs through the real game. Each step is one of:
-//   go <room> | click <hotspot> | wait | beam <name> | close | jump <HH:MM> <room> | flag <name> on|off
+//   go <room> | click <hotspot> | wait | beam <name> | close | jump <HH:MM> <room> | show <name> on|off
 // `ending` is how the run must end. `retry` says what "Try again" must bring back
 // (the danger that is running again, or null when no danger restarts).
 var PLAYTHROUGHS = [

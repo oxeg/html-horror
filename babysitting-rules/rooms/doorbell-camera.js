@@ -69,12 +69,12 @@ ROOMS["doorbell-camera"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMi
   <!-- what the camera sees (clipped to the screen) -->
   <g clip-path="url(#doorbell-camera-screen)">
     <!-- nobody there -->
-    <g data-name="feed-empty" data-hide-if="feedMom feedHallway">
+    <g data-name="feed-empty">
       <use href="#doorbell-camera-street"/>
     </g>
 
     <!-- "Mom", waving at the camera. Too still. Her face is too pale. And she has no shadow. -->
-    <g data-name="feed-mom" data-show-if="feedMom">
+    <g data-name="feed-mom" data-hidden>
       <use href="#doorbell-camera-street"/>
       <g fill="var(--void)" opacity="0.85">
         <path d="M690,360 Q688,316 716,314 Q744,316 742,360 L746,384 L686,384 Z"/>
@@ -105,7 +105,7 @@ ROOMS["doorbell-camera"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMi
     </g>
 
     <!-- not downstairs at all: this is YOUR hallway, right here. Someone is standing in it. -->
-    <g data-name="feed-hallway" data-show-if="feedHallway">
+    <g data-name="feed-hallway" data-hidden>
       <rect x="200" y="96" width="980" height="628" fill="var(--void)"/>
       <g transform="translate(130 95) scale(0.7)">
         <rect width="1600" height="900" fill="var(--skin)" opacity="0.14"/>

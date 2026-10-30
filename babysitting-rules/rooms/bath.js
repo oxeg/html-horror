@@ -44,7 +44,7 @@ ROOMS["bath"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice
   <polygon points="187,174 333,213 333,683 187,778" fill="var(--furniture)"/>
   <polygon points="205,219 318,240 318,382 205,390" fill="var(--void)" opacity="0.25"/>
   <polygon points="205,459 318,439 318,625 205,685" fill="var(--void)" opacity="0.25"/>
-  <g data-name="hall-glow" data-hide-if="dark">
+  <g data-name="hall-glow" data-light-only>
     <polygon points="187,774 333,679 333,684 187,779" fill="var(--glow)" opacity="0.35"/>
   </g>
 
@@ -62,7 +62,7 @@ ROOMS["bath"] = `<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice
   </g>
 
   <!-- mirror over the sink, and its light while the lights still work -->
-  <g data-name="light-glow" data-hide-if="dark">
+  <g data-name="light-glow" data-light-only>
     <circle cx="560" cy="226" r="210" fill="url(#bath-light)"/>
   </g>
   <rect x="500" y="208" width="120" height="10" rx="5" fill="var(--accent)"/>
