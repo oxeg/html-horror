@@ -73,7 +73,7 @@ test("camera opens overlay scene", function () {
   Game.newGame();
   Game.go("c");
   Game.click("cam");
-  eq(Game.state.camera, true);
+  eq(Game.state.camera, "feed");
   eq(Game.scene(), "feed");
   eq(Game.click("talk").texts, ["Static."]);
   var time = Game.state.time;

@@ -40,13 +40,212 @@
   <div id="ending">
     <div class="menu">
       <h1 id="ending-title"></h1>
-      <p id="ending-text"></p>
+      <div id="ending-text"></div>
       <div id="ending-buttons"></div>
     </div>
   </div>
 
   <div id="rotate"><div class="phone"></div><p>Turn your phone sideways</p></div>
   <div id="problem"></div>
+
+  <!-- ✏️ THE STORY: every room, everything you can click, the notes and the endings.
+       A <section class="room"> is a room, and its title is the name on the room's button.
+       Each <button> inside it is something you can click: its title is what you see when your
+       light is on it, and the words inside it pop up when you click it.
+       hidden means "not there yet": something in the night shows it later. -->
+
+  <!-- The hallway: where the night starts -->
+  <section class="room" id="entrance" title="Hallway">
+    <nav>Go to:
+      <a href="#living">Living room</a>
+      <a href="#my-room">My room</a>
+      <a href="#sister-room">Your sister's room</a>
+      <a href="#bath">Bathroom</a>
+      <a href="#bath-washer">Bathroom (laundry)</a>
+      <a href="#master-door">Parents' door</a>
+    </nav>
+
+    <button id="hall-not-sister" class="not-sister" title="Your sister?" data-ending="it-wasnt-her" hidden></button>
+    <button id="coats" title="Coat hooks">Mom's red coat is gone. So is Dad's.</button>
+    <button id="light-switch" title="Light switch">Click. Click.</button>
+    <button id="front-door" title="Front door">Locked. Mom and Dad have their keys.</button>
+    <button id="fake-note" title="A note under the door" data-note="door-note" hidden></button>
+    <button id="doorbell" title="Doorbell screen" data-camera="doorbell-camera"></button>
+  </section>
+
+  <!-- The living room, with the kitchen and the balcony door -->
+  <section class="room" id="living" title="Living room">
+    <nav>Go to: <a href="#entrance">Hallway</a></nav>
+
+    <button id="living-not-sister" class="not-sister" title="Your sister?" data-ending="it-wasnt-her" hidden></button>
+    <button id="counter" title="Kitchen counter">Crumbs. Somebody had cookies.</button>
+    <button id="fridge" title="Fridge">Milk, leftover pizza, and way too much yogurt.</button>
+    <button id="fridge-note" title="Note on the fridge" data-note="rules"></button>
+    <button id="cat-bowl" title="Cat bowl">You fill the cat's bowl. She's asleep in her tree house and doesn't come.</button>
+    <button id="living-window" class="window" title="Window">The city lights, far away.</button>
+    <button id="sofa" title="Sofa">The remote is stuck between the cushions again.</button>
+    <button id="balcony-door" title="Balcony door">Locked. It's cold out there, and there's no balcony light.</button>
+    <button id="cat-outside" title="The cat?" hidden>She stares at you through the glass. Her eyes shine in your light.</button>
+    <button id="reflection" title="Your reflection" data-ending="mirror" hidden></button>
+  </section>
+
+  <!-- Your own room -->
+  <section class="room" id="my-room" title="My room">
+    <nav>Go to: <a href="#entrance">Hallway</a></nav>
+
+    <button id="my-not-sister" class="not-sister" title="Your sister?" data-ending="it-wasnt-her" hidden></button>
+    <button id="posters" title="Posters">Your favorite book covers. The scary ones.</button>
+    <button id="desk" title="Desk">Homework. It can wait until tomorrow.</button>
+    <button id="my-window" class="window" title="Window">Other buildings, other windows. Most of them are dark.</button>
+    <button id="my-bed" class="bed" title="My bed">Not sleepy. Not yet.</button>
+  </section>
+
+  <!-- Your sister's room -->
+  <section class="room" id="sister-room" title="Your sister's room">
+    <nav>Go to: <a href="#entrance">Hallway</a></nav>
+
+    <button id="sister-window" class="window" title="Window">Just the dark, and your own face in the glass.</button>
+    <button id="night-light" title="Night-light">A little moon. It keeps the monsters away. Supposedly.</button>
+    <button id="sister-asleep" title="Your sister (asleep)" hidden>Your sister is fast asleep.</button>
+    <button id="sister-awake" title="Your sister">You tuck your sister in. "Night night." She's asleep in seconds.</button>
+    <button id="toys" title="Toys">A pile of stuffed animals. One of them is missing an eye.</button>
+  </section>
+
+  <!-- Outside Mom and Dad's bedroom. The door is a link: it takes you inside. -->
+  <section class="room" id="master-door" title="Parents' door">
+    <nav>Go to: <a href="#entrance">Hallway</a></nav>
+
+    <button id="door-not-sister" class="not-sister" title="Your sister?" data-ending="it-wasnt-her" hidden></button>
+    <a id="door-closed" href="#master" title="Parents' bedroom">You slip inside.</a>
+    <button id="door-open" title="Go in" data-ending="open-door" hidden></button>
+  </section>
+
+  <!-- Mom and Dad's bedroom, with the cat's tree house and the walk-in closet -->
+  <section class="room" id="master" title="Parents' bedroom">
+    <nav>Go to: <a href="#master-door">Parents' door</a></nav>
+
+    <button id="master-window" class="window" title="Window">No curtains. Just glass, and the night.</button>
+    <button id="big-bed" class="bed" title="Big bed">Neatly made. Mom always makes it.</button>
+    <button id="tree-house" title="The cat's tree house">The cat is curled up inside, fast asleep.</button>
+    <a id="walk-in-door" href="#walk-in" title="Walk-in closet">You step into the closet.</a>
+  </section>
+
+  <!-- The walk-in closet: the place to hide for rule 1 -->
+  <section class="room" id="walk-in" title="Walk-in closet">
+    <nav>Go to: <a href="#master">Parents' bedroom</a></nav>
+
+    <button id="door-light" title="Light under the door">A thin line of light from the bedroom.</button>
+    <button id="clothes" title="Clothes">Mom's dresses. Dad's shirts. They smell like home.</button>
+  </section>
+
+  <!-- The bathroom with the washing machine -->
+  <section class="room" id="bath-washer" title="Bathroom (laundry)">
+    <nav>Go to: <a href="#entrance">Hallway</a></nav>
+
+    <button id="laundry-lock" class="lock" title="Lock the door">Click. Locked.</button>
+    <button id="laundry-mirror" class="mirror" title="Mirror">Just you. Good.</button>
+    <button id="laundry-sink" class="sink" title="Sink">You brush your teeth. Minty.</button>
+    <button id="washer" title="Washing machine">Its round window stares at you like a big glass eye.</button>
+    <button id="laundry-shower" class="shower" title="Shower">Drip. Drip. Drip.</button>
+  </section>
+
+  <!-- The other bathroom: the safe one for rule 3 -->
+  <section class="room" id="bath" title="Bathroom">
+    <nav>Go to: <a href="#entrance">Hallway</a></nav>
+
+    <button id="bath-lock" class="lock" title="Lock the door">Click. Locked.</button>
+    <button id="bath-mirror" class="mirror" title="Mirror">Just you. Good.</button>
+    <button id="bath-sink" class="sink" title="Sink">You brush your teeth. Minty.</button>
+    <button id="basket" title="Laundry basket">Socks. So many socks.</button>
+    <button id="bath-shower" class="shower" title="Shower">Drip. Drip. Drip.</button>
+  </section>
+
+  <!-- The doorbell camera. It's not a room you walk into: it opens on top of the hallway. -->
+  <section class="room camera" id="doorbell-camera" title="Doorbell camera">
+    <button id="talk" title="Talk">Static. Nobody's there.</button>
+    <button id="open" title="Open the building door">You open the door downstairs. Nobody comes in.</button>
+  </section>
+
+  <!-- The notes you can find. The real one is always signed "Love you!"; the fake one never is. -->
+
+  <article class="note" id="rules">
+    <h2>Rules for tonight</h2>
+    <p>Mom &amp; Dad</p>
+    <ol>
+      <li>By 8:30 your sister is asleep, and she doesn't wake up until morning. If she's standing in a doorway after 9, it isn't her. Don't answer when it calls your name. Go to our walk-in closet and wait until it stops.</li>
+      <li>After dark, the balcony door is a mirror. If your reflection moves when you don't, walk away slowly and don't look back until you're in another room.</li>
+      <li>If you see a face in the window, lock yourself in the bathroom <b>without</b> the washing machine and count to 100. Don't open the door for anyone, even if they sound like us.</li>
+      <li>If the doorbell rings, check the camera first. If no one is there, don't answer. If the camera shows the inside of our apartment, take your sister and hide.</li>
+      <li>The cat is never allowed on the balcony. If you see her out there, don't let her in. Check her tree house in our bedroom first.</li>
+      <li>Keep our bedroom door closed. If you find it open, don't go in, not even to hide.</li>
+      <li>We're home at 11:30. We have keys. We will <b>never</b> ring the doorbell.</li>
+    </ol>
+    <p class="sign">Love you! ❤️</p>
+  </article>
+
+  <article class="note fake" id="door-note">
+    <p>The note on the fridge isn't from us. Rule 7 is wrong, we lost our keys!</p>
+    <p>Let us in. Your sister is fine. Hurry.</p>
+    <p>Mom &amp; Dad</p>
+  </article>
+
+  <!-- The endings. The one with class="win" is the good one. -->
+
+  <section class="ending" id="it-wasnt-her">
+    <h1>It wasn't her</h1>
+    <p>You walk to the doorway. It smiles at you. Its smile is too wide.<br>
+      In her room, your sister is still fast asleep.</p>
+  </section>
+
+  <section class="ending" id="mirror">
+    <h1>Mirror</h1>
+    <p>You stare. Your reflection stops pretending and puts its hand on the glass.<br>
+      From the inside.</p>
+  </section>
+
+  <section class="ending" id="open-door">
+    <h1>The open door</h1>
+    <p>The bedroom is dark. Something on the bed sits up.</p>
+  </section>
+
+  <section class="ending" id="not-the-cat">
+    <h1>Not the cat</h1>
+    <p>It slips inside. It walks on two legs.</p>
+  </section>
+
+  <section class="ending" id="spin-cycle" data-sound="washer">
+    <h1>Spin cycle</h1>
+    <p>The washing machine starts by itself. Click. The lock turns the wrong way.</p>
+  </section>
+
+  <section class="ending" id="sounds-like-us">
+    <h1>Sounds like us</h1>
+    <p>You open the door. Dad is there. Dad doesn't blink.</p>
+  </section>
+
+  <section class="ending" id="nobody-there">
+    <h1>Nobody there</h1>
+    <p>"Hello?" The empty screen answers in your own voice.</p>
+  </section>
+
+  <section class="ending" id="lost-keys">
+    <h1>We lost our keys</h1>
+    <p>You let them in. Footsteps climb the stairs. Many more than two.<br>
+      Real Mom always signs her notes "Love you!"…</p>
+  </section>
+
+  <section class="ending" id="forgot-her">
+    <h1>You forgot her</h1>
+    <p>You lock the door. From the hallway, your sister asks why you left her.</p>
+  </section>
+
+  <section class="ending win" id="home">
+    <h1>Home at 11:30</h1>
+    <p>Keys in the lock. Mom and Dad, the real ones. Mom asks how the cat was.<br>
+      You check on your sister. She half-wakes and mumbles:<br>
+      <i>"Who were you talking to all night? I was asleep."</i><br><br>
+      <b>THE END?</b></p>
+  </section>
 
   <script>
     // This part shows a plain-words message if a game file is broken or missing.
@@ -76,12 +275,12 @@
     function isRegistered(name) {
       var room = /^rooms\/(.+)\.js$/.exec(name);
       if (room) return typeof ROOMS[room[1]] === "string";
-      if (name === "story.js") {
-        return typeof SISTER_NAME !== "undefined" && typeof CAT_NAME !== "undefined" &&
-          typeof SETTINGS !== "undefined" && typeof NOTES !== "undefined" &&
-          typeof ROOM_INFO !== "undefined" && typeof EVENTS !== "undefined" && typeof ENDINGS !== "undefined";
-      }
+      if (name === "story.js") return typeof SETTINGS !== "undefined" && typeof EVENTS !== "undefined";
       if (name === "engine.js") return typeof Game !== "undefined";
+      if (name === "toolbox.js") return typeof Toolbox !== "undefined";
+      if (name === "loader.js") return typeof Loader !== "undefined";
+      // a mistake in rules.js stops it before it hands its scripts to the toolbox
+      if (name === "rules.js") return typeof Toolbox !== "undefined" && Object.keys(Toolbox.clickScripts()).length > 0;
       if (name === "check.js") return typeof Check !== "undefined";
       if (name === "view.js") return typeof View !== "undefined";
       if (name === "sound.js") return typeof Sound !== "undefined";
@@ -129,9 +328,10 @@
         return;
       }
       try {
+        Loader.read(document.body);  // the rooms, notes and endings written above
         var found = Check.run();
         if (found.errors.length) {
-          showProblem("The story has a mistake", found.errors.concat(["Fix it in story.js, then reload the page."]));
+          showProblem("The story has a mistake", found.errors.concat(["Fix it, then reload the page."]));
           return;
         }
         if (found.warnings.length) {
@@ -163,8 +363,11 @@
   <script src="rooms/doorbell-camera.js"></script>
   <script src="sound.js"></script>
   <script src="engine.js"></script>
+  <script src="toolbox.js"></script>
+  <script src="loader.js"></script>
   <script src="check.js"></script>
   <script src="view.js"></script>
   <script src="editmode.js"></script>
+  <script src="rules.js"></script>
 </body>
 </html>

@@ -5,37 +5,53 @@
   <title>playtest</title>
 </head>
 <body>
+  <!-- Builder-only, over http (python3 tests/tools/serve.py): the real game in a same-origin iframe,
+       with the tests added to its page. The title reads PASS n or FAIL n. -->
   <pre id="out">running...</pre>
-  <script>var ROOMS = {};</script>
-  <script src="../babysitting-rules/story.js"></script>
-  <script src="../babysitting-rules/rooms/title.js"></script>
-  <script src="../babysitting-rules/rooms/entrance.js"></script>
-  <script src="../babysitting-rules/rooms/living.js"></script>
-  <script src="../babysitting-rules/rooms/my-room.js"></script>
-  <script src="../babysitting-rules/rooms/sister-room.js"></script>
-  <script src="../babysitting-rules/rooms/master-door.js"></script>
-  <script src="../babysitting-rules/rooms/master.js"></script>
-  <script src="../babysitting-rules/rooms/walk-in.js"></script>
-  <script src="../babysitting-rules/rooms/bath-washer.js"></script>
-  <script src="../babysitting-rules/rooms/bath.js"></script>
-  <script src="../babysitting-rules/rooms/doorbell-camera.js"></script>
-  <script src="../babysitting-rules/sound.js"></script>
-  <script src="../babysitting-rules/engine.js"></script>
-  <script src="../babysitting-rules/check.js"></script>
-  <script src="../babysitting-rules/view.js"></script>
-  <script src="harness.js"></script>
-  <script src="playthroughs.js"></script>
-  <script src="game.test.js"></script>
-  <script src="dom.test.js"></script>
-  <script src="fixtures/visible-parts.js"></script>
-  <script src="visibility.test.js"></script>
+  <iframe id="game" src="../babysitting-rules/index.html" style="width: 1600px; height: 900px; border: 0"></iframe>
   <script>
-    window.addEventListener("load", function () {
-      var res = runTests();
-      var lines = res.failures.map(function (f) { return "FAIL " + f.name + ": " + f.message; });
-      lines.push(res.failures.length ? res.failures.length + " FAILED (" + res.passed + " passed)" : "ALL PASS (" + res.passed + " tests)");
+    var frame = document.getElementById("game");
+    // minidom.js is for the parity test in dom.test.js only.
+    var TESTS = ["minidom.js", "harness.js", "playthroughs.js", "game.test.js", "dom.test.js",
+      "fixtures/visible-parts.js", "visibility.test.js"];
+
+    function addScript(w, src) {
+      return new Promise(function (resolve, reject) {
+        var s = w.document.createElement("script");
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = function () { reject(new Error("could not load " + src)); };
+        w.document.body.appendChild(s);
+      });
+    }
+
+    function wait(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+
+    function report(lines, title) {
       document.getElementById("out").textContent = lines.join("\n");
-      document.title = res.failures.length ? "FAIL " + res.failures.length : "PASS " + res.passed;
+      document.title = title;
+    }
+
+    frame.addEventListener("load", function () {
+      var w = frame.contentWindow;
+      // Press Start like a player (visibility.test.js draws with the real view, which needs a game
+      // that's playing), then wait out View.act's 0.35 s so the tests' own clicks count.
+      Promise.resolve().then(function () {
+        w.Game.useStorage(false);
+        w.document.getElementById("title-start").click();
+        return wait(400);
+      }).then(function () {
+        return TESTS.reduce(function (chain, src) {
+          return chain.then(function () { return addScript(w, "../tests/" + src); });
+        }, Promise.resolve());
+      }).then(function () {
+        var res = w.runTests();
+        var lines = res.failures.map(function (f) { return "FAIL " + f.name + ": " + f.message; });
+        lines.push(res.failures.length ? res.failures.length + " FAILED (" + res.passed + " passed)" : "ALL PASS (" + res.passed + " tests)");
+        report(lines, res.failures.length ? "FAIL " + res.failures.length : "PASS " + res.passed);
+      }).catch(function (e) {
+        report([String(e && e.stack || e)], "FAIL load");
+      });
     });
   </script>
 </body>

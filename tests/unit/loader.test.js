@@ -58,3 +58,17 @@ test("Loader.read sets the globals and attaches whenClicked scripts by name", fu
   eq(Object.keys(globalThis.NOTES), ["n"]);
   Toolbox.reset();
 });
+
+// In a browser, children is an HTMLCollection: it has length and [i], but no forEach or filter.
+function likeABrowser(el) {
+  var copy = Object.create(el);
+  var kids = { length: el.children.length };
+  for (var i = 0; i < el.children.length; i++) kids[i] = likeABrowser(el.children[i]);
+  Object.defineProperty(copy, "children", { value: kids });
+  return copy;
+}
+
+test("loader reads a browser's children list too (not an Array)", function () {
+  var body = minidom(HTML).body;
+  eq(Loader.build(likeABrowser(body)), Loader.build(body));
+});

@@ -83,6 +83,45 @@ if (typeof document !== "undefined") {
       ok(!b.classList.contains("armed"), "tapping nothing clears the glow");
     });
 
+    // ---- parity: the browser and minidom read the same world out of index.html ----
+
+    // The browser writes innerHTML back out its own way. Spellings that differ for the same text:
+    // & / &amp;, " / &quot; and <br/> / <br>. (The page uses no &nbsp;, &lt;, &gt; or single quotes
+    // around attributes; add them here if it ever does.)
+    function spelledAlike(text) {
+      return text.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/<br\s*\/>/g, "<br>");
+    }
+    // A copy without scripts (JSON drops functions), every string spelled alike.
+    function plainWorld(rooms, notes, endings) {
+      return JSON.parse(JSON.stringify({ rooms: rooms, notes: notes, endings: endings }, function (key, value) {
+        return typeof value === "string" ? spelledAlike(value) : value;
+      }));
+    }
+    // Where two plain values first differ, for a readable failure.
+    function difference(a, b, at) {
+      if (JSON.stringify(a) === JSON.stringify(b)) return null;
+      if (!a || !b || typeof a !== "object" || typeof b !== "object") return at + ": " + JSON.stringify(a) + " vs " + JSON.stringify(b);
+      var keys = Object.keys(a).concat(Object.keys(b));
+      for (var i = 0; i < keys.length; i++) {
+        var d = difference(a[keys[i]], b[keys[i]], at + "." + keys[i]);
+        if (d) return d;
+      }
+      return at + ": the keys are in a different order";
+    }
+
+    test("the game read the same rooms, notes and endings from the page as minidom does", function () {
+      ok(typeof minidom === "function", "tests/playtest.html adds tests/minidom.js to the page");
+      var xhr = new XMLHttpRequest(); // builder-only, over http: index.html as it is on disk
+      xhr.open("GET", location.href.split("#")[0], false);
+      xhr.send();
+      var built = Loader.build(minidom(xhr.responseText).body);
+      var fromPage = plainWorld(ROOM_INFO, NOTES, ENDINGS);
+      var fromSource = plainWorld(built.rooms, built.notes, built.endings);
+      ok(Object.keys(fromSource.rooms).length > 0, "index.html has rooms");
+      var d = difference(fromPage, fromSource, "world");
+      ok(!d, d);
+    });
+
     var box100 = { left: 0, top: 0, right: 100, bottom: 100 };
 
     test("circleHitsRect inside", function () {

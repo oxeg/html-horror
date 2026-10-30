@@ -22,23 +22,48 @@ test("real game passes validation", function () {
   eq(res.warnings, []);
 });
 
-test("no unfilled template text", function () {
-  var all = JSON.stringify([NOTES, ROOM_INFO, EVENTS, ENDINGS]);
+test("the game says your sister and the cat, never a name", function () {
+  var all = JSON.stringify([ROOM_INFO, NOTES, ENDINGS, EVENTS]); // scripts drop out: only the texts are left
   ok(all.indexOf("${") < 0, "a ${...} was left unfilled");
   ok(all.indexOf("SISTER_NAME") < 0 && all.indexOf("CAT_NAME") < 0, "placeholder name in text");
-  ok(all.indexOf(SISTER_NAME) >= 0 && all.indexOf(CAT_NAME) >= 0, "the name settings are used");
-});
-
-test("no real names: the game says your sister and the cat", function () {
-  eq(SISTER_NAME, "your sister");
-  eq(CAT_NAME, "the cat");
+  ok(typeof SISTER_NAME === "undefined" && typeof CAT_NAME === "undefined", "the name settings are gone");
+  ok(/your sister/i.test(all) && /the cat/i.test(all), "the texts say your sister and the cat");
 });
 
 test("the fake note gives itself away: no Love you", function () {
-  ok(NOTES.fridge.text.indexOf("Love you!") >= 0, "the real note is signed Love you");
-  ok(NOTES.fake.text.indexOf("Love you") < 0, "the fake note must not say Love you");
-  ok(ENDINGS.E8.text.indexOf("Love you") >= 0, "E8 explains the giveaway");
+  ok(!NOTES.rules.fake && NOTES.rules.html.indexOf("Love you!") >= 0, "the real note is signed Love you");
+  ok(NOTES["door-note"].fake && NOTES["door-note"].html.indexOf("Love you") < 0, "the fake note must not say Love you");
+  ok(ENDINGS["lost-keys"].text.indexOf("Love you") >= 0, "the lost-keys ending explains the giveaway");
 });
+
+test("clicking your sister runs her whenClicked script from rules.js", function () {
+  Game.useStorage(false);
+  Game.newGame();
+  playStep("go sister-room");
+  eq(Game.click("sister-awake").texts, ["You play a board game with your sister. She wins. Twice."], "before 8");
+  ok(Game.isShown("sister-awake"), "still awake");
+  playStep("jump 20:00 sister-room");
+  eq(Game.click("sister-awake").texts, ['You tuck your sister in. "Night night." She\'s asleep in seconds.'], "at 8");
+  eq([Game.isShown("sister-awake"), Game.isShown("blanket"), Game.isShown("sister-asleep")], [false, false, true], "tucked in");
+});
+
+// Node only: in a browser this would touch the real saved endings.
+if (typeof document === "undefined") {
+  test("endings found before they had names (E1…W1) still count", function () {
+    var data = { "babysitting-rules:endings": JSON.stringify(["E1", "W1", "home", "E8", "GONE"]) };
+    globalThis.localStorage = {
+      getItem: function (k) { return k in data ? data[k] : null; },
+      setItem: function (k, v) { data[k] = String(v); },
+    };
+    Game.useStorage(true);
+    try {
+      eq(Game.endingsFound(), ["it-wasnt-her", "home", "lost-keys"]);
+    } finally {
+      Game.useStorage(false);
+      delete globalThis.localStorage;
+    }
+  });
+}
 
 PLAYTHROUGHS.forEach(function (pt) {
   test("playthrough " + pt.name, function () {

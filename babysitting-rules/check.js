@@ -1,5 +1,6 @@
-// check.js: looks over story.js and the rooms/ drawings before the game starts and
-// reports mistakes in plain words. Errors stop the game; warnings are only a note.
+// check.js: looks over index.html's rooms, notes and endings, story.js and the rooms/ drawings
+// before the game starts and reports mistakes in plain words. Errors stop the game; warnings
+// are only a note.
 // It never touches the page, so the tests can run it in Node too.
 
 var Check = (function () {
@@ -12,6 +13,18 @@ var Check = (function () {
   function hasDrawing(id) { return typeof ROOMS[id] === "string" && ROOMS[id].length > 0; }
 
   function list(value) { return Array.isArray(value) ? value : [value]; }
+
+  // The hotspot a name points at in a room: its id, or one of its names (a class in index.html).
+  function spotNamed(roomId, name) {
+    var id = Game.findHotspot(roomId, name);
+    return id ? ROOM_INFO[roomId].hotspots[id] : null;
+  }
+
+  // Is a part with this name in the room's drawing?
+  function drawingHas(roomId, name) {
+    var svg = ROOMS[roomId] || "";
+    return svg.indexOf('data-name="' + name + '"') >= 0 || svg.indexOf('data-hotspot="' + name + '"') >= 0;
+  }
 
   // ---- the walking graph: exits plus hotspots that move you (goTo) ----
 
@@ -65,7 +78,7 @@ var Check = (function () {
         list(step.room).forEach(function (target) {
           if (dist[target] === undefined) return;
           if (!step.hotspot) return put(next, target, cost + dist[target]);
-          var h = ((ROOM_INFO[target] || {}).hotspots || {})[step.hotspot];
+          var h = spotNamed(target, step.hotspot);
           put(next, (h && h.goTo) || target, cost + dist[target] + 1);
         });
       });
@@ -94,10 +107,10 @@ var Check = (function () {
     var warnings = [];
 
     function checkRoom(where, id) {
-      if (!isRoom(id)) errors.push(where + ': there is no room "' + id + '". Add it to ROOM_INFO in story.js or fix the name.');
+      if (!isRoom(id)) errors.push(where + ': there is no room "' + id + '". Add it to index.html or fix the name.');
     }
     function checkEnding(where, id) {
-      if (!ENDINGS[id]) errors.push(where + ': there is no ending "' + id + '". Add it to ENDINGS in story.js or fix the name.');
+      if (!ENDINGS[id]) errors.push(where + ': there is no ending "' + id + '". Add it to index.html or fix the name.');
     }
     function checkTime(where, time) {
       if (isNaN(Game.parseTime(time))) {
@@ -114,32 +127,31 @@ var Check = (function () {
     ids(ROOM_INFO).forEach(function (id) {
       var info = ROOM_INFO[id];
       (info.exits || []).forEach(function (to) {
-        if (!isRoom(to)) errors.push('story.js: room "' + id + '" has an exit to "' + to + '", but there is no room "' + to + '". Fix the exit or add the room.');
+        if (!isRoom(to)) errors.push('index.html: room "' + id + '" has an exit to "' + to + '", but there is no room "' + to + '". Fix the exit or add the room.');
       });
       ids(info.hotspots).forEach(function (h) {
         var spot = info.hotspots[h];
-        var where = 'story.js: hotspot "' + h + '" in room "' + id + '"';
+        var where = 'index.html: button "' + h + '" in room "' + id + '"';
         if (spot.goTo && !isRoom(spot.goTo)) errors.push(where + ' goes to "' + spot.goTo + '", but there is no room "' + spot.goTo + '".');
-        if (spot.note && !NOTES[spot.note]) errors.push(where + ' gives the note "' + spot.note + '", but NOTES has no "' + spot.note + '".');
+        if (spot.note && !NOTES[spot.note]) errors.push(where + ' gives the note "' + spot.note + '", but there is no note "' + spot.note + '".');
         if (spot.ending) checkEnding(where, spot.ending);
         if (spot.notBefore) checkTime(where + " notBefore", spot.notBefore);
-        if (hasDrawing(id) && !Game.roomHas(id, h)) {
-          errors.push('rooms/' + id + '.js: the drawing has no part marked data-hotspot="' + h + '", but story.js has that hotspot. Add it to the drawing or remove it from story.js.');
+        if (hasDrawing(id) && !(spot.names || [h]).some(function (name) { return drawingHas(id, name); })) {
+          errors.push('rooms/' + id + '.js: the drawing has no part marked data-hotspot="' + h + '", but index.html has that button. Add it to the drawing or remove it from index.html.');
         }
       });
-      if (!hasDrawing(id)) errors.push('rooms/' + id + '.js is missing: room "' + id + '" is in story.js but has no drawing. Make rooms/' + id + '.js and add it to index.html.');
+      if (!hasDrawing(id)) errors.push('rooms/' + id + '.js is missing: room "' + id + '" is in index.html but has no drawing. Make rooms/' + id + '.js and add it to index.html.');
     });
     if (!hasDrawing("title")) errors.push("rooms/title.js is missing: the title screen needs its drawing. Make rooms/title.js and add it to index.html.");
 
     // the giveaway: the real note is always signed "Love you!", a fake never is
     ids(NOTES).forEach(function (id) {
-      var text = String(NOTES[id].text);
-      var signed = text.indexOf("Love you") >= 0;
-      if (NOTES[id].look === "fake" && signed) {
-        warnings.push('story.js: the fake note "' + id + '" says "Love you". The real note is signed "Love you!" and a fake never is: that\'s how you can tell. Take it out.');
+      var signed = String(NOTES[id].html).indexOf("Love you") >= 0;
+      if (NOTES[id].fake && signed) {
+        warnings.push('index.html: the fake note "' + id + '" says "Love you". The real note is signed "Love you!" and a fake never is: that\'s how you can tell. Take it out.');
       }
-      if (NOTES[id].look === "mom" && !signed) {
-        warnings.push('story.js: the note "' + id + '" isn\'t signed "Love you!". That\'s how you tell the real note from the fake one, so keep it.');
+      if (!NOTES[id].fake && !signed) {
+        warnings.push('index.html: the note "' + id + '" isn\'t signed "Love you!". That\'s how you tell the real note from the fake one, so keep it.');
       }
     });
 
@@ -148,9 +160,7 @@ var Check = (function () {
     var lastId = "";
     var seenIds = {};
     var allEventIds = EVENTS.map(function (e) { return e.id; });
-    function hasSpot(roomId, spot) {
-      return !!(ROOM_INFO[roomId] && ROOM_INFO[roomId].hotspots && ROOM_INFO[roomId].hotspots[spot]);
-    }
+    function hasSpot(roomId, spot) { return !!spotNamed(roomId, spot); }
     EVENTS.forEach(function (ev) {
       var where = 'story.js: event "' + ev.id + '"';
       if (seenIds[ev.id]) errors.push(where + ' is in the list twice. Every event needs its own id: rename one of them.');

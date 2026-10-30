@@ -26,6 +26,9 @@ html, body {
   font-weight: 300;
 }
 
+/* the rooms, notes and endings written in index.html: the game reads them and shows them its own way */
+body > .room, body > .note, body > .ending { display: none; }
+
 #scene, #camera, #camera-art, #overlay, #tint, #title-art { position: fixed; inset: 0; }
 #scene svg, #camera-art svg, #title-art svg { width: 100%; height: 100%; display: block; }
 #scene { touch-action: none; }
@@ -158,16 +161,18 @@ body.playing #ui-popup.on { display: block; }
 #notes-list { display: flex; gap: 24px; justify-content: center; align-items: center; overflow: hidden; max-width: 98vw; max-height: 88vh; padding: 14px; font-size: 17px; }
 #notes-list .none { opacity: 0.6; }
 
-/* notes are landscape cards; the rules flow in two columns */
+/* notes are landscape cards; the rules flow in two columns, and a rule never splits between them */
 .note { padding: 1.2em 1.6em; color: #2a2118; background: #e9e0c8; box-shadow: 0 8px 30px #000; line-height: 1.35; }
-.note .line { margin: 0 0 0.35em; break-inside: avoid; }
-.note .gap { height: 0.5em; }
-.note.mom { width: min(62em, 92vw); column-count: 2; column-gap: 2em; font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; transform: rotate(-1deg); }
-.note.mom .line:first-child { column-span: all; font-size: 1.2em; margin-bottom: 0.2em; }
-.note.mom .line:last-child { column-span: all; text-align: right; margin: 0.3em 0 0; }
-.note.mom .gap { column-span: all; }
+.note h2, .note p, .note ol { margin: 0 0 0.35em; }
+.note h2 { font-size: 1.2em; margin-bottom: 0.1em; }
+.note h2 + p { margin-bottom: 0.75em; }
+.note ol { padding: 0; list-style-position: inside; }
+.note li { margin: 0 0 0.35em; break-inside: avoid; }
+.note h2, .note h2 + p, .note .sign { column-span: all; }
+.note .sign { text-align: right; margin: 0.8em 0 0; }
+#note-rules { width: min(62em, 92vw); column-count: 2; column-gap: 2em; font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; transform: rotate(-1deg); }
 /* both notes found: side by side, the fridge note big and the fake one small */
-#notes-list.both .note.mom { width: min(50em, 64vw); }
+#notes-list.both #note-rules { width: min(50em, 64vw); }
 .note.fake {
   width: min(19em, 28vw);
   font-family: "Ink Free", "Chalkduster", "Marker Felt", fantasy;

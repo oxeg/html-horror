@@ -5,7 +5,7 @@
 var PLAYTHROUGHS = [
   {
     name: "W1: the whole night, played right",
-    ending: "W1",
+    ending: "home",
     steps: [
       "go living", "click fridge-note", "click cat-bowl", "go entrance",
       "go sister-room", "click sister-awake", "wait", "click sister-awake",
@@ -20,14 +20,14 @@ var PLAYTHROUGHS = [
       // rule 2: the reflection. Walk away.
       "go living", "go entrance",
       // 22:20 rule 3: the face. Lock the right bathroom and count.
-      "go my-room", "beam face", "go entrance", "go bath", "click lock",
+      "go my-room", "beam face", "go entrance", "go bath", "click bath-lock",
       "wait", "wait", "wait", "wait", "wait", "wait", "wait", "wait", "wait", "wait",
       // 22:40 rule 4a: nobody there.
       "wait", "wait", "wait",
       // 23:00 rule 7: "Mom" at the door, and the fake note.
       "wait", "go entrance", "click doorbell", "click talk", "close", "click fake-note",
       // 23:10 rule 4b: take your sister and hide.
-      "wait", "go sister-room", "click sister-asleep", "go entrance", "go bath", "click lock",
+      "wait", "go sister-room", "click sister-asleep", "go entrance", "go bath", "click bath-lock",
       "wait", "wait",
       // 23:30: home.
       "wait",
@@ -35,65 +35,65 @@ var PLAYTHROUGHS = [
   },
   {
     name: "E1: answering the not-sister",
-    ending: "E1",
+    ending: "it-wasnt-her",
     retry: { danger: "rule1" },
-    steps: ["jump 21:15 my-room", "wait", "go entrance", "click not-sister"],
+    steps: ["jump 21:15 my-room", "wait", "go entrance", "click hall-not-sister"],
   },
   {
     name: "E2: touching anything while the reflection moves",
-    ending: "E2",
+    ending: "mirror",
     retry: { danger: "rule2" },
     steps: ["jump 21:35 entrance", "wait", "go living", "click fridge"],
   },
   {
     name: "E3: going through the open bedroom door",
-    ending: "E3",
+    ending: "open-door",
     retry: { danger: null },
     steps: ["jump 21:41 master-door", "wait", "click door-open"],
   },
   {
     name: "E4: letting the cat in",
-    ending: "E4",
+    ending: "not-the-cat",
     retry: { danger: "rule5" },
     steps: ["jump 21:59 living", "wait", "click balcony-door"],
   },
   {
     name: "E5: hiding in the washing-machine bathroom",
-    ending: "E5",
+    ending: "spin-cycle",
     retry: { danger: "rule3" },
-    steps: ["jump 22:15 my-room", "wait", "beam face", "go entrance", "go bath-washer", "click lock"],
+    steps: ["jump 22:15 my-room", "wait", "beam face", "go entrance", "go bath-washer", "click laundry-lock"],
   },
   {
     name: "E6: opening the door while counting",
-    ending: "E6",
+    ending: "sounds-like-us",
     retry: { danger: "rule3" },
     steps: [
-      "jump 22:15 my-room", "wait", "beam face", "go entrance", "go bath", "click lock",
-      "wait", "wait", "wait", "wait", "wait", "click lock",
+      "jump 22:15 my-room", "wait", "beam face", "go entrance", "go bath", "click bath-lock",
+      "wait", "wait", "wait", "wait", "wait", "click bath-lock",
     ],
   },
   {
     name: "E6-late: not hiding from the face in time",
-    ending: "E6",
+    ending: "sounds-like-us",
     retry: { danger: "rule3" },
     steps: ["jump 22:15 my-room", "wait", "beam face", "wait", "wait", "wait", "wait", "wait"],
   },
   {
     name: "E7: answering when nobody is there",
-    ending: "E7",
+    ending: "nobody-there",
     retry: { danger: "rule4a" },
     steps: ["jump 22:35 entrance", "wait", "click doorbell", "click talk"],
   },
   {
     name: "E8: letting 'Mom and Dad' in",
-    ending: "E8",
+    ending: "lost-keys",
     retry: { danger: "rule7" },
     steps: ["jump 22:55 entrance", "wait", "click doorbell", "click open"],
   },
   {
     name: "E9: hiding without your sister",
-    ending: "E9",
+    ending: "forgot-her",
     retry: { danger: "rule4b" },
-    steps: ["jump 23:05 entrance", "wait", "go bath", "click lock"],
+    steps: ["jump 23:05 entrance", "wait", "go bath", "click bath-lock"],
   },
 ];

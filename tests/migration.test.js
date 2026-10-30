@@ -241,3 +241,66 @@ test("the sister-awake script does what the old hotspot did", function () {
     { texts: [capitalize(h.text)], sounds: [], shake: false, show: h.show.slice().sort(), hide: h.hide.slice().sort(), dark: false, ending: null },
     "at " + h.notBefore);
 });
+
+// ---- the content: index.html against the old ROOM_INFO, NOTES and ENDINGS ----
+
+// Her HTML spells & as &amp; and may spell " as &quot;; the old story wrote them plainly.
+function decoded(text) {
+  return String(text === undefined ? "" : text).replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+}
+function collapsed(text) { return decoded(text).replace(/\s+/g, " ").trim(); }
+
+// A note's words without its tags. The old fridge note numbered its rules by hand ("1. ") and had
+// "Mom & Dad" on the heading's line after a comma; the new note numbers them with <ol> and gives
+// "Mom & Dad" a line of its own.
+function noteWords(html, isOld) {
+  var text = String(html);
+  if (isOld) text = text.replace(/<\/b>, /, "</b> ").replace(/(^|<br>)\s*\d+\. /g, "$1");
+  return collapsed(text.replace(/<[^>]+>/g, " "));
+}
+
+// An ending's text is one <p> in the HTML; the old story had the same words without it. The HTML
+// starts a new source line after each <br>, which shows the same (a line never starts with a space).
+function endingWords(html) { return collapsed(String(html).replace(/<\/?p>/g, "")).replace(/<br> /g, "<br>"); }
+
+test("the HTML says every word the old story said", function () {
+  var w = Loader.build(minidom(INDEX_HTML).body);
+  var camera = Object.keys(ROOM_INFO).filter(function (id) { return ROOM_INFO[id].overlay; })[0];
+
+  eq(Object.keys(w.rooms).sort(), Object.keys(ROOM_INFO).sort(), "rooms");
+  Object.keys(ROOM_INFO).forEach(function (room) {
+    var old = ROOM_INFO[room];
+    var now = w.rooms[room];
+    eq({ name: capitalize(now.name), exits: now.exits, overlay: now.overlay },
+      { name: capitalize(old.name), exits: old.exits, overlay: !!old.overlay }, room);
+    eq(Object.keys(now.hotspots).sort(),
+      Object.keys(old.hotspots).map(function (id) { return newNames(room, id)[0]; }).sort(), room + " buttons");
+    // tooEarly and notBefore (sister-awake) live in rules.js, so they aren't compared here.
+    Object.keys(old.hotspots).forEach(function (id) {
+      var o = old.hotspots[id];
+      var n = now.hotspots[newNames(room, id)[0]];
+      eq({
+        names: n.names, label: capitalize(n.label), text: capitalize(collapsed(n.text)), hidden: n.hidden,
+        note: n.note, ending: n.ending, goTo: n.goTo, minutes: n.minutes, camera: n.camera,
+      }, {
+        names: newNames(room, id), label: capitalize(o.label), text: capitalize(collapsed(o.text)), hidden: !!o.hidden,
+        note: renamed(RENAMES.notes, o.note), ending: renamed(RENAMES.endings, o.ending), goTo: o.goTo,
+        minutes: o.minutes, camera: o.action === "camera" ? camera : undefined,
+      }, room + "/" + id);
+    });
+  });
+
+  eq(Object.keys(w.notes).sort(), Object.keys(NOTES).map(function (id) { return renamed(RENAMES.notes, id); }).sort(), "notes");
+  Object.keys(NOTES).forEach(function (id) {
+    var n = w.notes[renamed(RENAMES.notes, id)];
+    eq({ words: noteWords(n.html), fake: n.fake }, { words: noteWords(NOTES[id].text, true), fake: NOTES[id].look === "fake" }, "note " + id);
+  });
+
+  eq(Object.keys(w.endings).sort(), Object.keys(ENDINGS).map(function (id) { return renamed(RENAMES.endings, id); }).sort(), "endings");
+  Object.keys(ENDINGS).forEach(function (id) {
+    var o = ENDINGS[id];
+    var e = w.endings[renamed(RENAMES.endings, id)];
+    eq({ title: e.title, text: endingWords(e.text), win: e.win, sound: e.sound },
+      { title: o.title, text: endingWords(o.text), win: !!o.win, sound: o.sound }, "ending " + id);
+  });
+});

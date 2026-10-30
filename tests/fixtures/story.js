@@ -12,8 +12,8 @@ const SETTINGS = {
 };
 
 const NOTES = {
-  n1: { title: "Rules", text: "Rule one. Love you!", look: "mom" },
-  fake: { title: "", text: "Let us in.", look: "fake" },
+  n1: { title: "Rules", fake: false, html: "<ol><li>Rule one.</li></ol><p class=\"sign\">Love you!</p>" },
+  fake: { title: "", fake: true, html: "<p>Let us in.</p>" },
 };
 
 const ROOM_INFO = {
@@ -47,7 +47,7 @@ const ROOM_INFO = {
       trap: { label: "Trap", ending: "X1" },
       lamp: { label: "Lamp", names: ["lamp", "light"], text: "Click.", show: ["lit"] },
       kid: { label: "Kid", text: "Goodnight.", notBefore: "19:30", tooEarly: "Too early", show: ["asleep"] },
-      cam: { label: "Camera", action: "camera" },
+      cam: { label: "Camera", camera: "feed" },
       clock: { label: "Clock", text: "Tick.", minutes: 0 },
       ghostly: { label: "Ghostly", text: "Boo.", hidden: true },
     },

@@ -1,7 +1,7 @@
 // engine.js: the game machine. It keeps track of the clock, the room, what is shown
 // or hidden, the events and the dangers. It never draws anything (view.js does that), so the
 // tests can play the whole game without a browser. You don't need to change this
-// file: everything you'd want to change lives in story.js.
+// file: everything you'd want to change lives in index.html and story.js.
 
 var Game = (function () {
   var SAVE_KEY = "babysitting-rules:save";
@@ -9,6 +9,11 @@ var Game = (function () {
   var storageOn = true;
   var foundInMemory = [];
   var G = { state: null, checkpoint: null };
+  // Endings found before they had readable names still count.
+  var LEGACY_ENDINGS = {
+    E1: "it-wasnt-her", E2: "mirror", E3: "open-door", E4: "not-the-cat", E5: "spin-cycle",
+    E6: "sounds-like-us", E7: "nobody-there", E8: "lost-keys", E9: "forgot-her", W1: "home",
+  };
 
   // ---- small helpers ----
 
@@ -30,12 +35,9 @@ var Game = (function () {
     return EVENTS.filter(function (ev) { return ev.id === id; })[0] || null;
   }
 
-  function overlayRoom() {
-    return Object.keys(ROOM_INFO).filter(function (id) { return ROOM_INFO[id].overlay; })[0] || null;
-  }
-
+  // The camera, while it's open (state.camera is its room's id), else the room you're in.
   function scene() {
-    return G.state.camera ? overlayRoom() : G.state.room;
+    return G.state.camera || G.state.room;
   }
 
   // The id of the hotspot a name points at in a room: the exact id first,
@@ -64,7 +66,9 @@ var Game = (function () {
     return undefined;
   }
 
+  // Does this room have something with this name: a hotspot, or a part of its drawing?
   function roomHas(roomId, name) {
+    if (findHotspot(roomId, name)) return true;
     var svg = (typeof ROOMS !== "undefined" && ROOMS[roomId]) || "";
     return svg.indexOf('data-name="' + name + '"') >= 0 || svg.indexOf('data-hotspot="' + name + '"') >= 0;
   }
@@ -153,6 +157,7 @@ var Game = (function () {
   // A save from before she edited story.js may name things that no longer exist.
   function validState(s) {
     if (!s || typeof s.time !== "number" || !ROOM_INFO[s.room] || !s.shown || !s.fired) return false;
+    if (s.camera && !ROOM_INFO[s.camera]) return false;
     for (var id in s.fired) if (!eventById(id)) return false;
     if (s.danger && !(s.danger.def && (eventById(s.danger.id) || {}).danger)) return false;
     if (s.ending && !ENDINGS[s.ending]) return false;
@@ -170,7 +175,12 @@ var Game = (function () {
   }
 
   function endingsFound() {
-    return (readStore(ENDINGS_KEY) || foundInMemory).filter(function (id) { return ENDINGS[id]; });
+    var found = [];
+    (readStore(ENDINGS_KEY) || foundInMemory).forEach(function (id) {
+      if (!ENDINGS[id] && LEGACY_ENDINGS[id]) id = LEGACY_ENDINGS[id];
+      if (ENDINGS[id] && found.indexOf(id) < 0) found.push(id);
+    });
+    return found;
   }
 
   function endGame(endingId, r) {
@@ -435,7 +445,7 @@ var Game = (function () {
       save();
       return r;
     }
-    if (h.action === "camera") G.state.camera = true;
+    if (h.camera) G.state.camera = h.camera;
     if (h.goTo) enter(h.goTo);
     spend(minutes);
     return after(r, !!h.goTo, act);
@@ -513,6 +523,7 @@ var Game = (function () {
   G.scene = scene;
   G.label = label;
   G.roomHas = roomHas;
+  G.findHotspot = findHotspot;
   G.beamTouched = beamTouched;
   G.editJump = editJump;
   G.endingsFound = endingsFound;

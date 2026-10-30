@@ -20,7 +20,7 @@ test("check: unknown exit", function () {
   var old = ROOM_INFO.a.exits;
   try {
     ROOM_INFO.a.exits = ["zz"];
-    checked(function (r) { ok(mentions(r.errors, ["story.js", '"a"', '"zz"']), r.errors.join("|")); });
+    checked(function (r) { ok(mentions(r.errors, ["index.html", '"a"', '"zz"']), r.errors.join("|")); });
   } finally { ROOM_INFO.a.exits = old; }
 });
 
@@ -28,7 +28,7 @@ test("check: unknown goTo", function () {
   var old = ROOM_INFO.b.hotspots.door.goTo;
   try {
     ROOM_INFO.b.hotspots.door.goTo = "nowhere";
-    checked(function (r) { ok(mentions(r.errors, ["story.js", "door", "nowhere"]), r.errors.join("|")); });
+    checked(function (r) { ok(mentions(r.errors, ["index.html", "door", "nowhere"]), r.errors.join("|")); });
   } finally { ROOM_INFO.b.hotspots.door.goTo = old; }
 });
 
@@ -114,19 +114,40 @@ test("check: hotspot note that does not exist", function () {
 });
 
 test("check: fake note signed Love you gives a warning", function () {
-  var old = NOTES.fake.text;
+  var old = NOTES.fake.html;
   try {
-    NOTES.fake.text = old + " Love you!";
+    NOTES.fake.html = old + "<p>Love you!</p>";
     checked(function (r) { ok(mentions(r.warnings, ["fake", "Love you"]), r.warnings.join("|")); });
-  } finally { NOTES.fake.text = old; }
+  } finally { NOTES.fake.html = old; }
 });
 
 test("check: real note without Love you gives a warning", function () {
-  var old = NOTES.n1.text;
+  var old = NOTES.n1.html;
   try {
-    NOTES.n1.text = "Rule one.";
+    NOTES.n1.html = "<ol><li>Rule one.</li></ol>";
     checked(function (r) { ok(mentions(r.warnings, ["n1", "Love you"]), r.warnings.join("|")); });
-  } finally { NOTES.n1.text = old; }
+  } finally { NOTES.n1.html = old; }
+});
+
+test("check: a hotspot is in its drawing when any of its names is", function () {
+  var lamp = ROOM_INFO.c.hotspots.lamp; // names ["lamp", "light"]
+  var old = ROOMS.c;
+  try {
+    ROOMS.c = old.replace('data-hotspot="lamp"', 'data-hotspot="light"');
+    checked(function (r) { eq(r.errors, [], "found by its class"); });
+    lamp.names = ["lamp"];
+    checked(function (r) { ok(mentions(r.errors, ["rooms/c.js", "lamp"]), r.errors.join("|")); });
+  } finally { ROOMS.c = old; lamp.names = ["lamp", "light"]; }
+});
+
+test("check: danger steps and deadly clicks find hotspots by name", function () {
+  var step = eventById("pick").danger.steps[0];
+  var f = eventById("hide").danger.fatal[0];
+  try {
+    step.hotspot = "light"; // the lamp's class, in room c
+    f.hotspot = "light";
+    checked(function (r) { eq(r.errors, [], "errors"); eq(r.warnings, [], "warnings"); });
+  } finally { step.hotspot = "kid"; f.hotspot = "trap"; }
 });
 
 test("check: shortest counts nav, goTo and clicks", function () {

@@ -1,12 +1,12 @@
 // view.js: draws the game on the screen and listens for clicks.
-// You don't need to change this file. The story lives in story.js.
+// You don't need to change this file. The story lives in index.html and story.js.
 // It touches the page only when View.boot() is called, so the tests can load it in Node.
 
 var View = (function () {
   var V = {};
   var el = {};          // the page elements we use, found in boot()
   var drawn = null;     // which drawing is in #scene right now
-  var drawnCamera = null;
+  var drawnCamera = null;  // which camera drawing is in #camera-art
   var playing = false;  // false while the title screen is up
   var popups = [];
   var popupTimer = null;
@@ -144,12 +144,14 @@ var View = (function () {
     });
   }
 
-  function clickHotspot(id) {
+  // name is the drawing's data-hotspot: the button's id or one of its classes.
+  function clickHotspot(name) {
     if (!playing || Game.state.ending || el.notes.className === "on") return;
-    var info = ROOM_INFO[Game.scene()];
-    var def = info && info.hotspots && info.hotspots[id];
+    var room = Game.scene();
+    var id = Game.findHotspot(room, name);
+    var def = id && ROOM_INFO[room].hotspots[id];
     hideLabel();
-    if (!V.act(function () { return Game.click(id); })) return;
+    if (!V.act(function () { return Game.click(name); })) return;
     if (def && def.note && !Game.state.ending) openNotes();
   }
 
@@ -266,20 +268,13 @@ var View = (function () {
 
   // ---- notes ----
 
-  // Each line of a note becomes its own block, so a rule never splits between the two columns.
-  function noteLines(text) {
-    return String(text).split(/<br\s*\/?>/).map(function (line) {
-      line = line.trim();
-      return line ? '<div class="line">' + line + "</div>" : '<div class="gap"></div>';
-    }).join("");
-  }
-
+  // Each note you found, as index.html writes it, with the id note-<its id>.
   function renderNotes() {
     var found = Game.state.notes;
     var html = "";
     found.forEach(function (id) {
       var n = NOTES[id];
-      if (n) html += '<div class="note ' + n.look + '" title="' + n.title + '">' + noteLines(n.text) + "</div>";
+      if (n) html += '<div class="note' + (n.fake ? " fake" : "") + '" id="note-' + id + '">' + n.html + "</div>";
     });
     el.notesList.innerHTML = html || '<p class="none">No notes yet.</p>';
     el.notesList.className = found.length > 1 ? "both" : "";
@@ -388,12 +383,12 @@ var View = (function () {
     }
     V.applyVisibility(el.scene, room);
 
-    if (s.camera) {
-      if (!drawnCamera) {
-        inject(el.cameraArt, Game.scene());
-        drawnCamera = true;
+    if (s.camera) {  // the camera room's id while it's open
+      if (drawnCamera !== s.camera) {
+        inject(el.cameraArt, s.camera);
+        drawnCamera = s.camera;
       }
-      V.applyVisibility(el.cameraArt, Game.scene());
+      V.applyVisibility(el.cameraArt, s.camera);
       el.camera.className = "on";
     } else {
       el.camera.className = "";

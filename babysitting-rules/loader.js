@@ -6,7 +6,7 @@
 var Loader = (function () {
   var L = {};
   var G = typeof globalThis !== "undefined" ? globalThis : this;
-  // Make sure the three names exist (story.js may still define them for now).
+  // Make sure the three names exist before anything reads them.
   ["ROOM_INFO", "NOTES", "ENDINGS"].forEach(function (name) {
     if (!(name in G)) G[name] = undefined;
   });
@@ -16,14 +16,20 @@ var Loader = (function () {
   }
   function hasClass(el, c) { return classesOf(el).indexOf(c) >= 0; }
   function tag(el) { return el.tagName.toLowerCase(); }
+  // A plain list of an element's children (a browser gives a list without forEach or filter).
+  function childrenOf(el) {
+    var out = [];
+    for (var i = 0; i < el.children.length; i++) out.push(el.children[i]);
+    return out;
+  }
   function kids(el, name, className) {
-    return el.children.filter(function (c) {
+    return childrenOf(el).filter(function (c) {
       return tag(c) === name && (!className || hasClass(c, className));
     });
   }
   function descendants(el, out) {
     out = out || [];
-    el.children.forEach(function (c) { out.push(c); descendants(c, out); });
+    childrenOf(el).forEach(function (c) { out.push(c); descendants(c, out); });
     return out;
   }
   function put(obj, key, value) { if (value !== null) obj[key] = value; }
@@ -53,7 +59,7 @@ var Loader = (function () {
       });
     });
     var r = { name: el.getAttribute("title"), exits: exits, overlay: hasClass(el, "camera"), hotspots: {} };
-    el.children.forEach(function (c) {
+    childrenOf(el).forEach(function (c) {
       if (tag(c) === "button" || tag(c) === "a") r.hotspots[c.getAttribute("id")] = hotspot(c);
     });
     return r;
@@ -68,7 +74,7 @@ var Loader = (function () {
   }
 
   function walk(el, parents, world) {
-    el.children.forEach(function (c) {
+    childrenOf(el).forEach(function (c) {
       var inRoom = parents.some(function (p) { return tag(p) === "section" && hasClass(p, "room"); });
       if (c.getAttribute("id") || inRoom) {
         world.elements.push(where(c, parents));
@@ -101,13 +107,14 @@ var Loader = (function () {
     return world;
   };
 
-  // Builds the world, sets ROOM_INFO, NOTES and ENDINGS, and gives each hotspot its whenClicked script.
+  // Builds the world, sets ROOM_INFO, NOTES and ENDINGS, and gives each hotspot its whenClicked
+  // script (when toolbox.js is there).
   L.read = function (root) {
     var world = L.build(root);
     G.ROOM_INFO = world.rooms;
     G.NOTES = world.notes;
     G.ENDINGS = world.endings;
-    var scripts = Toolbox.clickScripts();
+    var scripts = typeof Toolbox !== "undefined" ? Toolbox.clickScripts() : {};
     Object.keys(world.rooms).forEach(function (rid) {
       var spots = world.rooms[rid].hotspots;
       Object.keys(spots).forEach(function (hid) {
