@@ -187,13 +187,19 @@ var View = (function () {
         V.touchTap(null);
         return hideLabel();
       }
-      // A click from the keyboard (Enter or Space: detail 0) acts at once, even on a phone.
+      // A click from the keyboard (detail 0: Enter, or Space on a button) acts at once, even on a phone.
       if (e.detail !== 0 && lastPointer === "touch" && !V.touchTap(spot)) {
         var r = spot.getBoundingClientRect();
         return showLabel(spot, e.clientX || r.left + r.width / 2, e.clientY || r.top);
       }
       V.touchTap(null);
       use(spot);
+    });
+    // A link only answers Enter by itself: Space opens a door too (and never scrolls the page).
+    room.addEventListener("keydown", function (e) {
+      if (e.key !== " " || e.repeat || !e.target.matches || !e.target.matches(".room > a")) return;
+      e.preventDefault();
+      e.target.click();
     });
   }
 
@@ -318,6 +324,14 @@ var View = (function () {
         play("sting");
       }
     }
+  }
+
+  // A room that leaves the screen drops its shake and its jump-scare pop-ins. Off the screen it's
+  // display: none, and an animation starts over when its room shows again.
+  function stopAnimations(box) {
+    box.classList.remove("shake");
+    var parts = box.querySelectorAll("[data-scare]");
+    for (var i = 0; i < parts.length; i++) parts[i].classList.remove("scare-in");
   }
 
   // Shakes what's on the screen: the room, and the camera if it's open.
@@ -470,7 +484,11 @@ var View = (function () {
       light(null);
       onScreen = scene;
     }
-    for (var id in rooms) rooms[id].classList.toggle("here", id === room || id === s.camera);
+    for (var id in rooms) {
+      var here = id === room || id === s.camera;
+      if (!here && rooms[id].classList.contains("here")) stopAnimations(rooms[id]);
+      rooms[id].classList.toggle("here", here);
+    }
     V.applyVisibility(rooms[room], room);
     if (s.camera) V.applyVisibility(rooms[s.camera], s.camera);
     el.camera.className = s.camera ? "on" : "";  // the camera's Close button

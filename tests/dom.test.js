@@ -247,6 +247,48 @@ if (typeof document !== "undefined") {
       ok(!document.querySelector(".lit"), "nothing glows once the mouse is gone");
     });
 
+    // A room off the screen is display: none, and an animation starts over when it shows again.
+    test("a shake or a scare doesn't play again when you walk back into the room", function () {
+      inRoom("living");
+      var living = document.getElementById("living");
+      var face = drawingPart("living", "face-close");  // data-scare
+      View.show({ texts: [], sounds: [], shake: true, ending: null });
+      ok(living.classList.contains("shake"), "the living room shakes");
+      Game.setShown("face-close", true);
+      View.render();
+      ok(face.classList.contains("scare-in"), "the face jumps out");
+      Game.go("entrance");
+      View.render();
+      ok(!living.classList.contains("shake"), "the room you left stops shaking");
+      ok(!face.classList.contains("scare-in"), "and its face stops jumping out");
+      Game.go("living");
+      View.render();
+      ok(!living.classList.contains("shake"), "back in the living room: no shake");
+      ok(!face.classList.contains("scare-in"), "and the face, still there, stays still");
+    });
+
+    test("Space on a focused link opens the door once", function () {
+      inRoom("master");
+      var door = document.getElementById("walk-in-door");
+      door.focus();
+      ok(document.activeElement === door, "the door takes the focus");
+      var hash = location.hash;
+      var clicks = clickCounter();
+      var space = new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true });
+      // even right after a finger touched the screen: a key is never the first of two taps
+      withFinger(function () {
+        try {
+          door.dispatchEvent(space);
+        } finally {
+          clicks.stop();
+        }
+      });
+      eq(clicks.n, 1, "one click");
+      eq(Game.state.room, "walk-in", "through the door");
+      eq(location.hash, hash, "the page didn't jump");
+      ok(space.defaultPrevented, "Space didn't scroll the page");
+    });
+
     // ---- parity: the browser and minidom read the same world out of index.html ----
 
     // The browser writes innerHTML back out its own way. Spellings that differ for the same text:
