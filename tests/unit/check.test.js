@@ -320,6 +320,41 @@ test("check: a hidden button no rule ever shows", function () {
   quiet(function () { when("19:30", lightFinds("box", 2), function () {}); });
 });
 
+// Her own blocks (functions at the top of rules.js), for the tests below: the reading follows them.
+function revealTheBox() { show("crate"); }
+function hideTheGhots() { hide("ghots"); }
+function pingA() { pingB(); }
+function pingB() { pingA(); show("box"); }
+
+test("check: a hidden button shown only from her own function is fine", function () {
+  var html = '<section class="room" id="a" title="Hub"><button id="rug" title="Rug">A rug.</button>' +
+    '<button id="box" class="crate" title="Box" hidden>A box.</button></section>' + WIN;
+  var r = world(html, function () { startInA(); when("19:30", function () { revealTheBox(); }); });
+  eq(r.warnings, []);
+  r = world(html, function () { startInA(); whenClicked("rug", function () { pingA(); }); });  // they call each other: each is read once
+  eq(r.warnings, []);
+});
+
+test("check: a name inside her own function is checked, and the message names the function", function () {
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    whenClicked("lamp", function () { hideTheGhots(); });
+  });
+  ok(mentions(r.warnings, ["rules.js (inside your function hideTheGhots())", 'hide("ghots")', "did you mean ghost?"]), r.warnings.join("|"));
+});
+
+test("check: a string joined with + isn't a name", function () {
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    whenClicked("lamp", function () {
+      var where = "close";
+      show("face-" + where);
+      hide("gh" + "ost");
+    });
+  });
+  ok(!mentions(r.warnings, ["no button or part of a drawing"]), r.warnings.join("|"));
+});
+
 // ---- dangers, from each rule's pretend run ----
 
 test("check: unknown ending ids", function () {

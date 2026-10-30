@@ -185,7 +185,8 @@ var Toolbox = (function () {
   // Every call written in a script, read from its source: [{ name, line, method, declared, words }].
   // line: the script's first line is 1. method: a call like list.push(…). declared: not a call but
   // function name(…), her own block. words: the plain strings written right inside its brackets
-  // (in a list too, but not inside another call). Strings and comments are skipped.
+  // (in a list too, but not inside another call). A string joined with + or holding ${…} is only
+  // part of a word, so it isn't one. Strings and comments are skipped.
   T.calls = function (fn) {
     var src = String(fn);
     var calls = [];
@@ -201,7 +202,8 @@ var Toolbox = (function () {
       if (space) continue;
       if (string) {
         var inside = open[open.length - 1];
-        if (inside && t.indexOf("${") < 0) inside.words.push(t.slice(1, -1));
+        var part = last === "+" || /^\s*\+/.test(src.slice(i)) || t.indexOf("${") >= 0;
+        if (inside && !part) inside.words.push(t.slice(1, -1));
         t = '"';
       } else if (t === "(") {
         var call = WORD.test(last) ? { name: last, line: line, method: before === ".", declared: before === "function", words: [] } : null;

@@ -316,8 +316,12 @@ var Check = (function () {
   // rules.js: the setup, every rule (its conditions, then a pretend run, then a reading) and every
   // click script, then the hidden buttons nothing shows.
   function checkRules(out, n) {
-    var shown = [];        // every name a rule or a click script shows
-    var endingsSaid = Object.create(null);  // endGame() endings the pretend runs already said are missing
+    var reading = {
+      shown: [],                         // every name a rule, a click script or her own function shows
+      endingsSaid: Object.create(null),  // endGame() endings the pretend runs already said are missing
+      unknown: [],                       // the words the reading said aren't blocks
+      read: [],                          // her own functions read already (each one once)
+    };
     if (!isRoom(SETTINGS.startRoom)) out.errors.push('rules.js: startAt(…): the night starts in the room "' + SETTINGS.startRoom + '", but there is no room "' + SETTINGS.startRoom + '" in index.html' + orGuess(SETTINGS.startRoom, n.rooms));
     if (badTime(SETTINGS.startTime)) out.errors.push('rules.js: startAt("' + SETTINGS.startTime + '"): the time "' + SETTINGS.startTime + '" ' + TIME);
     var times = EVENTS.map(function (ev) { return ev.time; });
@@ -347,7 +351,7 @@ var Check = (function () {
         if (!same) out.errors.push(at + 'afterRule("' + ev.after + '"): there is no rule at ' + ev.after + orGuess(ev.after, others));
         if (same > 1) out.errors.push(at + 'afterRule("' + ev.after + '"): there are ' + same + " rules at " + ev.after + ", so it can't tell which one you mean. Give one of them another time.");
       }
-      (ev.armShow || []).forEach(function (name) { add(shown, name); });
+      (ev.armShow || []).forEach(function (name) { add(reading.shown, name); });
       if (typeof ev.run !== "function") {
         out.errors.push(at + hat + ' needs a function at the end, like when("' + ev.time + '", function () { … });');
         return;
@@ -355,14 +359,14 @@ var Check = (function () {
 
       var does = Toolbox.pretend(ev);
       if (does.ending && !has(ENDINGS, does.ending)) {
-        endingsSaid[does.ending] = true;
+        reading.endingsSaid[does.ending] = true;
         out.errors.push(at + 'endGame("' + does.ending + '"): there is no ending "' + does.ending + '" in index.html' + orGuess(does.ending, ids(ENDINGS)));
       }
-      if (does.danger) checkDanger(out, n, ev, does.danger, shown);
-      var unknown = readScript(out, n, ev.run, ev.line, shown, endingsSaid);
+      if (does.danger) checkDanger(out, n, ev, does.danger, reading.shown);
+      readScript(out, n, { fn: ev.run, line: ev.line }, reading);
       does.problems.forEach(function (p) {
         var name = notDefined(p.message);
-        if (name && unknown.indexOf(name) >= 0) return;  // the reading said so already
+        if (name && reading.unknown.indexOf(name) >= 0) return;  // the reading said so already
         out.warnings.push(inRules(p.line) + "the rule at " + ev.time + " stops halfway with a mistake: " + String(p.message).replace(/\.$/, "") + orGuess(name, Toolbox.blocks));
       });
     });
@@ -374,13 +378,13 @@ var Check = (function () {
       if (typeof scripts[name].run !== "function") {
         out.errors.push(at + 'whenClicked("' + name + '", …) needs a function at the end, like whenClicked("' + name + '", function () { … });');
       } else {
-        readScript(out, n, scripts[name].run, scripts[name].line, shown, endingsSaid);
+        readScript(out, n, { fn: scripts[name].run, line: scripts[name].line }, reading);
       }
     });
 
     eachSpot(function (spot, h) {
       if (!spot.hidden || noId(spot, h)) return;
-      if (!namesOf(spot, h).some(function (name) { return shown.indexOf(name) >= 0; })) {
+      if (!namesOf(spot, h).some(function (name) { return reading.shown.indexOf(name) >= 0; })) {
         out.warnings.push('index.html: the button "' + h + '" starts hidden, but no rule in rules.js ever shows it. Add show("' + h + '") to a rule, or take out hidden.');
       }
     });
@@ -396,28 +400,45 @@ var Check = (function () {
     out.warnings.push(what + ' there is no sound "' + name + '"' + (guess ? ", " + guess : ". The sounds are: " + Sound.names.join(", ") + "."));
   }
 
-  // Reads a script without running it (all warnings): the names it shows, hides, asks about,
-  // plays and ends with, and the words it calls that aren't blocks. Gives those words.
-  function readScript(out, n, fn, line, shown, endingsSaid) {
-    var calls = Toolbox.calls(fn);
-    var unknown = unknownCalls(fn, calls);
-    unknown.forEach(function (c) {
-      out.warnings.push(inRules(line && line + c.line - 1) + c.name + "( isn't a block or a function of yours" +
+  // Her own function with this name, if it is one: a global function that isn't a block or one of
+  // the browser's own.
+  function ownFunction(name) {
+    var fn = KEYWORDS.indexOf(name) < 0 && Toolbox.blocks.indexOf(name) < 0 ? GLOBAL[name] : null;
+    return typeof fn === "function" && !/\{\s*\[native code\]\s*\}\s*$/.test(String(fn)) ? fn : null;
+  }
+
+  // Where a call is: its line in rules.js, or the name of her own function (its line can't be known).
+  function placeOf(script, c) {
+    return script.name ? "rules.js (inside your function " + script.name + "()): " : inRules(script.line && script.line + c.line - 1);
+  }
+
+  // Reads a script ({ fn, line }, or her own function { fn, name }) without running it (all
+  // warnings): the names it shows, hides, asks about, plays and ends with, and the words it calls
+  // that aren't blocks. Her own functions it calls get read too, each one once.
+  function readScript(out, n, script, reading) {
+    var calls = Toolbox.calls(script.fn);
+    unknownCalls(script.fn, calls).forEach(function (c) {
+      add(reading.unknown, c.name);
+      out.warnings.push(placeOf(script, c) + c.name + "( isn't a block or a function of yours" +
         orGuess(c.name + "(", Toolbox.blocks.map(function (b) { return b + "("; })));
     });
     calls.forEach(function (c) {
       if (c.method) return;
       c.words.forEach(function (w) {
-        var what = inRules(line && line + c.line - 1) + c.name + '("' + w + '"):';
-        if (c.name === "show") add(shown, w);
+        var what = placeOf(script, c) + c.name + '("' + w + '"):';
+        if (c.name === "show") add(reading.shown, w);
         if (c.name === "show" || c.name === "hide" || c.name === "isShown") unknownThing(out, n, what, w);
         if (c.name === "playSound") unknownSound(out, what, w);
-        if (c.name === "endGame" && !has(ENDINGS, w) && !endingsSaid[w]) {
+        if (c.name === "endGame" && !has(ENDINGS, w) && !reading.endingsSaid[w]) {
           out.warnings.push(what + ' there is no ending "' + w + '" in index.html' + orGuess(w, ids(ENDINGS)));
         }
       });
+      var own = !c.declared && ownFunction(c.name);
+      if (own && reading.read.indexOf(own) < 0) {
+        reading.read.push(own);
+        readScript(out, n, { fn: own, name: c.name }, reading);
+      }
     });
-    return unknown.map(function (c) { return c.name; });
   }
 
   // A plain word where a danger needs a block (safe: "walk-in" instead of beIn("walk-in")).

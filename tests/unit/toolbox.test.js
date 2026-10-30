@@ -386,3 +386,9 @@ test("calls reads a script's calls without running it", function () {
     ["say", 6, false, false, ["f"]],
   ]);
 });
+
+test("calls skips a string joined with +: it isn't a whole name", function () {
+  var calls = Toolbox.calls(function () { show("cat-" + where, "a" + "b", "c"); });
+  eq(calls[1].name, "show");
+  eq(calls[1].words, ["c"]);
+});
