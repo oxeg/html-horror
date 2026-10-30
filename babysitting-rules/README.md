@@ -51,6 +51,9 @@ While you're playing, press **E**. The lights come on and a panel opens:
 
 - **Every button gets a green box with its id**, so you know what to call it.
 - **Room and Time:** pick a room, type a time like `22:05`, and press Go to jump there.
+- **Tonight:** click it to see when every rule in `rules.js` comes tonight (every new game
+  picks new times), with its line in `rules.js`. *skipped* means it doesn't come tonight.
+  Click a line to put its time in the Time box.
 - **Pointer:** shows where your mouse is on the picture, like `left: 41.2%  top: 30.5%`.
   That's how you place a new button (CSS mission 2).
 - **lights out** switches the lights off and on.
@@ -107,9 +110,11 @@ still there. `<br>` starts a new line, and `<b>bold</b>` makes words bold.
 1. The endings are at the bottom of `index.html`. Find `<section class="ending" id="mirror">`.
 2. Change the words in `<h1>` (the big title) or in `<p>` (the story).
 
-**Check it:** reload and get that ending: after 21:40, walk into the living room and click
-anything there. To get there faster, press E, jump to the hallway at 21:35, press E again,
-and walk to the living room.
+**Check it:** reload and get that ending: when your reflection moves in the living room,
+click anything there. To get there faster, press E and open **Tonight**. Click the line that
+says *In the dark glass of the balcony…*, so its time goes in the Time box. Pick the hallway,
+press Go, press E again, and walk to the living room. (If that line says *skipped*, tonight has
+no reflection: reload and press Start for a new night.)
 
 ### HTML 4: Add something you can click
 
@@ -386,6 +391,39 @@ A rule needs three things: the rule on Mom's note, the danger in `rules.js`, and
 **Check it:** go to your room after 20:15. Try both: leave in time, and click your bed.
 The other rules in `rules.js` show every piece a danger can have.
 
+### JS 8: Your own spooky extra
+
+*You'll learn: `between` and `onSomeNights`, the random blocks.*
+
+At the end of `rules.js` there are **Little spooky things**: small surprises that come on
+some nights and can't hurt you. Add your own under them:
+```js
+// The TV turns on by itself
+when(between("21:00", "22:30"), onSomeNights(1, 2), function () {
+  playSound("click");
+  say("In the living room, the TV turns on by itself. Static. Then it's off again.");
+});
+```
+`between("21:00", "22:30")` picks a new time in there for every new game, like Scratch's
+*pick random*. `onSomeNights(1, 2)` means it comes on 1 night out of 2.
+
+**Check it:** reload and press Start. Press E and open **Tonight**: your TV is in the list,
+with a time, or *skipped* on a night without it (then reload and press Start again). Click
+its line, press Go, press E again, and press Wait.
+
+### JS 9: Change how often a scare comes
+
+*You'll learn: changing a block's numbers.*
+
+1. Find `// Rule 5: the cat on the balcony` in `rules.js`. The line under it says
+   `when(between("21:35", "22:40"), onSomeNights(9, 10), function () {`.
+2. Make the cat come every night, and early: change it to
+   `when(between("21:05", "21:15"), onSomeNights(10, 10), function () {`.
+
+**Check it:** reload, press Start, press E and open **Tonight**: the line that says *The cat
+is outside on the balcony…* has a time from 21:05 to 21:15, and never *skipped*. Try a few new
+games. (**Continue** keeps the night you were playing, so start a new game to see a change.)
+
 ---
 
 ## All the blocks
@@ -394,18 +432,20 @@ The other rules in `rules.js` show every piece a danger can have.
 |---|---|
 | `whenClicked("fridge", function () { … })` | runs when you click something (its id or class) |
 | `when("21:00", function () { … })` | runs once, when the clock gets there |
+| `between("21:00", "22:00")` | (instead of the time in `when`) a new time in there for every new game |
+| `onSomeNights(9, 10)` | (inside `when`) it happens on 9 nights out of 10 |
 | `inRoom("living")` | (inside `when`) waits until you're in that room |
 | `enteringRoomWith("not-sister")` | (inside `when`) waits until you walk into a room that has it |
 | `lightFinds("face", 3)` | (inside `when`) shows it, and waits until your light finds it, or 3 clicks |
 | `notIn("master", "walk-in")` | (inside `when`) not while you're in one of these rooms |
-| `afterRule("21:20")` | (inside `when`) only after the rule at 21:20 has happened |
+| `afterRule("21:10")` | (inside `when`) only after the rule that starts at 21:10 has happened (or if it's skipped tonight) |
 | `say("Hi!")` | pops up words |
 | `playSound("knock")` | plays a sound |
 | `shake()` | shakes the picture |
 | `show("face")`, `hide("face")` | shows or hides things by name |
 | `lightsOut()`, `lightsOn()` | the lights |
 | `endGame("home")` | ends the game with that ending |
-| `danger({ … })` | starts a danger (see the rules at 21:20, 22:00, 22:20 and 23:00) |
+| `danger({ … })` | starts a danger (see rules 1, 3, 5 and 7 in `rules.js`) |
 | `isShown("face")` | yes if it's showing |
 | `youAreIn("living")` | yes if you're in that room |
 | `clockIsBefore("20:00")` | yes if it's earlier than that |
