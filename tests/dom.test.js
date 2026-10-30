@@ -325,6 +325,23 @@ if (typeof document !== "undefined") {
       }
     });
 
+    test("an ending index.html doesn't have never breaks the view: the box says so, and Try again is there", function () {
+      inRoom("living");
+      Game.state.ending = "homee";  // a name rules.js made in a way the checks can't read
+      try {
+        View.render();
+        var box = document.getElementById("rule-problem");
+        ok(getComputedStyle(box).display !== "none", "the box shows");
+        eq(box.querySelector("p").textContent, 'rules.js: there is no ending "homee" in index.html, did you mean home?');
+        eq(document.getElementById("ending").className, "on", "the ending screen shows");
+        eq([].map.call(document.querySelectorAll("#ending-buttons button"), function (b) { return b.textContent; }), ["Try again", "Start over"]);
+      } finally {
+        document.getElementById("rule-problem-ok").click();
+        Game.newGame();
+        View.render();
+      }
+    });
+
     // ---- where the buttons sit: Check.layout() measures them against the picture ----
 
     function says(list, parts) {

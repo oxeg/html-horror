@@ -326,7 +326,7 @@ var Check = (function () {
   function checkRules(out, n) {
     var reading = {
       shown: [],                         // every name a rule, a click script or her own function shows
-      endingsSaid: Object.create(null),  // endGame() endings the pretend runs already said are missing
+      endingsSaid: Object.create(null),  // endGame() endings this rule's pretend run already said are missing
       unknown: [],                       // the words the reading said aren't blocks
       read: [],                          // her own functions read already (each one once)
     };
@@ -366,6 +366,7 @@ var Check = (function () {
       }
 
       var does = Toolbox.pretend(ev);
+      reading.endingsSaid = Object.create(null);
       if (does.ending && !has(ENDINGS, does.ending)) {
         reading.endingsSaid[does.ending] = true;
         out.errors.push(at + 'endGame("' + does.ending + '"): there is no ending "' + does.ending + '" in index.html' + orGuess(does.ending, ids(ENDINGS)));
@@ -380,6 +381,7 @@ var Check = (function () {
     });
 
     var scripts = Toolbox.clickScripts();
+    reading.endingsSaid = Object.create(null);
     ids(scripts).forEach(function (name) {
       var at = inRules(scripts[name].line);
       if (n.buttons.indexOf(name) < 0) out.errors.push(at + 'whenClicked("' + name + '"): no button in index.html has the id or class "' + name + '"' + orGuess(name, n.buttons));
@@ -420,9 +422,10 @@ var Check = (function () {
     return script.name ? "rules.js (inside your function " + script.name + "()): " : inRules(script.line && script.line + c.line - 1);
   }
 
-  // Reads a script ({ fn, line }, or her own function { fn, name }) without running it (all
-  // warnings): the names it shows, hides, asks about, plays and ends with, and the words it calls
-  // that aren't blocks. Her own functions it calls get read too, each one once.
+  // Reads a script ({ fn, line }, or her own function { fn, name }) without running it: the names it
+  // shows, hides, asks about, plays and ends with, and the words it calls that aren't blocks. Her own
+  // functions it calls get read too, each one once. All warnings, but an ending that isn't there is
+  // an error: the game would get stuck on it.
   function readScript(out, n, script, reading) {
     var calls = Toolbox.calls(script.fn);
     unknownCalls(script.fn, calls).forEach(function (c) {
@@ -438,7 +441,7 @@ var Check = (function () {
         if (c.name === "show" || c.name === "hide" || c.name === "isShown") unknownThing(out, n, what, w);
         if (c.name === "playSound") unknownSound(out, what, w);
         if (c.name === "endGame" && !has(ENDINGS, w) && !reading.endingsSaid[w]) {
-          out.warnings.push(what + ' there is no ending "' + w + '" in index.html' + orGuess(w, ids(ENDINGS)));
+          out.errors.push(what + ' there is no ending "' + w + '" in index.html' + orGuess(w, ids(ENDINGS)));
         }
       });
       var own = !c.declared && ownFunction(c.name);

@@ -288,11 +288,22 @@ test("check: playSound, hide, isShown and endGame name things that aren't there"
       if (youAreIn("zz")) endGame("WON");  // a click script doesn't run before the game: only reading it finds this
     });
   });
-  eq(r.errors, []);
   ok(mentions(r.warnings, ['playSound("clik")', "did you mean click?"]), r.warnings.join("|"));
   ok(mentions(r.warnings, ['hide("lampp")', "did you mean lamp?"]), r.warnings.join("|"));
   ok(mentions(r.warnings, ['isShown("rugg")', "did you mean rug?"]), r.warnings.join("|"));
-  ok(mentions(r.warnings, ['endGame("WON")', "did you mean WIN?"]), r.warnings.join("|"));
+  eq(r.errors.length, 1, "an ending that isn't there stops the game: " + r.errors.join("|"));
+  ok(mentions(r.errors, ['endGame("WON")', "did you mean WIN?"]), r.errors.join("|"));
+});
+
+test("check: an unknown ending in a click script is an error, worded as for a when() rule", function () {
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    whenClicked("lamp", function () { endGame("homee"); });
+    when("19:30", function () { endGame("homee"); });
+  });
+  var said = r.errors.filter(function (m) { return m.indexOf('endGame("homee"): there is no ending "homee" in index.html') >= 0; });
+  eq(said.length, 2, "the click script and the rule: " + r.errors.join("|"));
+  ok(!mentions(r.warnings, ["homee"]), "not a warning too: " + r.warnings.join("|"));
 });
 
 test("check: a word that isn't a block gives a warning, once", function () {

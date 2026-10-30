@@ -457,8 +457,16 @@ var View = (function () {
     if (result) V.show(result); else V.render();
   }
 
+  // An ending index.html doesn't have (rules.js made its name in a way the checks can't read): the
+  // box at the top says so, and the ending screen still has Try again and Start over.
+  function unknownEnding(id) {
+    var guess = typeof Check !== "undefined" ? Check.suggest(String(id), Object.keys(ENDINGS)) : "";
+    showProblems([{ text: 'rules.js: there is no ending "' + id + '" in index.html' + (guess ? ", " + guess : ".") }]);
+    return { title: String(id), text: "" };
+  }
+
   function showEnding(id) {
-    var end = ENDINGS[id];
+    var end = Object.prototype.hasOwnProperty.call(ENDINGS, id) ? ENDINGS[id] : unknownEnding(id);
     popups = [];
     nextPopup();
     closeNotes();
@@ -535,11 +543,11 @@ var View = (function () {
   // ---- a mistake in rules.js while playing ----
 
   // A script that went wrong says so in a small box ("rules.js line 57: sya is not defined. Did you
-  // mean say?"), and the game goes on. OK closes the box.
+  // mean say?"), and the game goes on. OK closes the box. A problem with text says just that.
   function showProblems(problems) {
     var lines = [];
     (problems || []).forEach(function (p) {
-      var line = typeof Check !== "undefined" ? Check.describe(p) : p.file + " line " + p.line + ": " + p.message;
+      var line = p.text || (typeof Check !== "undefined" ? Check.describe(p) : p.file + " line " + p.line + ": " + p.message);
       if (lines.indexOf(line) < 0) lines.push(line);
     });
     if (!lines.length) return;
