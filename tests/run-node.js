@@ -1,6 +1,7 @@
 // Runs the engine tests in Node, with no npm: `node tests/run-node.js`.
-// unit: fixture story + engine (+ check.js, sound.js once they exist) + tests/unit/*.test.js
+// unit: fixture story + engine + toolbox (+ check.js, sound.js once they exist) + tests/unit/*.test.js
 // game: the real game files in index.html order + playthroughs + game.test.js
+// migration (until Task 14): the frozen old story + drawings + engine + toolbox + rules.js + migration.test.js
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
@@ -31,11 +32,16 @@ const unitTests = fs.readdirSync(path.join(__dirname, "unit"))
   .filter((f) => f.endsWith(".test.js")).sort()
   .map((f) => path.join(__dirname, "unit", f));
 
+const drawings = fs.readdirSync(path.join(GAME, "rooms"))
+  .filter((f) => f.endsWith(".js")).sort()
+  .map((f) => path.join(GAME, "rooms", f));
+
 const results = [
   suite("unit", [
     path.join(__dirname, "fixtures/story.js"),
     path.join(__dirname, "fixtures/rooms.js"),
     path.join(GAME, "engine.js"),
+    path.join(GAME, "toolbox.js"),
     ...optional(path.join(GAME, "check.js")),
     ...optional(path.join(GAME, "sound.js")),
     path.join(__dirname, "harness.js"),
@@ -51,6 +57,17 @@ if (fs.existsSync(path.join(GAME, "index.html"))) {
     path.join(__dirname, "game.test.js"),
   ]));
 }
+
+results.push(suite("migration", [
+  path.join(__dirname, "fixtures/old-story.js"),
+  ...drawings,
+  path.join(GAME, "engine.js"),
+  path.join(GAME, "toolbox.js"),
+  path.join(__dirname, "tools/renames.js"),
+  path.join(GAME, "rules.js"),
+  path.join(__dirname, "harness.js"),
+  path.join(__dirname, "migration.test.js"),
+]));
 
 const passed = results.reduce((n, r) => n + r.passed, 0);
 const failed = results.reduce((n, r) => n + r.failed, 0);

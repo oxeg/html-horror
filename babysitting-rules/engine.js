@@ -23,7 +23,7 @@ var Game = (function () {
     return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
   }
 
-  function emptyResult() { return { texts: [], sounds: [], shake: false, ending: null }; }
+  function emptyResult() { return { texts: [], sounds: [], shake: false, ending: null, problems: [] }; }
   function copy(value) { return JSON.parse(JSON.stringify(value)); }
 
   function eventById(id) {
@@ -187,10 +187,12 @@ var Game = (function () {
 
   function dangerDef() { return G.state.danger ? G.state.danger.def : null; }
 
+  // A click step with no room counts in any room.
   function stepDone(step, act) {
     if (step.leave) return G.state.room !== step.leave;
     var rooms = [].concat(step.room);
-    if (step.hotspot) return (act.names || []).indexOf(step.hotspot) >= 0 && rooms.indexOf(act.room) >= 0;
+    var here = step.room === undefined || rooms.indexOf(act.room) >= 0;
+    if (step.hotspot) return (act.names || []).indexOf(step.hotspot) >= 0 && here;
     return rooms.indexOf(G.state.room) >= 0;
   }
 
@@ -214,9 +216,9 @@ var Game = (function () {
     return true;
   }
 
-  function startDanger(ev, r) {
-    G.state.danger = { id: ev.id, used: 0, step: 0, held: 0, holding: false, def: copy(ev.danger) };
-    if (ev.danger.steps) advanceSteps(r, {});
+  function startDanger(id, def, r) {
+    G.state.danger = { id: id, used: 0, step: 0, held: 0, holding: false, def: copy(def) };
+    if (def.steps) advanceSteps(r, {});
   }
 
   // Which ending (if any) a click on a hotspot with these names in roomId causes during the danger.
@@ -257,9 +259,16 @@ var Game = (function () {
   function due(ev) { return !G.state.fired[ev.id] && G.state.time >= parseTime(ev.time); }
 
   // Fires one event: checkpoint first, so "Try again" lands just before it.
+  // A rule from rules.js runs its script; its ending or danger comes back from the toolbox.
   function fire(ev, r, byFallback) {
     G.checkpoint = { eventId: ev.id, state: copy(G.state) };
     G.state.fired[ev.id] = true;
+    if (ev.run) {
+      var out = Toolbox.run(ev.run, { r: r, byFallback: !!byFallback });
+      if (out.ending) endGame(out.ending, r);
+      else if (out.danger) startDanger(ev.id, out.danger, r);
+      return;
+    }
     if (ev.unlessShown && isShown(ev.unlessShown)) return;
     if (ev.lightsOut) G.state.dark = true;
     var text = ev.room && ev.textAway && G.state.room !== ev.room ? ev.textAway : ev.text;
@@ -270,7 +279,7 @@ var Game = (function () {
     }
     applyMoment({ text: text, sound: sound, shake: ev.scare, show: ev.show, hide: ev.hide }, r);
     if (ev.ending) endGame(ev.ending, r);
-    else if (ev.danger) startDanger(ev, r);
+    else if (ev.danger) startDanger(ev.id, ev.danger, r);
   }
 
   // Runs after every action: fires whatever is due, in story order.
@@ -325,7 +334,8 @@ var Game = (function () {
   }
 
   // Edit mode: jump to a time. Earlier events count as done (what they show and hide
-  // is applied, but no texts, sounds or dangers); later ones will happen again.
+  // is applied, but no texts, sounds or dangers; scripts run in silent mode); later ones
+  // will happen again.
   function editJump(roomId, time) {
     var t = parseTime(time);
     var s = G.state;
@@ -340,6 +350,10 @@ var Game = (function () {
         if (s.fired[ev.id]) return;
         s.fired[ev.id] = true;
         mark(ev.armShow, true);
+        if (ev.run) {
+          var out = Toolbox.run(ev.run, { r: emptyResult(), silent: true });
+          return applyMoment(out.danger && out.danger.whenSafe);
+        }
         if (ev.lightsOut) s.dark = true;
         applyMoment(ev);
         applyMoment(ev.danger && ev.danger.whenSafe);
@@ -412,7 +426,15 @@ var Game = (function () {
       return after(r, false, act);
     }
     if (h.note && G.state.notes.indexOf(h.note) < 0) G.state.notes.push(h.note);
-    applyMoment({ text: (D && byName(D.say, names)) || h.text, show: h.show, hide: h.hide }, r);
+    // A whenClicked script runs here. The button's own text shows unless the script said
+    // something. A danger from a click is ignored.
+    var out = h.run ? Toolbox.run(h.run, { r: r }) : {};
+    applyMoment({ text: out.said ? null : (D && byName(D.say, names)) || h.text, show: h.show, hide: h.hide }, r);
+    if (out.ending) {
+      endGame(out.ending, r);
+      save();
+      return r;
+    }
     if (h.action === "camera") G.state.camera = true;
     if (h.goTo) enter(h.goTo);
     spend(minutes);

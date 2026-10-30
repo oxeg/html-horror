@@ -1,5 +1,5 @@
 // Engine core: clock, moving, looking, notes, camera, endings.
-var EMPTY = { texts: [], sounds: [], shake: false, ending: null };
+var EMPTY = { texts: [], sounds: [], shake: false, ending: null, problems: [] };
 
 test("newGame starts at start time and room", function () {
   Game.useStorage(false);
