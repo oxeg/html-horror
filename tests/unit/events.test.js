@@ -147,3 +147,12 @@ test("after waits until the named event has happened", function () {
   Game.click("note");
   eq(Game.state.flags.lateOn, true);
 });
+
+test("notIn holds a nextEntry rule too", function () {
+  Game.newGame();
+  Game.editJump("b", "19:45");
+  Game.click("door"); // into the closet, which has a ghost too
+  eq(Game.state.fired.ghost, undefined, "not in the closet");
+  Game.go("b");
+  eq(Game.state.fired.ghost, true);
+});

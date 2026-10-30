@@ -298,3 +298,35 @@ test("a hotspot named in hold.labels is fatal during the hold", function () {
   Game.click("door");
   eq(Game.click("coat").ending, "X3");
 });
+
+test("the danger definition is kept in the save", function () {
+  startHide("a");
+  eq(Game.state.danger.def.late, "X2");
+  Game.state = JSON.parse(JSON.stringify(Game.state));
+  Game.go("b");
+  eq(Game.state.danger.step, 1);
+});
+
+test("a click that does the next safe step is never deadly", function () {
+  Game.newGame();
+  Game.editJump("c", "20:50");
+  Game.click("lamp");
+  eq(Game.state.danger.id, "pick");
+  eq(Game.click("kid").ending, null); // kid is also in pick's fatal list now
+  eq(Game.state.danger.step, 1);
+  eq(Game.click("kid").ending, "X1", "once the step is done, the same click is deadly");
+});
+
+test("names: a click by class finds the hotspot in this room", function () {
+  Game.newGame();
+  Game.editJump("c", "19:00");
+  eq(Game.click("light").texts, ["Click."]); // lamp has names ["lamp", "light"]
+  eq(Game.label("light"), "Lamp");
+});
+
+test("the endings counter counts only endings that exist", function () {
+  withStorage(fakeStorage(false), function () {
+    localStorage.setItem("babysitting-rules:endings", JSON.stringify(["X1", "GONE"]));
+    eq(Game.endingsFound(), ["X1"]);
+  });
+});

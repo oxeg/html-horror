@@ -45,9 +45,28 @@ var Game = (function () {
     return G.state.camera ? overlayRoom() : G.state.room;
   }
 
-  function hotspot(id) {
+  // The id of the hotspot a name points at in this scene: the exact id first,
+  // then the first hotspot whose "names" list has it.
+  function hotspotId(name) {
     var info = ROOM_INFO[scene()];
-    return info && info.hotspots ? info.hotspots[id] : undefined;
+    var all = info && info.hotspots;
+    if (!all) return null;
+    if (all[name]) return name;
+    for (var id in all) if (namesOf(id, all[id]).indexOf(name) >= 0) return id;
+    return null;
+  }
+
+  function namesOf(id, h) { return h.names || [id]; }
+
+  function hotspot(name) {
+    var id = hotspotId(name);
+    return id ? ROOM_INFO[scene()].hotspots[id] : undefined;
+  }
+
+  // The value a map (labels, say) holds for the first of these names it knows.
+  function byName(map, names) {
+    for (var i = 0; i < names.length; i++) if (map && map[names[i]]) return map[names[i]];
+    return undefined;
   }
 
   function roomHas(roomId, name) {
@@ -92,7 +111,7 @@ var Game = (function () {
   function validState(s) {
     if (!s || typeof s.time !== "number" || !ROOM_INFO[s.room] || !s.flags || !s.fired) return false;
     for (var id in s.fired) if (!eventById(id)) return false;
-    if (s.danger && !(eventById(s.danger.id) || {}).danger) return false;
+    if (s.danger && !(s.danger.def && (eventById(s.danger.id) || {}).danger)) return false;
     if (s.ending && !ENDINGS[s.ending]) return false;
     return (s.notes || []).every(function (n) {
       return NOTES[n];
@@ -107,7 +126,9 @@ var Game = (function () {
     return data;
   }
 
-  function endingsFound() { return (readStore(ENDINGS_KEY) || foundInMemory).slice(); }
+  function endingsFound() {
+    return (readStore(ENDINGS_KEY) || foundInMemory).filter(function (id) { return ENDINGS[id]; });
+  }
 
   function endGame(endingId, r) {
     G.state.ending = endingId;
@@ -121,12 +142,12 @@ var Game = (function () {
 
   // ---- dangers ----
 
-  function dangerDef() { return G.state.danger ? eventById(G.state.danger.id).danger : null; }
+  function dangerDef() { return G.state.danger ? G.state.danger.def : null; }
 
   function stepDone(step, act) {
     if (step.leave) return G.state.room !== step.leave;
     var rooms = [].concat(step.room);
-    if (step.hotspot) return act.hotspot === step.hotspot && rooms.indexOf(act.room) >= 0;
+    if (step.hotspot) return (act.names || []).indexOf(step.hotspot) >= 0 && rooms.indexOf(act.room) >= 0;
     return rooms.indexOf(G.state.room) >= 0;
   }
 
@@ -156,16 +177,16 @@ var Game = (function () {
   }
 
   function startDanger(ev, r) {
-    G.state.danger = { id: ev.id, used: 0, step: 0, held: 0, holding: false };
+    G.state.danger = { id: ev.id, used: 0, step: 0, held: 0, holding: false, def: copy(ev.danger) };
     if (ev.danger.steps) advanceSteps(r, {});
   }
 
-  // Which ending (if any) a click on hotspot id in roomId causes during the danger.
-  function fatalFor(id, roomId) {
+  // Which ending (if any) a click on a hotspot with these names in roomId causes during the danger.
+  function fatalFor(names, roomId) {
     var list = dangerDef().fatal || [];
     for (var i = 0; i < list.length; i++) {
       var f = list[i];
-      if (f.hotspot && f.hotspot !== id) continue;
+      if (f.hotspot && names.indexOf(f.hotspot) < 0) continue;
       if (f.room && f.room !== roomId) continue;
       if (f.unlessFlag && G.state.flags[f.unlessFlag]) continue;
       return f.ending;
@@ -229,8 +250,10 @@ var Game = (function () {
       if (G.state.ending || G.state.danger) return;
       if (!due(ev) || (ev.after && !G.state.fired[ev.after])) continue;
       var trigger = ev.trigger || "now";
+      var blocked = !!ev.notIn && ev.notIn.indexOf(G.state.room) >= 0;
+      if (blocked && trigger !== "beam") continue;
       if (trigger === "now") {
-        if (!(ev.notIn && ev.notIn.indexOf(G.state.room) >= 0)) fire(ev, r);
+        fire(ev, r);
       } else if (trigger === "nextEntry") {
         if (entered && roomHas(G.state.room, ev.group)) fire(ev, r);
       } else if (trigger === "inRoom") {
@@ -240,7 +263,7 @@ var Game = (function () {
           G.state.armed[ev.id] = true;
           G.state.actionsHere = 0;
           setFlags(ev.armFlags, true);
-        } else if (ev.fallback && roomHas(G.state.room, ev.group) && G.state.actionsHere >= ev.fallback) {
+        } else if (!blocked && ev.fallback && roomHas(G.state.room, ev.group) && G.state.actionsHere >= ev.fallback) {
           fire(ev, r, true);
         }
       }
@@ -261,7 +284,8 @@ var Game = (function () {
     if (G.state.ending || G.state.danger) return r;
     for (var i = 0; i < EVENTS.length; i++) {
       var ev = EVENTS[i];
-      if (ev.trigger === "beam" && ev.group === name && due(ev) && G.state.armed[ev.id]) {
+      if (ev.trigger === "beam" && ev.group === name && due(ev) && G.state.armed[ev.id]
+          && !(ev.notIn && ev.notIn.indexOf(G.state.room) >= 0)) {
         fire(ev, r);
         return after(r, true);
       }
@@ -330,32 +354,37 @@ var Game = (function () {
     return after(r, true, {});
   }
 
-  function click(id) {
+  function click(name) {
     var r = emptyResult();
+    var id = hotspotId(name);
+    if (G.state.ending || !id) return r;
     var h = hotspot(id);
-    if (G.state.ending || !h) return r;
+    var names = namesOf(id, h);
     var room = G.state.room;
+    var act = { hotspot: id, names: names, room: room };
     var D = dangerDef();
-    var ending = h.ending || (D && fatalFor(id, scene()));
+    // A click that does the danger's next safe step is never deadly.
+    var next = D && D.steps && D.steps[G.state.danger.step];
+    var safeStep = !!(next && next.hotspot && stepDone(next, act));
+    var ending = h.ending || (D && !safeStep && fatalFor(names, scene()));
     if (ending) {
       endGame(ending, r);
       save();
       return r;
     }
     // During a hold only leaving, or the things its labels name (the door), give you away.
-    if (G.state.danger && G.state.danger.holding && !h.goTo && !(D.hold.labels || {})[id]) {
+    if (G.state.danger && G.state.danger.holding && !h.goTo && !byName(D.hold.labels, names)) {
       r.texts.push(D.hold.keep || "Keep going...");
       return r;
     }
     if (breaksHold(r)) return r;
-    var act = { hotspot: id, room: room };
     var minutes = h.minutes != null ? h.minutes : h.note ? 0 : h.goTo ? SETTINGS.moveMinutes : SETTINGS.lookMinutes;
     if (h.notBefore && G.state.time < parseTime(h.notBefore)) {
       r.texts.push(h.tooEarly);
       spend(minutes);
       return after(r, false, act);
     }
-    var said = D && D.say && D.say[id];
+    var said = D && byName(D.say, names);
     if (said || h.text) r.texts.push(said || h.text);
     if (h.note && G.state.notes.indexOf(h.note) < 0) G.state.notes.push(h.note);
     setFlags(h.setFlags, true);
@@ -378,13 +407,13 @@ var Game = (function () {
 
   // ---- what the view asks ----
 
-  function label(id) {
-    var h = hotspot(id);
-    if (!h) return "";
+  function label(name) {
+    var id = hotspotId(name);
+    if (!id) return "";
+    var names = namesOf(id, hotspot(id));
     var D = dangerDef();
-    if (D && G.state.danger.holding && D.hold.labels && D.hold.labels[id]) return D.hold.labels[id];
-    if (D && D.labels && D.labels[id]) return D.labels[id];
-    return h.label;
+    var held = D && G.state.danger.holding && D.hold.labels ? byName(D.hold.labels, names) : null;
+    return held || (D && byName(D.labels, names)) || hotspot(id).label;
   }
 
   // ---- what the view (and the tests) can call ----

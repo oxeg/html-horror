@@ -45,7 +45,7 @@ const ROOM_INFO = {
     exits: ["a"],
     hotspots: {
       trap: { label: "Trap", ending: "X1" },
-      lamp: { label: "Lamp", text: "Click.", setFlags: ["lit"] },
+      lamp: { label: "Lamp", names: ["lamp", "light"], text: "Click.", setFlags: ["lit"] },
       kid: { label: "Kid", text: "Goodnight.", notBefore: "19:30", tooEarly: "Too early", setFlags: ["asleep"] },
       cam: { label: "Camera", action: "camera" },
       clock: { label: "Clock", text: "Tick.", minutes: 0 },
@@ -66,7 +66,7 @@ const EVENTS = [
   { id: "e2", time: "19:20", trigger: "now", text: "E2 text" },
   { id: "late", time: "19:30", trigger: "now", after: "ghost", setFlags: ["lateOn"] },
   { id: "bed", time: "19:40", trigger: "now", unlessFlag: "asleep", setFlags: ["asleep"], text: "Bed" },
-  { id: "ghost", time: "19:50", trigger: "nextEntry", group: "ghost", setFlags: ["ghostOn"] },
+  { id: "ghost", time: "19:50", trigger: "nextEntry", group: "ghost", notIn: ["closet"], setFlags: ["ghostOn"] },
   { id: "glass", time: "20:00", trigger: "inRoom", room: "c", text: "Glass", textAway: "Away" },
   { id: "stay", time: "20:00", trigger: "now", notIn: ["closet"], setFlags: ["open"] },
   { id: "meow", time: "20:05", trigger: "now", room: "c", text: "Here", textAway: "Away" },
@@ -103,7 +103,7 @@ const EVENTS = [
       steps: [{ room: "c", hotspot: "kid", setFlags: ["carry"] }, { room: ["b", "closet"] }],
       deadline: 7,
       late: "X2",
-      fatal: [{ hotspot: "door", unlessFlag: "carry", ending: "X3" }],
+      fatal: [{ hotspot: "door", unlessFlag: "carry", ending: "X3" }, { hotspot: "kid", ending: "X1" }],
     },
   },
   {
