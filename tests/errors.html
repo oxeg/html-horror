@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>errors</title>
+</head>
+<body>
+  <!-- Builder-only, over http (python3 tests/tools/serve.py): broken copies of the game, one at a time
+       in an iframe, and the message each one must show. Make the copies first, and again after any
+       change to the game: node tests/tools/break.js. The title reads PASS n or FAIL n. -->
+  <pre id="out">running...</pre>
+  <script src="tools/out/broken.js"></script>
+  <script>
+    function copyOf(name) { return "tools/out/broken-" + name + "/index.html"; }
+
+    function wait(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+
+    function check(cond, msg) { if (!cond) throw new Error(msg); }
+
+    // The text of the game's problem box, if it shows one.
+    function problem(d) {
+      var box = d.getElementById("problem");
+      return box ? box.textContent.replace(/\s+/g, " ").trim() : "";
+    }
+
+    function says(d, part) {
+      check(problem(d).indexOf(part) >= 0, 'the message should say "' + part + '", but it says "' + problem(d) + '"');
+    }
+
+    function noMessage(d) {
+      check(!d.getElementById("problem"), "a message: " + problem(d));
+      var warnings = d.getElementById("warnings");
+      check(!warnings, "warnings: " + (warnings && warnings.textContent));
+    }
+
+    function shows(w, id) {
+      var el = w.document.getElementById(id);
+      return !!el && w.getComputedStyle(el).display !== "none";
+    }
+
+    function aTypo(name) {
+      return function (w, d) {
+        says(d, "rules.js has a mistake in it (line " + BROKEN[name].line + ").");
+        says(d, "Ctrl+Shift+J");
+        check(!shows(w, "unzip"), "the unzip text is gone");
+      };
+    }
+
+    var CASES = [
+      { name: "the game as it is: no message, and the unzip text is gone", src: "../babysitting-rules/index.html",
+        check: function (w, d) {
+          noMessage(d);
+          check(!d.getElementById("unzip"), "#unzip is still on the page");
+          check(shows(w, "title"), "the title screen shows");
+        } },
+      { name: "a typo in rules.js: the message names rules.js", src: copyOf("typo"), check: aTypo("typo") },
+      { name: "a typo at the end of rules.js, after the whenClicked scripts: the message names rules.js",
+        src: copyOf("typo-at-end"), check: aTypo("typo-at-end") },
+      { name: 'a mistake Chrome hides on file:// ("Script error.", no file, no line): the load order names rules.js',
+        src: copyOf("hidden"),
+        check: function (w, d) {
+          says(d, "rules.js has a mistake in it.");
+          says(d, "Ctrl+Shift+J");
+          check(!/\(line|Script error/.test(problem(d)), "no line number and no \"Script error.\": " + problem(d));
+        } },
+      { name: "engine/view.js deleted: engine/view.js is missing", src: copyOf("view"),
+        check: function (w, d) {
+          says(d, "engine/view.js is missing.");
+          check(!/has a mistake|Ctrl\+Shift\+J/.test(problem(d)), "only the missing file is named, with no hint about lines: " + problem(d));
+        } },
+      { name: "all of engine/ deleted: the #unzip text shows", src: copyOf("engine"),
+        check: function (w, d) {
+          check(shows(w, "unzip"), "#unzip shows");
+          check(d.getElementById("unzip").textContent.indexOf("extract (unzip) the whole folder") >= 0, "it says to unzip the folder");
+          check(!d.getElementById("problem"), "no problem box (errors.js isn't there to make one)");
+        } },
+      { name: "a new room section with no drawing: it plays, with the plain room", src: copyOf("room"),
+        check: function (w, d) {
+          noMessage(d);
+          check(w.Loader.missingDrawings.attic === true, "loader.js noted that engine/drawings/attic.js isn't there");
+          w.Game.useStorage(false);
+          d.getElementById("title-start").click();
+          return wait(400).then(function () {  // View.act ignores clicks for 0.35 s after one
+            var door = [].filter.call(d.querySelectorAll("#ui-nav button"), function (b) { return b.textContent === "Attic"; })[0];
+            check(door, "the hallway has a button to the attic");
+            door.click();
+            return wait(400);
+          }).then(function () {
+            var attic = d.getElementById("attic");
+            check(attic.classList.contains("here"), "you're in the attic");
+            var svg = attic.querySelector(".drawing svg");
+            check(svg && !svg.querySelector("[data-name]"), "the attic shows the plain room");
+            var box = d.getElementById("dusty-box");
+            check(box.classList.contains("plain"), "its button gets the plain look");
+            box.click();
+            var popup = d.getElementById("ui-popup").textContent;
+            check(popup === "Old photos. Everybody looks so young.", "clicking it says its text, not " + JSON.stringify(popup));
+          });
+        } },
+      { name: "a story mistake: the footer names index.html", src: copyOf("story"),
+        check: function (w, d) {
+          says(d, "The story has a mistake");
+          says(d, "no-such-ending");
+          says(d, "Fix it in index.html, then reload the page.");
+        } },
+    ];
+
+    // Opens a page in a 1600x900 iframe; gives its window once it has loaded (and started, if it can).
+    function open(src) {
+      return new Promise(function (resolve) {
+        var frame = document.createElement("iframe");
+        frame.style.cssText = "width: 1600px; height: 900px; border: 0";
+        frame.addEventListener("load", function () { resolve(frame); });
+        frame.src = src;
+        document.body.appendChild(frame);
+      });
+    }
+
+    function report(lines, title) {
+      document.getElementById("out").textContent = lines.join("\n");
+      document.title = title;
+    }
+
+    if (typeof BROKEN === "undefined") {
+      report(["tests/tools/out/broken.js is missing: run node tests/tools/break.js first."], "FAIL setup");
+    } else {
+      var lines = [], failed = 0;
+      CASES.reduce(function (chain, c) {
+        return chain.then(function () {
+          return open(c.src).then(function (frame) {
+            var w = frame.contentWindow;
+            return Promise.resolve().then(function () { return c.check(w, w.document); }).then(function () {
+              lines.push("ok   " + c.name);
+            }, function (e) {
+              failed++;
+              lines.push("FAIL " + c.name + ": " + (e && e.message || e));
+            }).then(function () { frame.remove(); });
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        var passed = CASES.length - failed;
+        lines.push(failed ? failed + " FAILED (" + passed + " passed)" : "ALL PASS (" + passed + " cases)");
+        report(lines, failed ? "FAIL " + failed : "PASS " + passed);
+      });
+    }
+  </script>
+</body>
+</html>

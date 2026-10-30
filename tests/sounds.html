@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <!-- Builder-only page: listen to every sound of the game. Loads only sound.js. -->
+  <!-- Builder-only page: listen to every sound of the game. Loads only engine/sound.js. -->
   <h1>The Babysitting Rules: sound check</h1>
   <p class="hint">Click each sound and listen. Nothing should be loud, nothing should scream, and the
     doorbell should be a two-note "ding-dong". If <code>babysitting-rules/sounds/&lt;name&gt;.mp3</code>
@@ -30,7 +30,7 @@
   <p>Loudest moment of each sound (after the compressor; 1.00 would be the very top):</p>
   <table id="peaks"></table>
 
-  <script src="../babysitting-rules/sound.js"></script>
+  <script src="../babysitting-rules/engine/sound.js"></script>
   <script>
     // The level meter listens in on whatever sound.js connects to the speakers.
     var ctx = null, meter = null, current = null, peaks = {};

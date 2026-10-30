@@ -56,16 +56,26 @@ test("check: a button with nothing drawn for it is fine (the view gives it the p
 
 test("check: room without a drawing", function () {
   var r = world('<section class="room" id="attic" title="Attic"></section>');
-  ok(mentions(r.errors, ["rooms/attic.js"]), r.errors.join("|"));
+  ok(mentions(r.errors, ["engine/drawings/attic.js"]), r.errors.join("|"));
+});
+
+test("check: a room without a drawing is fine when the plain one is there", function () {
+  // In a page, loader.js always adds engine/drawings/plain.js; the fixture has none of its own.
+  ROOMS.plain = '<svg viewBox="0 0 1600 900"><rect width="1600" height="900"/></svg>';
+  try {
+    var r = world('<section class="room" id="attic" title="Attic"></section>', function () { startAt("19:00", "attic"); });
+    eq(r.errors, []);
+    eq(r.warnings, []);
+  } finally { delete ROOMS.plain; }
 });
 
 test("check: title drawing is required", function () {
-  // The drawings aren't part of a world (they're rooms/*.js), so this one goes away by hand.
+  // The drawings aren't part of a world (they're engine/drawings/*.js), so this one goes away by hand.
   var old = ROOMS.title;
   try {
     delete ROOMS.title;
     var r = Check.run();
-    ok(mentions(r.errors, ["rooms/title.js"]), r.errors.join("|"));
+    ok(mentions(r.errors, ["engine/drawings/title.js"]), r.errors.join("|"));
   } finally { ROOMS.title = old; }
 });
 

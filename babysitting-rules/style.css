@@ -1,5 +1,5 @@
 /* ✏️ Your style sheet: how the game looks. Change something, save, and reload the page (F5).
-   The machinery's own look is in engine.css; this file loads after it, so yours wins. */
+   The machinery's own look is in engine/engine.css; this file loads after it, so yours wins. */
 
 /* The colors every room uses. Change one and the whole game changes! */
 :root {

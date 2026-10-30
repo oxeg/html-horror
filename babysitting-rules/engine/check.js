@@ -1,4 +1,4 @@
-// check.js: looks over index.html's rooms, notes and endings, rules.js and the rooms/ drawings
+// check.js: looks over index.html's rooms, notes and endings, rules.js and the drawings
 // before the game starts and reports mistakes in plain words. Errors stop the game; warnings
 // are only a note.
 // It never touches the page, so the tests can run it in Node too.
@@ -137,9 +137,10 @@ var Check = (function () {
         if (spot.note && !NOTES[spot.note]) errors.push(where + ' gives the note "' + spot.note + '", but there is no note "' + spot.note + '".');
         if (spot.ending) checkEnding(where, spot.ending);
       });
-      if (!hasDrawing(id)) errors.push('rooms/' + id + '.js is missing: room "' + id + '" is in index.html but has no drawing. Make rooms/' + id + '.js and add it to index.html.');
+      // a room with no drawing of its own gets the plain one (engine/drawings/plain.js)
+      if (!hasDrawing(id) && !hasDrawing("plain")) errors.push('engine/drawings/' + id + '.js is missing: room "' + id + '" is in index.html but has no drawing, and engine/drawings/plain.js is missing too.');
     });
-    if (!hasDrawing("title")) errors.push("rooms/title.js is missing: the title screen needs its drawing. Make rooms/title.js and add it to index.html.");
+    if (!hasDrawing("title")) errors.push("engine/drawings/title.js is missing: the title screen needs its drawing.");
 
     // the giveaway: the real note is always signed "Love you!", a fake never is
     ids(NOTES).forEach(function (id) {

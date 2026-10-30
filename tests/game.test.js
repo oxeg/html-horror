@@ -30,6 +30,19 @@ test("real game passes validation", function () {
   eq(res.warnings, []);
 });
 
+// In Node, run-node.js reads every drawing from engine/drawings/ (but not plain.js); in a page,
+// loader.js adds them itself, plain.js too.
+test("every room has a drawing or the plain one", function () {
+  Object.keys(ROOM_INFO).forEach(function (id) {
+    ok(typeof ROOMS[id] === "string" || typeof ROOMS.plain === "string", "room " + id + " has no drawing");
+  });
+  ok(typeof ROOMS.title === "string", "the title screen has its drawing");
+  if (typeof document !== "undefined") {
+    ok(typeof ROOMS.plain === "string", "engine/drawings/plain.js loaded itself");
+    ok(/<svg[\s>]/.test(ROOMS.plain) && ROOMS.plain.indexOf("data-name") < 0, "the plain room is an empty shell: nothing in it has a name");
+  }
+});
+
 test("the game says your sister and the cat, never a name", function () {
   var all = JSON.stringify([ROOM_INFO, NOTES, ENDINGS, EVENTS]); // scripts drop out: only the texts are left
   ok(all.indexOf("${") < 0, "a ${...} was left unfilled");

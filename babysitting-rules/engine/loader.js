@@ -133,7 +133,7 @@ var Loader = (function () {
     return world;
   };
 
-  // The names of the drawing parts (rooms/*.js) that start hidden: data-name="…" with data-hidden.
+  // The names of the drawing parts (engine/drawings/*.js) that start hidden: data-name="…" with data-hidden.
   L.hiddenInDrawings = function () {
     var names = [];
     var drawings = typeof ROOMS !== "undefined" ? ROOMS : {};
@@ -145,6 +145,34 @@ var Loader = (function () {
     });
     return names;
   };
+
+  // ---- the drawings load themselves ----
+
+  // The rooms whose drawing file isn't there: they get the plain room (engine/drawings/plain.js).
+  L.missingDrawings = {};
+
+  // While the page loads, this adds a <script> for every room above it, from the drawings folder
+  // next to this file, plus the title screen's drawing and the plain room. They load in this order,
+  // and the page's load event waits for them.
+  function addDrawings(me) {
+    var folder = (me.getAttribute("src") || "").replace(/[^\/]*$/, "") + "drawings/";
+    var ids = [];
+    var rooms = document.querySelectorAll("section.room");
+    for (var i = 0; i < rooms.length; i++) {
+      if (rooms[i].id && ids.indexOf(rooms[i].id) < 0) ids.push(rooms[i].id);
+    }
+    ids.concat(["title", "plain"]).forEach(function (id) {
+      var s = document.createElement("script");
+      s.src = folder + id + ".js";
+      s.async = false;
+      s.onerror = function () { L.missingDrawings[id] = true; };
+      document.head.appendChild(s);
+    });
+  }
+
+  // Only in a page, where document.currentScript is this file's <script> tag (in Node, nothing happens).
+  var me = typeof document !== "undefined" && document.currentScript;
+  if (me) addDrawings(me);
 
   return L;
 })();

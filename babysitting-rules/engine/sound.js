@@ -19,10 +19,10 @@ var Sound = (function () {
 
   S.names = NAMES.slice();
 
-  // sounds/ sits next to this file, whichever page loads it.
+  // sounds/ sits next to the engine/ folder this file is in, whichever page loads it.
   function soundsFolder() {
     var me = typeof document !== "undefined" && document.currentScript;
-    return (me && me.src ? me.src.replace(/[^\/]*$/, "") : "") + "sounds/";
+    return me && me.src ? me.src.replace(/engine\/[^\/]*$/, "sounds/") : "sounds/";
   }
 
   function readMuted() {

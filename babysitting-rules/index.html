@@ -3,50 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>The Babysitting Rules</title>   <!-- also the heading on the title screen -->
+  <link rel="stylesheet" href="engine/engine.css">
+  <link rel="stylesheet" href="style.css">   <!-- yours loads last, so it wins -->
+  <!-- keeps the page tidy while the game loads: leave this line -->
+  <style>body:not(.ready):not(.playing) > :not(#unzip):not(#problem):not(#warnings){display:none!important}</style>
   <meta name="theme-color" content="#07070d">
-  <title>The Babysitting Rules</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="engine.css">
-  <link rel="stylesheet" href="style.css">   <!-- yours loads last, so it wins -->
-  <style>body:not(.ready):not(.playing) > div:not(#problem):not(#warnings) { display: none !important; }</style>
 </head>
 <body>
-  <div id="tint"></div>
-  <div id="overlay"></div>
-  <div id="camera"><button id="camera-close">Close</button></div>
-  <div id="grain"><svg width="100%" height="100%"><filter id="grain-noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#grain-noise)"/></svg></div>
-
-  <div id="ui-clock"></div>
-  <button id="ui-mute" aria-label="Mute" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="on" d="M15.5 9.5a3.5 3.5 0 0 1 0 5M18 7a7 7 0 0 1 0 10"/><path class="off" d="M16 9.5l5 5m0-5l-5 5"/></svg></button>
-  <button id="ui-notes-btn">Notes</button>
-  <div id="ui-popup"></div>
-  <div id="ui-bar"><div id="ui-nav"></div><button id="ui-wait">Wait</button></div>
-  <div id="ui-label"></div>
-
-  <div id="notes"><div class="panel"><div id="notes-list"></div><button id="notes-close">Close</button></div></div>
-
-  <div id="title">
-    <div id="title-art"></div>
-    <div class="menu">
-      <h1>The Babysitting Rules</h1>
-      <button id="title-start">Start</button>
-      <button id="title-continue">Continue</button>
-      <p id="title-count"></p>
-      <p class="touch-hint">Tap something once to look at it. Tap again to use it.</p>
-    </div>
-  </div>
-
-  <div id="ending">
-    <div class="menu">
-      <h1 id="ending-title"></h1>
-      <div id="ending-text"></div>
-      <div id="ending-buttons"></div>
-    </div>
-  </div>
-
-  <div id="rotate"><div class="phone"></div><p>Turn your phone sideways</p></div>
-  <div id="problem"></div>
+  <p id="unzip">The game files are missing. If you opened this from a zip file, extract (unzip) the whole folder first, then open index.html inside it.</p>
 
   <!-- ✏️ THE STORY: every room, everything you can click, the notes and the endings.
        A <section class="room"> is a room, and its title is the name on the room's button.
@@ -248,127 +215,16 @@
       <b>THE END?</b></p>
   </section>
 
-  <script>
-    // This part shows a plain-words message if a game file is broken or missing.
-    var ROOMS = {};
-    var errors = [];
-    window.onerror = function (message, file, line) {
-      errors.push({ message: message, file: file || "", line: line || 0 });
-    };
-
-    // Works even if style.css is missing, so it never lands on a blank or messy page.
-    function styleBox(box, css) { box.style.cssText = css; }
-
-    function showProblem(title, lines) {
-      var box = document.getElementById("problem");
-      var html = "<h2 style='color:#ffb4b4;font-weight:400'>" + title + "</h2>";
-      for (var i = 0; i < lines.length; i++) html += "<p>" + lines[i] + "</p>";
-      box.innerHTML = html;
-      box.className = "on";
-      styleBox(box, "display:block;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;background:#000;color:#fff;padding:8vh 10vw;overflow:auto;font:18px/1.5 system-ui,sans-serif");
-    }
-
-    // Does this script file define what it should?
-    // (A const that was never reached still exists but throws when touched, so a throw means "not defined".)
-    function registered(name) {
-      try { return isRegistered(name); } catch (e) { return false; }
-    }
-    function isRegistered(name) {
-      var room = /^rooms\/(.+)\.js$/.exec(name);
-      if (room) return typeof ROOMS[room[1]] === "string";
-      if (name === "engine.js") return typeof Game !== "undefined";
-      if (name === "save.js") return typeof Game !== "undefined" && typeof Game.continueGame === "function";
-      if (name === "toolbox.js") return typeof Toolbox !== "undefined";
-      if (name === "loader.js") return typeof Loader !== "undefined";
-      // a mistake in rules.js stops it before it hands its scripts to the toolbox
-      if (name === "rules.js") return typeof Toolbox !== "undefined" && Object.keys(Toolbox.clickScripts()).length > 0;
-      if (name === "check.js") return typeof Check !== "undefined";
-      if (name === "view.js") return typeof View !== "undefined";
-      if (name === "sound.js") return typeof Sound !== "undefined";
-      if (name === "editmode.js") return typeof EditMode !== "undefined";
-      return true;
-    }
-
-    // What the browser said about this file, with its own line number when it gave one.
-    function errorsFor(name) {
-      var out = [];
-      errors.forEach(function (e) {
-        var file = e.file.split("?")[0];
-        if (file.slice(-name.length) === name) {
-          out.push("The browser says: " + e.message + (e.line ? " (line " + e.line + ")" : ""));
-        }
-      });
-      return out;
-    }
-
-    function failed(e) {
-      showProblem("Something is wrong", [e.message, "Press Ctrl+Shift+J to see the exact line."]);
-    }
-
-    window.addEventListener("load", function () {
-      var names = [];
-      var scripts = document.getElementsByTagName("script");
-      for (var i = 0; i < scripts.length; i++) {
-        var src = scripts[i].getAttribute("src");
-        if (src) names.push(src);
-      }
-      var broken = names.filter(function (n) { return !registered(n); });
-      if (broken.length === names.length) {
-        showProblem("The other game files are missing.",
-          ["If you opened this from a zip file, extract (unzip) the whole folder first, then open index.html inside it."]);
-        return;
-      }
-      if (broken.length) {
-        var lines = [];
-        broken.forEach(function (n) {
-          lines.push("<b>" + n + "</b> has a mistake in it.");
-          lines = lines.concat(errorsFor(n));
-        });
-        lines.push("Press Ctrl+Shift+J to see the exact line.");
-        showProblem("Something is wrong", lines);
-        return;
-      }
-      try {
-        Loader.read(document.body);  // the rooms, notes and endings written above
-        var found = Check.run();
-        if (found.errors.length) {
-          showProblem("The story has a mistake", found.errors.concat(["Fix it, then reload the page."]));
-          return;
-        }
-        if (found.warnings.length) {
-          var note = document.createElement("div");
-          note.id = "warnings";
-          styleBox(note, "position:fixed;z-index:90;bottom:8px;left:8px;padding:8px 12px;font:13px system-ui,sans-serif;background:#222;color:#fff;border:1px solid #666;border-radius:8px");
-          note.innerHTML = found.warnings.join("<br>") + " <button>OK</button>";
-          note.getElementsByTagName("button")[0].onclick = function () { note.remove(); };
-          document.body.appendChild(note);
-        }
-        document.body.className = "ready";
-        View.boot();
-      } catch (e) {
-        failed(e);
-      }
-    });
-  </script>
-  <script src="rooms/title.js"></script>
-  <script src="rooms/entrance.js"></script>
-  <script src="rooms/living.js"></script>
-  <script src="rooms/my-room.js"></script>
-  <script src="rooms/sister-room.js"></script>
-  <script src="rooms/master-door.js"></script>
-  <script src="rooms/master.js"></script>
-  <script src="rooms/walk-in.js"></script>
-  <script src="rooms/bath-washer.js"></script>
-  <script src="rooms/bath.js"></script>
-  <script src="rooms/doorbell-camera.js"></script>
-  <script src="sound.js"></script>
-  <script src="engine.js"></script>
-  <script src="save.js"></script>
-  <script src="toolbox.js"></script>
-  <script src="loader.js"></script>
-  <script src="check.js"></script>
-  <script src="view.js"></script>
-  <script src="editmode.js"></script>
-  <script src="rules.js"></script>
+  <!-- The game itself: leave these lines as they are. -->
+  <script src="engine/errors.js"></script>   <!-- first: catches mistakes in everything after it -->
+  <script src="engine/sound.js"></script>
+  <script src="engine/engine.js"></script>
+  <script src="engine/save.js"></script>
+  <script src="engine/toolbox.js"></script>
+  <script src="engine/loader.js"></script>   <!-- also adds the drawing for every room -->
+  <script src="engine/check.js"></script>
+  <script src="engine/view.js"></script>
+  <script src="engine/editmode.js"></script>
+  <script src="rules.js"></script>           <!-- yours, last, so every block already exists -->
 </body>
 </html>

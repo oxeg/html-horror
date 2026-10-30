@@ -15,7 +15,8 @@ var OUT = path.join(__dirname, "out");
 var ctx = vm.createContext({ ROOMS: {} });
 function load(file) { vm.runInContext(fs.readFileSync(file, "utf8"), ctx, { filename: file }); }
 load(path.join(ROOT, "tests/fixtures/old-story.js"));
-fs.readdirSync(path.join(GAME, "rooms")).sort().forEach(function (f) { load(path.join(GAME, "rooms", f)); });
+var DRAWINGS = path.join(GAME, "engine", "drawings");
+fs.readdirSync(DRAWINGS).sort().forEach(function (f) { load(path.join(DRAWINGS, f)); });
 load(path.join(__dirname, "renames.js"));
 load(path.join(ROOT, "tests/fixtures/hotspot-boxes.js"));
 var old = vm.runInContext("({ rooms: ROOM_INFO, notes: NOTES, endings: ENDINGS, drawings: ROOMS, renames: RENAMES, boxes: HOTSPOT_BOXES })", ctx);

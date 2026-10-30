@@ -1,6 +1,8 @@
 // view.js: draws the game on the screen and listens for clicks.
 // You don't need to change this file. The story lives in index.html and rules.js.
-// It touches the page only when View.boot() is called, so the tests can load it in Node.
+// It touches the page only when View.boot() is called, so the tests can load it in Node. boot()
+// builds the game's own screen parts (the clock, the buttons, the panels, the title and ending
+// screens) in front of the story in index.html.
 // Each room in index.html is a 16:9 picture: its drawing goes in underneath, and its buttons and
 // links sit on top of it, invisible, where style.css puts them.
 
@@ -214,12 +216,13 @@ var View = (function () {
     if (def && def.note && !Game.state.ending) openNotes();
   }
 
-  // Get a room ready: its drawing goes in first, under the buttons, and a button with nothing
-  // drawn for it gets the plain look, so you can see it.
+  // Get a room ready: its drawing goes in first, under the buttons (a room with no drawing of its
+  // own gets the plain room), and a button with nothing drawn for it gets the plain look, so you
+  // can see it.
   function setUpRoom(room) {
     var drawing = document.createElement("div");
     drawing.className = "drawing";
-    drawing.innerHTML = ROOMS[room.id] || "";
+    drawing.innerHTML = typeof ROOMS[room.id] === "string" ? ROOMS[room.id] : ROOMS.plain || "";
     room.insertBefore(drawing, room.firstChild);
     buttonsOf(room).forEach(function (spot) {
       var drawn = namesOf(spot).some(function (name) { return drawing.querySelector('[data-name="' + name + '"]'); });
@@ -538,7 +541,52 @@ var View = (function () {
     if (result.shake) shake();
   };
 
+  // ---- the game's own screen parts ----
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // The flashlight's dark, the danger tint and the film grain, the clock, mute and Notes buttons,
+  // the popup, the bottom bar and the name label, the notes panel, the title and ending screens,
+  // the "turn your phone" overlay and the camera's Close button. The title screen's heading is
+  // the page's <title>.
+  function buildUI() {
+    var html =
+      '<div id="tint"></div>' +
+      '<div id="overlay"></div>' +
+      '<div id="camera"><button id="camera-close">Close</button></div>' +
+      '<div id="grain"><svg width="100%" height="100%"><filter id="grain-noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#grain-noise)"/></svg></div>' +
+      '<div id="ui-clock"></div>' +
+      '<button id="ui-mute" aria-label="Mute" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="on" d="M15.5 9.5a3.5 3.5 0 0 1 0 5M18 7a7 7 0 0 1 0 10"/><path class="off" d="M16 9.5l5 5m0-5l-5 5"/></svg></button>' +
+      '<button id="ui-notes-btn">Notes</button>' +
+      '<div id="ui-popup"></div>' +
+      '<div id="ui-bar"><div id="ui-nav"></div><button id="ui-wait">Wait</button></div>' +
+      '<div id="ui-label"></div>' +
+      '<div id="notes"><div class="panel"><div id="notes-list"></div><button id="notes-close">Close</button></div></div>' +
+      '<div id="title">' +
+        '<div id="title-art"></div>' +
+        '<div class="menu">' +
+          "<h1>" + escapeHtml(document.title) + "</h1>" +
+          '<button id="title-start">Start</button>' +
+          '<button id="title-continue">Continue</button>' +
+          '<p id="title-count"></p>' +
+          '<p class="touch-hint">Tap something once to look at it. Tap again to use it.</p>' +
+        "</div>" +
+      "</div>" +
+      '<div id="ending">' +
+        '<div class="menu">' +
+          '<h1 id="ending-title"></h1>' +
+          '<div id="ending-text"></div>' +
+          '<div id="ending-buttons"></div>' +
+        "</div>" +
+      "</div>" +
+      '<div id="rotate"><div class="phone"></div><p>Turn your phone sideways</p></div>';
+    document.body.insertAdjacentHTML("afterbegin", html);
+  }
+
   V.boot = function () {
+    buildUI();
     ["overlay", "camera", "title", "ending", "notes"].forEach(function (id) { el[id] = $(id); });
     el.clock = $("ui-clock");
     el.notesBtn = $("ui-notes-btn");
