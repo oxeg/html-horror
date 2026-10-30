@@ -5,12 +5,13 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const minidom = require("./minidom");
 
 const ROOT = path.join(__dirname, "..");
 const GAME = path.join(ROOT, "babysitting-rules");
 
 function suite(name, files) {
-  const ctx = vm.createContext({ ROOMS: {}, console });
+  const ctx = vm.createContext({ ROOMS: {}, console, minidom });
   for (const file of files) {
     vm.runInContext(fs.readFileSync(file, "utf8"), ctx, { filename: path.relative(ROOT, file) });
   }
@@ -42,6 +43,7 @@ const results = [
     path.join(__dirname, "fixtures/rooms.js"),
     path.join(GAME, "engine.js"),
     path.join(GAME, "toolbox.js"),
+    path.join(GAME, "loader.js"),
     ...optional(path.join(GAME, "check.js")),
     ...optional(path.join(GAME, "sound.js")),
     path.join(__dirname, "harness.js"),
