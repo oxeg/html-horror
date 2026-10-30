@@ -89,6 +89,24 @@ copy("story", function (dir) {
   editLine(path.join(dir, "index.html"), /<button id="coats"/, function (l) { return l.replace('<button id="coats"', '<button id="coats" data-ending="no-such-ending"'); });
 });
 
+// Notepad saved her style sheet as style.css.txt: there's no style.css.
+copy("style", function (dir) {
+  fs.renameSync(path.join(dir, "style.css"), path.join(dir, "style.css.txt"));
+});
+
+copy("engine-css", function (dir) {
+  fs.rmSync(path.join(dir, "engine", "engine.css"), { force: true });
+});
+
+// Every button's line gone from style.css: a warning for each, too many for one screen.
+copy("positions", function (dir) {
+  var css = path.join(dir, "style.css");
+  var lines = fs.readFileSync(css, "utf8").split("\n");
+  var kept = lines.filter(function (l) { return !/^#[\w-]+ \{ left:/.test(l); });
+  fs.writeFileSync(css, kept.join("\n"));
+  return { removed: lines.length - kept.length };
+});
+
 fs.writeFileSync(path.join(OUT, "broken.js"),
   "// Made by tests/tools/break.js: the broken copies of the game, and the lines it broke.\n" +
   "var BROKEN = " + JSON.stringify(BROKEN, null, 2) + ";\n");

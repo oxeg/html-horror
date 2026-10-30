@@ -11,6 +11,7 @@ var ROOMS = {};  // the drawings: each file in engine/drawings/ adds one
   var me = document.currentScript;
   var errors = [];   // every mistake the browser reported while the page loaded: { message, file, line, script }
   var missing = [];  // the <script> tags whose file isn't there
+  var missingCss = [];  // the style sheets (their href) whose file isn't there
   var loaded = [];   // the <script> tags that finished loading
   var UNZIP = "If you opened this from a zip file, extract (unzip) the whole folder first, then open index.html inside it.";
 
@@ -35,10 +36,23 @@ var ROOMS = {};  // the drawings: each file in engine/drawings/ adds one
   window.onerror = function (message, file, line) {
     errors.push({ message: String(message || ""), file: file || "", line: line || 0, script: runningScript() });
   };
-  // A file that isn't there: its <script> tag gets an error event (and never a load event).
+  // A file that isn't there: its <script> or <link> tag gets an error event (and never a load event).
   document.addEventListener("error", function (e) {
     if (e.target && e.target.tagName === "SCRIPT") missing.push(e.target);
+    if (e.target && e.target.tagName === "LINK" && /stylesheet/i.test(e.target.rel)) add(missingCss, e.target.getAttribute("href"));
   }, true);
+  // The style sheets above this file may have failed before it was here to hear it, so each one is
+  // asked for again with media="not all": it never changes how the page looks, and its error
+  // comes after this file. The page's load event waits for them.
+  var askedAgain = [].slice.call(document.querySelectorAll('link[rel~="stylesheet"]')).map(function (link) {
+    var again = document.createElement("link");
+    again.rel = "stylesheet";
+    again.media = "not all";
+    again.setAttribute("href", link.getAttribute("href"));
+    document.head.appendChild(again);
+    return again;
+  });
+  function add(list, value) { if (list.indexOf(value) < 0) list.push(value); }
   document.addEventListener("load", function (e) {
     if (e.target && e.target.tagName === "SCRIPT") loaded.push(e.target);
   }, true);
@@ -74,7 +88,7 @@ var ROOMS = {};  // the drawings: each file in engine/drawings/ adds one
   function showWarnings(warnings) {
     var note = document.createElement("div");
     note.id = "warnings";
-    styleBox(note, "position:fixed;z-index:90;bottom:8px;left:8px;padding:8px 12px;font:13px system-ui,sans-serif;background:#222;color:#fff;border:1px solid #666;border-radius:8px");
+    styleBox(note, "position:fixed;z-index:90;bottom:8px;left:8px;max-height:40vh;overflow:auto;padding:8px 12px;font:13px system-ui,sans-serif;background:#222;color:#fff;border:1px solid #666;border-radius:8px");
     note.innerHTML = warnings.join("<br>") + " <button>OK</button>";
     note.getElementsByTagName("button")[0].onclick = function () { note.remove(); };
     document.body.appendChild(note);
@@ -152,6 +166,11 @@ var ROOMS = {};  // the drawings: each file in engine/drawings/ adds one
       lines.push("Something went wrong while the game was loading.");
       stray.forEach(function (e) { lines = lines.concat(browserSays(e)); });
     }
+    // a missing style sheet: the game would show up with no colours and nothing to click
+    lines = missingCss.map(function (href) { return "<b>" + href + "</b> is missing."; }).concat(lines);
+    if (missingCss.indexOf("style.css") >= 0) {
+      lines.splice(missingCss.length, 0, 'Did Notepad save it as style.css.txt? Open it in Notepad, choose File, then Save As, set "Save as type" to "All files", and save it as style.css.');
+    }
     if (!lines.length) return false;
     if (mistakes) lines.push("Press Ctrl+Shift+J to see the exact line.");
     showProblem("Something is wrong", lines);
@@ -191,6 +210,7 @@ var ROOMS = {};  // the drawings: each file in engine/drawings/ adds one
   }
 
   window.addEventListener("load", function () {
+    askedAgain.forEach(function (again) { again.parentNode.removeChild(again); });
     try {
       if (!shownProblems()) startGame();
     } catch (e) {

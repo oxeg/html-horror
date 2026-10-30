@@ -68,6 +68,27 @@
           says(d, "engine/view.js is missing.");
           check(!/has a mistake|Ctrl\+Shift\+J/.test(problem(d)), "only the missing file is named, with no hint about lines: " + problem(d));
         } },
+      { name: "style.css saved as style.css.txt: style.css is missing, with no pile of warnings", src: copyOf("style"),
+        check: function (w, d) {
+          says(d, "style.css is missing.");
+          check(!/engine\.css|has a mistake|Ctrl\+Shift\+J/.test(problem(d)), "only style.css is named, with no hint about lines: " + problem(d));
+          check(!d.getElementById("warnings"), "no warnings box");
+          check(!d.getElementById("unzip"), "the unzip text is gone");
+        } },
+      { name: "engine/engine.css deleted: engine/engine.css is missing", src: copyOf("engine-css"),
+        check: function (w, d) {
+          says(d, "engine/engine.css is missing.");
+          check(!/style\.css/.test(problem(d)), "only engine/engine.css is named: " + problem(d));
+        } },
+      { name: "every button's line gone from style.css: the warnings box scrolls, and stays on the screen", src: copyOf("positions"),
+        check: function (w, d) {
+          var box = d.getElementById("warnings");
+          check(box, "a warnings box");
+          check(box.textContent.split("has no size").length - 1 >= BROKEN.positions.removed, "a warning for every button");
+          var r = box.getBoundingClientRect();
+          check(r.top >= 0 && r.height <= w.innerHeight / 2, "the box takes at most half the screen: top " + Math.round(r.top) + ", height " + Math.round(r.height));
+          check(box.scrollHeight > box.clientHeight && /auto|scroll/.test(w.getComputedStyle(box).overflowY), "it scrolls");
+        } },
       { name: "all of engine/ deleted: the #unzip text shows", src: copyOf("engine"),
         check: function (w, d) {
           check(shows(w, "unzip"), "#unzip shows");
