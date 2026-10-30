@@ -275,6 +275,75 @@ test("100 random nights played with random clicks never break, and every one end
   }
 });
 
+// A careful player: does what the note says when a scare starts, and otherwise walks around the
+// flat (through every room with a doorway or a window) without touching anything. Gives the ending.
+function carefulNight(night) {
+  // Where you can go from a room: its links, and the doors you can see (never into the parents'
+  // bedroom once its door is open).
+  function ways(room) {
+    var out = (ROOM_INFO[room].exits || []).map(function (e) { return { to: e, step: "go " + e }; });
+    var spots = ROOM_INFO[room].hotspots;
+    Object.keys(spots).forEach(function (id) {
+      var h = spots[id];
+      if (h.goTo && Game.isVisible(h.names || [id], h.hidden)) out.push({ to: h.goTo, step: "click " + id });
+    });
+    return out.filter(function (w) { return !(w.to === "master" && Game.isShown("door-open")); });
+  }
+  // The first step of the shortest way to a room.
+  function toward(target) {
+    var seen = {}, queue = [{ room: Game.state.room, first: null }];
+    seen[Game.state.room] = true;
+    while (queue.length) {
+      var at = queue.shift();
+      if (at.room === target) return at.first;
+      ways(at.room).forEach(function (w) {
+        if (seen[w.to]) return;
+        seen[w.to] = true;
+        queue.push({ room: w.to, first: at.first || w.step });
+      });
+    }
+    throw new Error("no way to " + target + " from " + Game.state.room);
+  }
+  function inOr(room, step) { return Game.state.room === room ? step : toward(room); }
+  var RULES = {
+    "21:10": function () { return toward("walk-in"); },                       // hide in the walk-in
+    "21:20": function () { return toward("entrance"); },                      // walk away from the mirror
+    "21:35": function () { return "wait"; },                                  // don't let the cat in
+    "21:40": function () { return inOr("bath", "click bath-lock"); },         // the bathroom without the washer
+    "22:00": function () { return "wait"; },                                  // nobody there: don't answer
+    "23:00": function () { return "wait"; },                                  // "Mom": don't open
+    "23:10": function () {                                                    // take your sister and hide
+      return Game.isShown("sister-asleep") ? inOr("sister-room", "click sister-asleep") : inOr("bath", "click bath-lock");
+    },
+  };
+  var TOUR = ["living", "entrance", "my-room", "entrance", "sister-room", "entrance", "master-door", "entrance"];
+  var next = 0;
+  Game.useStorage(false);
+  Game.newGame(night);
+  for (var i = 0; i < 600 && !Game.state.ending; i++) {
+    var d = Game.state.danger;
+    var step;
+    if (d && d.holding) step = "wait";
+    else if (d) step = RULES[d.id]();
+    else if (Game.state.room === TOUR[next]) {
+      next = (next + 1) % TOUR.length;
+      step = "beam face";  // look around with the light
+    } else step = toward(TOUR[next]);
+    playStep(step);
+  }
+  return Game.state.ending ? Game.state.ending : "no ending (" + describeState() + ")";
+}
+
+test("a careful player gets home on 100 random nights", function () {
+  eq(carefulNight(classicNight()), "home", "the classic night");
+  var random = seeded(23);
+  for (var n = 0; n < 100; n++) {
+    var night = Toolbox.rollNight(EVENTS, random);
+    var tonight = SCARES.map(function (id) { return id + "→" + (night[id] === null ? "skipped" : Game.formatTime(night[id])); }).join(" ");
+    eq(carefulNight(night), "home", "night " + n + " (" + tonight + ")");
+  }
+});
+
 test("rule 1 is still survivable when it first happens after 21:50", function () {
   Game.useStorage(false);
   Game.newGame(classicNight());
