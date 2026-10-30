@@ -38,21 +38,24 @@ function oldDoes(ev, here, byFallback) {
 
 // What a new script does in one variant: it runs into a scratch result, at its own time, on a
 // fresh state that is thrown away afterwards, so nothing reaches the game. (Silent mode would
-// drop the words, and the words are what this compares.)
-function newDoes(script, time, room, byFallback) {
+// drop the words, and the words are what this compares.) `before` can set the scene first;
+// show and hide are what the script itself changed.
+function newDoes(script, time, room, byFallback, before) {
   Game.newGame();
   Game.state.room = room;
-  Game.state.time = Game.parseTime(time);
   Game.state.shown = {};
   Game.state.dark = false;
+  if (before) before();
+  Game.state.time = Game.parseTime(time);
+  var start = JSON.parse(JSON.stringify(Game.state.shown));
   var r = { texts: [], sounds: [], shake: false, problems: [] };
   var out = Toolbox.run(script, { r: r, silent: false, byFallback: byFallback });
   var shown = Game.state.shown;
-  var names = Object.keys(shown).sort();
+  var changed = Object.keys(shown).sort().filter(function (n) { return shown[n] !== start[n]; });
   var does = {
     texts: r.texts.map(capitalize), sounds: r.sounds, shake: r.shake,
-    show: names.filter(function (n) { return shown[n] === true; }),
-    hide: names.filter(function (n) { return shown[n] === false; }),
+    show: changed.filter(function (n) { return shown[n] === true; }),
+    hide: changed.filter(function (n) { return shown[n] === false; }),
     dark: Game.state.dark, ending: out.ending,
   };
   Game.newGame();
@@ -61,26 +64,20 @@ function newDoes(script, time, room, byFallback) {
 
 // ---- the danger, compared piece by piece ----
 //
-// Not a literal "every string in the def" multiset: on purpose, the new rules drop some old strings
-// and rename others. Rule 4b's old steps name their rooms ("sister-room", "bath", "bath-washer") and
-// its deadly lock has unlessShown "bed-empty" (the next safe step beats a deadly click now), and rule
-// 3's "lock" is now "bath-lock" / "laundry-lock". So: the words and names that carry over are
-// compared as a multiset, the endings after renaming, and every step and deadly click by where it
-// points, in old ids.
+// Not a literal "every string in the def" comparison: on purpose, the new rules drop some old
+// strings and rename others. Rule 4b's old steps name their rooms ("sister-room", "bath",
+// "bath-washer") and its deadly lock has unlessShown "bed-empty" (the next safe step beats a deadly
+// click now), and rule 3's "lock" is now "bath-lock" / "laundry-lock". So every step, deadly piece,
+// label and buttonSays key is compared by where it points, in old ids, and every moment field by
+// field, in order, with the step it belongs to.
 
-var WORDS = { text: true, keep: true, button: true, sound: true };   // these keys' strings
-var EVERY_VALUE = { show: true, hide: true, labels: true, say: true }; // every string inside these
-
-// The multiset also counts every moment's shake, as "(shake)".
-function words(value, key, out) {
-  if (typeof value === "string") {
-    if (WORDS[key] || EVERY_VALUE[key]) out.push(capitalize(value));
-  } else if (key === "shake") {
-    if (value) out.push("(shake)");
-  } else if (value && typeof value === "object") {
-    for (var k in value) words(value[k], Array.isArray(value) || EVERY_VALUE[key] ? key : k, out);
-  }
-  return out;
+// A moment as the player gets it.
+function moment(m) {
+  if (!m) return null;
+  return {
+    text: capitalize(m.text) || null, sound: m.sound || null, shake: !!m.shake,
+    show: (m.show || []).slice().sort(), hide: (m.hide || []).slice().sort(),
+  };
 }
 
 // A hotspot's names in the new world: a renamed one keeps its old id as its class.
@@ -104,18 +101,67 @@ function target(p, isNew, kind) {
   return out.sort();
 }
 
-function dangerShape(def, isNew) {
+// Where you are while you wait: wherever the old danger's last safe step leaves you.
+function waitRooms(def) {
+  var steps = (def && def.steps) || [];
+  var last = steps[steps.length - 1];
+  if (!last) return null;
+  if (!last.hotspot) return [].concat(last.room);
+  return target(last, false, "step").map(function (t) {
+    var at = t.split("/");
+    return ROOM_INFO[at[0]].hotspots[at[1]].goTo || at[0];
+  });
+}
+
+// A labels or buttonSays map as [where each key points, its words] pairs. With `within`, only the
+// buttons in those rooms count.
+function pairs(map, isNew, within) {
+  return Object.keys(map || {}).map(function (key) {
+    var at = target({ hotspot: key }, isNew, "step").filter(function (t) {
+      return !within || within.indexOf(t.split("/")[0]) >= 0;
+    });
+    return [at, capitalize(map[key])];
+  }).sort(function (a, b) { return JSON.stringify(a) < JSON.stringify(b) ? -1 : 1; });
+}
+
+// The wait's labels: within the rooms where you wait they must point at exactly what the old ones
+// did (dangerShape checks that), and nowhere outside the old targets. Rule 3's "lock" narrows to
+// "bath-lock" because you wait locked in the bath.
+function holdLabelsOnlyNarrow(newDef, oldDef, where) {
+  var olds = pairs((oldDef.hold || {}).labels, false);
+  pairs((newDef.hold || {}).labels, true).forEach(function (p) {
+    var o = olds.filter(function (q) { return q[1] === p[1]; })[0];
+    ok(o && p[0].length && p[0].every(function (t) { return o[0].indexOf(t) >= 0; }),
+      where + ": the wait label " + JSON.stringify(p) + " points at something the old one didn't");
+  });
+}
+
+function dangerShape(def, isNew, waitAt) {
   if (!def) return null;
   function ending(id) { return isNew ? id : renamed(RENAMES.endings, id); }
-  var hold = def.hold || {};
+  var hold = def.hold;
   return {
     deadline: def.deadline, late: ending(def.late), endure: def.endure, waitEnds: def.waitEnds,
-    steps: (def.steps || []).length,
-    holdButton: hold.button, holdSteps: (hold.steps || []).length, holdEnding: ending(hold.fatal),
-    stepTargets: (def.steps || []).map(function (s) { return target(s, isNew, "step"); }),
-    deadly: (def.fatal || []).map(function (f) { return target(f, isNew, "deadly").concat("ends " + ending(f.ending)); }),
-    words: words(def, "", []).sort(),
+    steps: (def.steps || []).map(function (s) { return { at: target(s, isNew, "step"), then: moment(s.then) }; }),
+    deadly: (def.fatal || []).map(function (f) { return { at: target(f, isNew, "deadly"), ending: ending(f.ending) }; }),
+    labels: pairs(def.labels, isNew), buttonSays: pairs(def.say, isNew),
+    hold: hold ? {
+      button: hold.button, steps: (hold.steps || []).map(moment), labels: pairs(hold.labels, isNew, waitAt),
+      otherClicks: capitalize(hold.keep) || null, ending: ending(hold.fatal),
+    } : null,
+    whenSafe: moment(def.whenSafe),
   };
+}
+
+// The old hotspot whose click shows this name, and its id: { id, spot }.
+function clickThatShows(name) {
+  for (var room in ROOM_INFO) {
+    for (var id in ROOM_INFO[room].hotspots) {
+      var spot = ROOM_INFO[room].hotspots[id];
+      if ((spot.show || []).indexOf(name) >= 0) return { id: id, spot: spot };
+    }
+  }
+  return null;
 }
 
 // ---- the tests ----
@@ -144,15 +190,33 @@ EVENTS.forEach(function (ev) {
     }, ev.id + " trigger");
 
     // What it does, in the event's room and elsewhere, found by the light and by the clicks.
+    var waitAt = waitRooms(ev.danger);
     roomsFor(ev).forEach(function (room, i) {
       [false, true].forEach(function (byFallback) {
         var where = ev.id + " in " + room + (byFallback ? " (by the clicks)" : " (by the light)");
         var got = newDoes(rule.run, rule.time, room, byFallback);
         eq(got.problems, [], where + " problems");
         eq(got.does, oldDoes(ev, i === 0, byFallback), where);
-        eq(dangerShape(got.danger, true), dangerShape(ev.danger, false), where + " danger");
+        eq(dangerShape(got.danger, true, waitAt), dangerShape(ev.danger, false, waitAt), where + " danger");
+        if (got.danger) holdLabelsOnlyNarrow(got.danger, ev.danger, where);
       });
     });
+
+    // An event with unlessShown also has the branch where it does nothing: first the click that
+    // shows that thing (tucking your sister in), and then neither the old event nor the new
+    // script may say or change anything.
+    if (ev.unlessShown) {
+      var tuck = clickThatShows(ev.unlessShown);
+      ok(tuck, "no old hotspot shows " + ev.unlessShown);
+      var skipped = newDoes(rule.run, rule.time, roomsFor(ev)[0], false, function () {
+        Game.state.time = Game.parseTime(tuck.spot.notBefore || rule.time);
+        Toolbox.run(Toolbox.clickScripts()[tuck.id].run, { r: { texts: [], sounds: [], problems: [] } });
+        ok(Game.isShown(ev.unlessShown), "after clicking " + tuck.id + ", " + ev.unlessShown + " shows, so the old event skips");
+      });
+      eq(skipped.problems, [], ev.id + " after " + tuck.id + " problems");
+      eq(skipped.does, { texts: [], sounds: [], shake: false, show: [], hide: [], dark: false, ending: null }, ev.id + " after " + tuck.id);
+      eq(skipped.danger, null, ev.id + " after " + tuck.id + " danger");
+    }
   });
 });
 
