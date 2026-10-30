@@ -68,6 +68,20 @@ test("clicking your sister runs her whenClicked script from rules.js", function 
   eq([Game.isShown("sister-awake"), Game.isShown("blanket"), Game.isShown("sister-asleep")], [false, false, true], "tucked in");
 });
 
+test("tucking your sister in says the words inside her button in index.html (HTML 1)", function () {
+  var h = ROOM_INFO["sister-room"].hotspots["sister-awake"];
+  var text = h.text;
+  h.text = "Sweet dreams, little one.";  // as if she changed it in index.html
+  try {
+    Game.useStorage(false);
+    Game.newGame();
+    playStep("jump 20:00 sister-room");
+    eq(Game.click("sister-awake").texts, ["Sweet dreams, little one."]);
+  } finally {
+    h.text = text;
+  }
+});
+
 // Plays with a pretend localStorage while fn runs, and gives fn its data.
 function withStorage(data, fn) {
   globalThis.localStorage = {

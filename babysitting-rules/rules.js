@@ -41,10 +41,9 @@ when("19:00", function () {
 whenClicked("sister-awake", function () {
   if (clockIsBefore("20:00")) {
     say("You play a board game with your sister. She wins. Twice.");
-  } else {
+  } else {                          // no say() here, so her button's words in index.html pop up
     hide("sister-awake", "blanket");
     show("sister-asleep");
-    say(`You tuck your sister in. "Night night." She's asleep in seconds.`);
   }
 });
 
