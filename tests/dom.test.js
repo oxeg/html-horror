@@ -204,9 +204,21 @@ if (typeof document !== "undefined") {
       ok(stage, "the room you're in shows");
       stage.style.width = "800px";  // black bars at the sides: the picture is narrower than the window
       try {
-        eq(Math.round(View.beamRadius()), Math.round(800 * 22 / 100)); // flashlightSize is 22 unless set
+        eq(Math.round(View.beamRadius()), Math.round(800 * 22 / 100)); // --flashlight-size is 22 in style.css
       } finally {
         stage.style.width = "";
+      }
+    });
+
+    test("the flashlight size comes from style.css", function () {
+      inRoom("living");
+      var root = document.documentElement;
+      var before = View.beamRadius();
+      root.style.setProperty("--flashlight-size", "30");
+      try {
+        eq(Math.round(View.beamRadius()), Math.round(before * 30 / 22));
+      } finally {
+        root.style.removeProperty("--flashlight-size");
       }
     });
 

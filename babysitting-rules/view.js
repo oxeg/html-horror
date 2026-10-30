@@ -240,12 +240,17 @@ var View = (function () {
 
   function isDark() { return playing && !!Game.state.dark && !editing(); }
 
-  // flashlightSize (22 unless it's set) is a share of the picture's width, not the window's: with
-  // black bars at the sides, the light stays the same size on the picture.
+  // --flashlight-size in style.css (22 unless it's set) is a share of the picture's width, not the
+  // window's: with black bars at the sides, the light stays the same size on the picture.
+  function flashlightSize() {
+    var size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--flashlight-size"));
+    return size > 0 ? size : 22;
+  }
+
   function beamRadius() {
     var stage = Game.state && rooms[Game.state.room];
     var width = stage ? stage.getBoundingClientRect().width : 0;
-    return (width || Math.min(window.innerWidth, window.innerHeight * 16 / 9)) * (SETTINGS.flashlightSize || 22) / 100;
+    return (width || Math.min(window.innerWidth, window.innerHeight * 16 / 9)) * flashlightSize() / 100;
   }
   V.beamRadius = beamRadius;
 
