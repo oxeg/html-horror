@@ -94,6 +94,12 @@ copy("style", function (dir) {
   fs.renameSync(path.join(dir, "style.css"), path.join(dir, "style.css.txt"));
 });
 
+// Like a phone still loading the scripts: errors.js isn't there to hide the unzip text, but
+// engine/engine.css is.
+copy("errors-js", function (dir) {
+  fs.rmSync(path.join(dir, "engine", "errors.js"), { force: true });
+});
+
 copy("engine-css", function (dir) {
   fs.rmSync(path.join(dir, "engine", "engine.css"), { force: true });
 });

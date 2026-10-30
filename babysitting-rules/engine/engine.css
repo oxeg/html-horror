@@ -222,6 +222,12 @@ body.playing #ui-popup.on { display: block; }
 #title-count { font-size: 14px; opacity: 0.7; }
 #ending-buttons { display: flex; gap: 12px; margin-top: 10px; }
 
+/* "The game files are missing…" in index.html waits 2 seconds before it shows, so it doesn't flash
+   while a slow phone loads the game (errors.js hides it once it's here). Without this file, as in a
+   zip that wasn't unzipped, it shows at once. */
+#unzip { animation: unzip-show 0s 2s both; }
+@keyframes unzip-show { from { visibility: hidden; } }
+
 /* error box */
 #problem { display: none; position: fixed; inset: 0; z-index: 100; padding: 8vh 10vw; background: #000; color: #fff; font-size: 18px; line-height: 1.5; overflow: auto; }
 #problem.on { display: block; }

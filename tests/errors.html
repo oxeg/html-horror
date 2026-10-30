@@ -91,9 +91,18 @@
         } },
       { name: "all of engine/ deleted: the #unzip text shows", src: copyOf("engine"),
         check: function (w, d) {
-          check(shows(w, "unzip"), "#unzip shows");
+          check(shows(w, "unzip") && w.getComputedStyle(d.getElementById("unzip")).visibility === "visible", "#unzip shows at once");
           check(d.getElementById("unzip").textContent.indexOf("extract (unzip) the whole folder") >= 0, "it says to unzip the folder");
           check(!d.getElementById("problem"), "no problem box (errors.js isn't there to make one)");
+        } },
+      { name: "engine/errors.js missing, engine/engine.css there (like a slow phone): the unzip text waits 2 s, then shows",
+        src: copyOf("errors-js"),
+        check: function (w, d) {
+          var unzip = d.getElementById("unzip");
+          check(w.getComputedStyle(unzip).visibility === "hidden", "hidden while the page loads");
+          return wait(2200).then(function () {
+            check(shows(w, "unzip") && w.getComputedStyle(unzip).visibility === "visible", "it shows after 2 s");
+          });
         } },
       { name: "a new room section with no drawing: it plays, with the plain room", src: copyOf("room"),
         check: function (w, d) {
