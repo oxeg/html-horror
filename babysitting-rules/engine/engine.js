@@ -274,8 +274,8 @@ var Game = (function () {
   }
 
   // Edit mode: jump to a time. Events earlier tonight count as done (what they show and hide
-  // is applied, but no texts, sounds or dangers; scripts run in silent mode); later ones
-  // will happen again. The ones skipped tonight stay skipped.
+  // is applied, but no texts, sounds or dangers; scripts run in silent mode); later ones, and
+  // ones after a rule that is later tonight, will happen again. Skipped ones stay skipped.
   function editJump(roomId, time) {
     var t = parseTime(time);
     var s = G.state;
@@ -286,7 +286,7 @@ var Game = (function () {
     s.ending = null;
     s.actionsHere = 0;
     EVENTS.forEach(function (ev) {
-      var tonight = Toolbox.tonight(ev, s);
+      var tonight = Toolbox.earliest(ev, s, EVENTS);
       if (tonight === null) return;
       if (tonight < t) {
         if (s.fired[ev.id]) return;
@@ -404,7 +404,7 @@ var Game = (function () {
   };
   G.startOver = G.newGame;
   G.tryAgain = function () {
-    if (!G.checkpoint) return G.newGame();
+    if (!G.checkpoint) return G.newGame(G.state.night);
     var r = emptyResult();
     G.state = copy(G.checkpoint.state);
     fire(eventById(G.checkpoint.eventId), r);

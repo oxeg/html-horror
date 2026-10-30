@@ -344,6 +344,20 @@ test("a careful player gets home on 100 random nights", function () {
   }
 });
 
+test("an edit-mode jump never opens the bedroom door before your sister's scare", function () {
+  var night = classicNight();
+  night["21:10"] = Game.parseTime("22:05");  // your sister comes late tonight
+  night["21:30"] = Game.parseTime("21:35");  // the door's own time is earlier
+  Game.useStorage(false);
+  Game.newGame(night);
+  playStep("jump 21:50 entrance");
+  eq(Game.isShown("door-open"), false, "the door is still closed");
+  ["wait", "wait", "go my-room"].forEach(playStep);
+  eq(Game.state.danger && Game.state.danger.id, "21:10", "your sister comes");
+  ["go entrance", "go master-door", "click door-closed", "click walk-in-door", "wait", "wait", "wait"].forEach(playStep);
+  eq(Game.state.ending, null, "made it to the walk-in");
+});
+
 test("rule 1 is still survivable when it first happens after 21:50", function () {
   Game.useStorage(false);
   Game.newGame(classicNight());

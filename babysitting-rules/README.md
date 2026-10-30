@@ -112,9 +112,9 @@ still there. `<br>` starts a new line, and `<b>bold</b>` makes words bold.
 
 **Check it:** reload and get that ending: when your reflection moves in the living room,
 click anything there. To get there faster, press E and open **Tonight**. Click the line that
-says *In the dark glass of the balcony…*, so its time goes in the Time box. Pick the hallway,
-press Go, press E again, and walk to the living room. (If that line says *skipped*, tonight has
-no reflection: reload and press Start for a new night.)
+says *In the dark glass of the balcony…*, so its time goes in the Time box. Pick the living
+room, press Go, press E again, and press Wait. (If that line says *skipped*, tonight has no
+reflection: reload and press Start for a new night.)
 
 ### HTML 4: Add something you can click
 

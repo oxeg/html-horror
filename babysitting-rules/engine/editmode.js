@@ -89,13 +89,14 @@ var EditMode = (function () {
     panel.querySelector("#edit-where").textContent = "left: " + left.toFixed(1) + "%  top: " + down.toFixed(1) + "%";
   }
 
-  // Tonight's rules in order: when each one comes (or "skipped" when it doesn't come tonight),
-  // its line in rules.js, and what it is. The ones that happened already are greyed out.
+  // Tonight's rules in order: when each one comes (or "skipped" when it doesn't come tonight; a
+  // rule that waits for another comes after it), its line in rules.js, and what it is. The ones
+  // that happened already are greyed out.
   function listTonight() {
     var list = panel.querySelector("#edit-night");
     list.innerHTML = "";
     Toolbox.inTonightsOrder(EVENTS, Game.state).forEach(function (ev) {
-      var t = Toolbox.tonight(ev, Game.state);
+      var t = Toolbox.earliest(ev, Game.state, EVENTS);
       var line = document.createElement("li");
       line.textContent = (t === null ? "skipped" : Game.formatTime(t)) + " · line " + ev.line + " · " + Toolbox.labelOf(ev);
       if (t !== null) line.setAttribute("data-time", Game.formatTime(t));

@@ -101,6 +101,7 @@
       G.checkpoint = data.checkpoint;
       G.state.night = Toolbox.rollNight(EVENTS, null, G.state.night);
       if (G.checkpoint) G.checkpoint.state.night = Toolbox.rollNight(EVENTS, null, G.state.night);
+      G.saveNow();
     }
     return !!data;
   };

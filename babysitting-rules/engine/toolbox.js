@@ -96,9 +96,22 @@ var Toolbox = (function () {
     return state && has(state.night, ev.id) ? state.night[ev.id] : Game.parseTime(ev.time);
   };
 
-  // The rules in tonight's order; rules at the same time keep their order, skipped ones go last.
+  // The earliest a rule can come tonight: its own time, or later when it waits (afterRule) for a
+  // rule that comes later tonight. A rule skipped tonight holds nothing up. null: not tonight.
+  T.earliest = function (ev, state, events, seen) {
+    var t = T.tonight(ev, state);
+    var before = ev.after === undefined ? null : events.filter(function (e) { return e.id === ev.after; })[0];
+    seen = seen || {};
+    if (t === null || !before || seen[ev.id]) return t;
+    seen[ev.id] = true;
+    var other = T.earliest(before, state, events, seen);
+    return other === null || isNaN(other) ? t : Math.max(t, other);
+  };
+
+  // The rules in tonight's order; rules at the same time keep their order (by first time, then as
+  // written in rules.js), skipped ones go last.
   T.inTonightsOrder = function (events, state) {
-    function key(ev) { var t = T.tonight(ev, state); return t === null || isNaN(t) ? Infinity : t; }
+    function key(ev) { var t = T.earliest(ev, state, events); return t === null || isNaN(t) ? Infinity : t; }
     return events.map(function (ev, i) { return { ev: ev, i: i, t: key(ev) }; })
       .sort(function (a, b) { return a.t - b.t || a.i - b.i; })
       .map(function (x) { return x.ev; });

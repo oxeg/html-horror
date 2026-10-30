@@ -68,7 +68,7 @@ test("rollNight keeps what a saved night has and rolls only the rules it doesn't
   eq(night, { "21:00": at("21:35"), "21:10": at("22:10") });
 });
 
-test("tonight and inTonightsOrder: tonight's times, ties in rules.js order, skipped ones last", function () {
+test("tonight and inTonightsOrder: tonight's times, ties by first time then rules.js order, skipped ones last", function () {
   Toolbox.reset();
   when("19:00", function () {});
   when(between("19:10", "20:00"), function () {});
@@ -175,5 +175,46 @@ test("a rule the saved night doesn't have yet is rolled when you continue", func
     storage.data["babysitting-rules:save"] = JSON.stringify(saved);
     ok(Game.continueGame(), "continued");
     eq([Game.state.night["19:40"], Game.state.night["20:05"]], [at("20:00"), at("20:05")]);
+  });
+});
+
+test("earliest: a rule after another can't come before it tonight, unless that one is skipped", function () {
+  Toolbox.reset();
+  when(between("19:10", "20:00"), function () {});
+  when(between("19:30", "20:00"), afterRule("19:10"), function () {});
+  var events = Toolbox.rules();
+  var state = { night: { "19:10": at("19:50"), "19:30": at("19:35") } };
+  eq(Toolbox.earliest(events[1], state, events), at("19:50"));
+  eq(Toolbox.earliest(events[0], state, events), at("19:50"));
+  eq(Toolbox.inTonightsOrder(events, state).map(function (ev) { return ev.id; }), ["19:10", "19:30"]);
+  state.night["19:10"] = null;
+  eq(Toolbox.earliest(events[1], state, events), at("19:35"), "the one it waits for is skipped tonight");
+});
+
+test("edit mode's jump doesn't count a rule as done before the rule it waits for", function () {
+  Game.newGame(fixtureNight({ "19:30": at("19:30") }));
+  Game.editJump("a", "19:40");
+  eq([Game.state.fired["19:30"], Game.state.shown.lateOn], [undefined, undefined], "19:50 hasn't come yet");
+  Game.editJump("a", "20:00");
+  eq([Game.state.fired["19:30"], Game.state.shown.lateOn], [true, true]);
+});
+
+test("Try again before any rule has fired keeps tonight", function () {
+  var night = fixtureNight({ "19:40": at("20:00") });
+  Game.newGame(night);
+  eq(Game.checkpoint, null);
+  Game.tryAgain();
+  eq(Game.state.night, night);
+});
+
+test("Continue saves the times it rolled for the rules the saved night didn't have", function () {
+  var storage = fakeStorage(false);
+  withStorage(storage, function () {
+    Game.newGame();
+    var saved = JSON.parse(storage.data["babysitting-rules:save"]);
+    delete saved.state.night["20:05"];
+    storage.data["babysitting-rules:save"] = JSON.stringify(saved);
+    ok(Game.continueGame(), "continued");
+    eq(JSON.parse(storage.data["babysitting-rules:save"]).state.night["20:05"], at("20:05"));
   });
 });
