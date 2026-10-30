@@ -34,8 +34,9 @@
   }
 
   // A save from before she edited rules.js or index.html may name things that no longer exist.
+  // A save from before random nights has no night at all.
   function validState(s) {
-    if (!s || typeof s.time !== "number" || !ROOM_INFO[s.room] || !s.shown || !s.fired) return false;
+    if (!s || typeof s.time !== "number" || !ROOM_INFO[s.room] || !s.shown || !s.fired || !validNight(s.night)) return false;
     if (s.camera && !ROOM_INFO[s.camera]) return false;
     for (var id in s.fired) if (!isRule(id)) return false;
     if (s.danger && !(isRule(s.danger.id) && validDanger(s.danger.def))) return false;
@@ -43,6 +44,13 @@
     return (s.notes || []).every(function (n) {
       return NOTES[n];
     });
+  }
+
+  // Tonight's times: a time or null (skipped) for rules that still exist.
+  function validNight(night) {
+    if (!night || typeof night !== "object") return false;
+    for (var id in night) if (!isRule(id) || !(night[id] === null || typeof night[id] === "number")) return false;
+    return true;
   }
 
   // A saved danger is its own definition: every ending it can lead to must still exist.
@@ -84,11 +92,15 @@
 
   // ---- what the view (and the tests) can call ----
 
+  // A rule she added since the save gets its time for tonight now. The checkpoint is from the
+  // same night, so it gets a copy of it.
   G.continueGame = function () {
     var data = loadSave();
     if (data) {
       G.state = data.state;
       G.checkpoint = data.checkpoint;
+      G.state.night = Toolbox.rollNight(EVENTS, null, G.state.night);
+      if (G.checkpoint) G.checkpoint.state.night = Toolbox.rollNight(EVENTS, null, G.state.night);
     }
     return !!data;
   };

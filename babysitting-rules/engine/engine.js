@@ -105,8 +105,10 @@ var Game = (function () {
     mark(m.hide, false);
   }
 
-  function freshState() {
+  // A new night: its times and skips are rolled (toolbox.js), unless a test gives one.
+  function freshState(night) {
     return {
+      night: night || Toolbox.rollNight(EVENTS),
       time: parseTime(SETTINGS.startTime),
       room: SETTINGS.startRoom,
       camera: false,
@@ -205,7 +207,8 @@ var Game = (function () {
 
   // ---- events ----
 
-  function due(ev) { return !G.state.fired[ev.id] && G.state.time >= parseTime(ev.time); }
+  // Due at tonight's time; a rule skipped tonight never is.
+  function due(ev) { var t = Toolbox.tonight(ev, G.state); return !G.state.fired[ev.id] && t !== null && G.state.time >= t; }
 
   // Fires one event: checkpoint first, so "Try again" lands just before it.
   // Every event is a rule from rules.js: it runs its script, and its ending or danger comes back
@@ -218,13 +221,14 @@ var Game = (function () {
     else if (out.danger) startDanger(ev.id, out.danger, r);
   }
 
-  // Runs after every action: fires whatever is due, in time order.
-  // Nothing new starts while a danger runs; it all waits until the danger is over.
+  // Runs after every action: fires whatever is due, in tonight's order. A rule after one that is
+  // skipped tonight doesn't wait for it. Nothing new starts while a danger runs; it all waits.
   function processEvents(r, entered) {
-    for (var i = 0; i < EVENTS.length; i++) {
-      var ev = EVENTS[i];
+    var events = Toolbox.inTonightsOrder(EVENTS, G.state);
+    for (var i = 0; i < events.length; i++) {
+      var ev = events[i];
       if (G.state.ending || G.state.danger) return;
-      if (!due(ev) || (ev.after && !G.state.fired[ev.after])) continue;
+      if (!due(ev) || (ev.after && !G.state.fired[ev.after] && G.state.night[ev.after] !== null)) continue;
       var trigger = ev.trigger || "now";
       var blocked = !!ev.notIn && ev.notIn.indexOf(G.state.room) >= 0;
       if (blocked && trigger !== "beam") continue;
@@ -269,9 +273,9 @@ var Game = (function () {
     return r;
   }
 
-  // Edit mode: jump to a time. Earlier events count as done (what they show and hide
+  // Edit mode: jump to a time. Events earlier tonight count as done (what they show and hide
   // is applied, but no texts, sounds or dangers; scripts run in silent mode); later ones
-  // will happen again.
+  // will happen again. The ones skipped tonight stay skipped.
   function editJump(roomId, time) {
     var t = parseTime(time);
     var s = G.state;
@@ -282,7 +286,9 @@ var Game = (function () {
     s.ending = null;
     s.actionsHere = 0;
     EVENTS.forEach(function (ev) {
-      if (parseTime(ev.time) < t) {
+      var tonight = Toolbox.tonight(ev, s);
+      if (tonight === null) return;
+      if (tonight < t) {
         if (s.fired[ev.id]) return;
         s.fired[ev.id] = true;
         mark(ev.armShow, true);
@@ -391,8 +397,8 @@ var Game = (function () {
 
   // ---- what the view (and the tests) can call ----
 
-  G.newGame = function () {
-    G.state = freshState();
+  G.newGame = function (night) {
+    G.state = freshState(night);
     G.checkpoint = null;
     return after(emptyResult(), true);
   };

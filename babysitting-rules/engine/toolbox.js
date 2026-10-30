@@ -31,12 +31,15 @@ var Toolbox = (function () {
   T.set = function (key, value) { setup[key] = value; };
   T.settings = function () { return copy(setup); };
 
-  // A rule's id is its time, with " #2", " #3"… for later rules at the same time. It keeps every
+  // A rule's id is its time, with " #2", " #3"… for later rules at the same time. A rule with
+  // between(…) goes by its first time, and keeps the last one in latest. It keeps every
   // trigger it was given (check.js says so when there's more than one).
   T.addRule = function (time, conditions, fn, line) {
+    var latest = time && time.between ? time.to : undefined;
+    if (time && time.between) time = time.from;
     var same = rules.filter(function (r) { return r.time === time; }).length;
     var rule = {
-      id: same ? time + " #" + (same + 1) : time, time: time, trigger: "now", group: undefined, room: undefined,
+      id: same ? time + " #" + (same + 1) : time, time: time, latest: latest, trigger: "now", group: undefined, room: undefined,
       fallback: undefined, notIn: [], after: undefined, armShow: [], run: fn, line: line, triggers: [],
     };
     conditions.forEach(function (c) {
@@ -64,6 +67,55 @@ var Toolbox = (function () {
     return rules.map(function (rule, i) { return { rule: rule, i: i, t: minutes(rule.time) }; })
       .sort(function (a, b) { return a.t - b.t || a.i - b.i; })
       .map(function (x) { return x.rule; });
+  };
+
+  // ---- tonight: the times and skips a new game rolls ----
+
+  function has(obj, key) { return !!obj && Object.prototype.hasOwnProperty.call(obj, key); }
+
+  // { rule id: minutes, or null for a rule that doesn't happen tonight }. A rule with between(…)
+  // gets a time on its 5-minute steps; one with onSomeNights(n, of) is skipped on the other nights.
+  // A saved night keeps what it has, and only the rules it doesn't have yet are rolled.
+  T.rollNight = function (events, random, keep) {
+    var pick = random || Math.random;
+    var night = copy(keep) || {};
+    events.forEach(function (ev) {
+      if (has(night, ev.id)) return;
+      var from = Game.parseTime(ev.time);
+      var steps = ev.latest === undefined ? 0 : Math.max(0, Math.floor((Game.parseTime(ev.latest) - from) / 5));
+      var skip = ev.odds && pick() * ev.odds[1] >= ev.odds[0];
+      var step = steps && !skip ? Math.min(steps, Math.floor(pick() * (steps + 1))) : 0;
+      night[ev.id] = skip ? null : from + 5 * step;
+    });
+    return night;
+  };
+
+  // Tonight's minutes for a rule (null: not tonight). A rule the night doesn't have keeps its first time.
+  T.tonight = function (ev, state) {
+    return state && has(state.night, ev.id) ? state.night[ev.id] : Game.parseTime(ev.time);
+  };
+
+  // The rules in tonight's order; rules at the same time keep their order, skipped ones go last.
+  T.inTonightsOrder = function (events, state) {
+    function key(ev) { var t = T.tonight(ev, state); return t === null || isNaN(t) ? Infinity : t; }
+    return events.map(function (ev, i) { return { ev: ev, i: i, t: key(ev) }; })
+      .sort(function (a, b) { return a.t - b.t || a.i - b.i; })
+      .map(function (x) { return x.ev; });
+  };
+
+  // What edit mode's Tonight list calls a rule: the start of what it says, else the first name it
+  // shows. It's read from the script, which doesn't run.
+  T.labelOf = function (rule) {
+    var calls = typeof rule.run === "function" ? T.calls(rule.run) : [];
+    function first(name) {
+      for (var i = 0; i < calls.length; i++) if (calls[i].name === name && !calls[i].method && calls[i].words.length) return calls[i].words[0];
+    }
+    var said = first("say");
+    if (said) {
+      var words = said.replace(/<[^>]*>/g, " ").trim().split(/\s+/);
+      return words.slice(0, 7).join(" ") + (words.length > 7 ? "…" : "");
+    }
+    return first("show") || "the rule at " + rule.time;
   };
 
   T.clickScripts = function () {
@@ -178,7 +230,7 @@ var Toolbox = (function () {
 
   // Every block there is, by name (they're all below).
   T.blocks = ["startAt", "walkingTakes", "lookingTakes", "waitingTakes", "when", "whenClicked",
-    "inRoom", "enteringRoomWith", "lightFinds", "notIn", "afterRule",
+    "between", "inRoom", "enteringRoomWith", "lightFinds", "notIn", "afterRule", "onSomeNights",
     "say", "playSound", "shake", "show", "hide", "lightsOut", "lightsOn", "endGame", "danger",
     "isShown", "youAreIn", "clockIsBefore", "isDark", "foundWithLight",
     "beIn", "leaveRoom", "click", "anythingIn"];
@@ -248,8 +300,12 @@ function when(time) {
   return Toolbox.addRule(time, conditions, fn, Toolbox.lineOf(new Error().stack));
 }
 
+// when(between("21:00", "22:00"), …): a random time in there, a new one every night.
+function between(from, to) { return { between: true, from: from, to: to }; }
+
 // ---- conditions for when() ----
 
+function onSomeNights(n, of) { return { odds: [n, of] }; }
 function inRoom(room) { return { trigger: "inRoom", room: room }; }
 function enteringRoomWith(name) { return { trigger: "nextEntry", group: name }; }
 function lightFinds(name, clicks) { return { trigger: "beam", group: name, fallback: clicks, armShow: [name] }; }
