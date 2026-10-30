@@ -48,7 +48,12 @@ var Toolbox = (function () {
     return rule;
   };
 
-  T.addClick = function (name, fn, line) { clicks[name] = { run: fn, line: line }; };
+  // A second whenClicked for the same name takes the first one's place; lines keeps every line it
+  // was written on, so check.js can say so.
+  T.addClick = function (name, fn, line) {
+    var before = Object.prototype.hasOwnProperty.call(clicks, name) ? clicks[name].lines : [];
+    clicks[name] = { run: fn, line: line, lines: before.concat([line]) };
+  };
 
   // Sorted by time; rules at the same time keep their order in rules.js.
   T.rules = function () {

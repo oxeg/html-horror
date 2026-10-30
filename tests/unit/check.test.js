@@ -174,6 +174,29 @@ test("check: whenClicked names a button that isn't there", function () {
   ok(mentions(r.errors, ["rules.js (line ", 'whenClicked("fridg")', "did you mean", "fridge", "line"]), r.errors.join("|"));
 });
 
+test("check: two whenClicked scripts for the same button: only the last one runs", function () {
+  var lines = [];  // the line each whenClicked is on
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    whenClicked("lamp", function () { say("One."); }); lines.push(Toolbox.lineOf(new Error().stack));
+    whenClicked("lamp", function () { say("Two."); }); lines.push(Toolbox.lineOf(new Error().stack));
+  });
+  eq(r.errors, []);
+  ok(mentions(r.warnings, ['rules.js: there are two whenClicked("lamp") scripts (line ' + lines[0] + " and line " + lines[1] + "); only the last one runs."]), r.warnings.join("|"));
+});
+
+test("check: danger() in a whenClicked script does nothing", function () {
+  var r = world(FIXTURE_HTML, function () {
+    startInA();
+    whenClicked("lamp", function () {
+      say("Run!");
+      danger({ clicks: 3, safe: beIn("b"), ending: "X1" });
+    });
+  });
+  eq(r.errors, []);
+  ok(mentions(r.warnings, ["rules.js (line ", 'whenClicked("lamp"): danger() only works in a when() rule']), r.warnings.join("|"));
+});
+
 test("check: when() and whenClicked() need a function at the end", function () {
   var r = world(HUB + WIN, function () {
     startInA();

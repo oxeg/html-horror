@@ -385,10 +385,21 @@ var Check = (function () {
     ids(scripts).forEach(function (name) {
       var at = inRules(scripts[name].line);
       if (n.buttons.indexOf(name) < 0) out.errors.push(at + 'whenClicked("' + name + '"): no button in index.html has the id or class "' + name + '"' + orGuess(name, n.buttons));
+      var lines = scripts[name].lines || [];
+      if (lines.length > 1) {
+        out.warnings.push("rules.js: there are " + (lines.length === 2 ? "two" : lines.length) + ' whenClicked("' + name + '") scripts (' +
+          (lines.length === 2 ? "line " + lines[0] + " and line " + lines[1] : "lines " + lines.slice(0, -1).join(", ") + " and " + lines[lines.length - 1]) +
+          "); only the last one runs. Put them together in one script.");
+      }
       if (typeof scripts[name].run !== "function") {
         out.errors.push(at + 'whenClicked("' + name + '", …) needs a function at the end, like whenClicked("' + name + '", function () { … });');
       } else {
         readScript(out, n, { fn: scripts[name].run, line: scripts[name].line }, reading);
+        // the engine ignores a danger from a click
+        Toolbox.calls(scripts[name].run).forEach(function (c) {
+          if (c.name !== "danger" || c.method || c.declared) return;
+          out.warnings.push(placeOf(scripts[name], c) + 'whenClicked("' + name + '"): danger() only works in a when() rule, so here it does nothing. Move it into a when("…", function () { … }) rule.');
+        });
       }
     });
 
