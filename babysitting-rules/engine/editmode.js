@@ -1,6 +1,7 @@
 // editmode.js: press E while playing to see behind the scenes.
 // The flashlight turns off, every clickable thing gets a box with its id, and a panel
-// lets you jump to any room and time, show or hide things by name, and turn the lights off.
+// lets you jump to any room and time, show or hide things by name, turn the lights off, and
+// see where the pointer is on the picture (in %, for placing buttons in style.css).
 // You don't need to change this file.
 
 var EditMode = (function () {
@@ -8,28 +9,27 @@ var EditMode = (function () {
   var panel = null;
   var boxes = null;
 
-  // Every name worth a checkbox: the parts the drawings hide (data-hidden), the hidden
-  // hotspots, and what the dangers in rules.js show or hide.
+  // Every name worth a checkbox: every part of the drawings, the buttons that start hidden, and
+  // what the scripts in rules.js show or hide (read, not run).
   function allNames() {
     var found = {};
     function add(list) { (list || []).forEach(function (n) { found[n] = true; }); }
-    function moment(m) { add((m || {}).show); add((m || {}).hide); }
-    add(Loader.hiddenInDrawings());
+    function read(fn) {
+      var words = Check.scanNames(fn);
+      add(words.show);
+      add(words.hide);
+    }
+    add(Loader.drawingNames());
     Object.keys(ROOM_INFO).forEach(function (id) {
       var spots = ROOM_INFO[id].hotspots || {};
-      Object.keys(spots).forEach(function (h) {
-        if (spots[h].hidden) add([h]);
-        moment(spots[h]);
-      });
+      Object.keys(spots).forEach(function (h) { if (spots[h].hidden) add([h]); });
     });
     EVENTS.forEach(function (ev) {
-      moment(ev);
       add(ev.armShow);
-      var d = ev.danger || (ev.run && Toolbox.pretend(ev).danger) || {};
-      (d.steps || []).forEach(function (s) { moment(s.then); });
-      ((d.hold || {}).steps || []).forEach(moment);
-      moment(d.whenSafe);
+      if (ev.run) read(ev.run);
     });
+    var scripts = Toolbox.clickScripts();
+    Object.keys(scripts).forEach(function (name) { read(scripts[name].run); });
     return Object.keys(found).sort();
   }
 
@@ -39,9 +39,12 @@ var EditMode = (function () {
     var rooms = Object.keys(ROOM_INFO).filter(function (id) { return !ROOM_INFO[id].overlay; });
     var html = "<b>Edit mode</b> (press E to play again)<br>";
     html += '<label>Room <select id="edit-room">';
-    rooms.forEach(function (id) { html += '<option value="' + id + '">' + id + "</option>"; });
+    rooms.forEach(function (id) {
+      html += '<option value="' + id + '">' + id + " (" + ROOM_INFO[id].name + ")</option>";
+    });
     html += '</select></label> <label>Time <input id="edit-time" size="5" value="21:30"></label> ';
-    html += '<button id="edit-go">Go</button><div id="edit-flags">';
+    html += '<button id="edit-go">Go</button>';
+    html += '<div>Pointer: <span id="edit-where">move it over the picture</span></div><div id="edit-flags">';
     html += '<label><input type="checkbox" id="edit-dark"> lights out</label>';
     allNames().forEach(function (n) {
       html += '<label><input type="checkbox" data-shown="' + n + '"> ' + n + "</label>";
@@ -66,6 +69,18 @@ var EditMode = (function () {
       else return;
       View.render();
     });
+  }
+
+  // Where the pointer is on the picture you're looking at, in % of the picture, like the lines in
+  // style.css: "left: 41.2%  top: 30.5%".
+  function showWhere(e) {
+    if (!M.on) return;
+    var top = document.querySelector("section.room.camera.here") || document.querySelector("section.room.here");
+    if (!top) return;
+    var r = top.getBoundingClientRect();
+    var left = (e.clientX - r.left) / r.width * 100;
+    var down = (e.clientY - r.top) / r.height * 100;
+    panel.querySelector("#edit-where").textContent = "left: " + left.toFixed(1) + "%  top: " + down.toFixed(1) + "%";
   }
 
   function markBadTime() {
@@ -127,6 +142,7 @@ var EditMode = (function () {
       if ((e.key === "e" || e.key === "E") && document.body.classList.contains("playing")) M.toggle();
     });
     window.addEventListener("resize", function () { M.afterRender(); });
+    document.addEventListener("pointermove", showWhere);
   };
 
   return M;

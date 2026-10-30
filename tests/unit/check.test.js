@@ -541,6 +541,16 @@ test("check: scanNames finds the words in show, hide, isShown, playSound and end
   eq(names, { show: ["a", "b"], hide: ["c", "d"], isShown: ["e"], playSound: ["knock"], endGame: ["WIN"] });
 });
 
+test("check: scanNames also reads her own functions, each once", function () {
+  var names = Check.scanNames(function () {
+    revealTheBox();
+    hideTheGhots();
+    revealTheBox();
+  });
+  eq(names.show, ["crate"]);
+  eq(names.hide, ["ghots"]);
+});
+
 test("check: describe says what went wrong while playing", function () {
   eq(Check.describe({ file: "rules.js", line: 57, message: "sya is not defined" }), "rules.js line 57: sya is not defined. Did you mean say?");
   eq(Check.describe({ file: "rules.js", line: 3, message: "danger() can't hold a function." }), "rules.js line 3: danger() can't hold a function.");

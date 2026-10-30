@@ -451,6 +451,45 @@ if (typeof document !== "undefined") {
 
     var box100 = { left: 0, top: 0, right: 100, bottom: 100 };
 
+    // ---- edit mode (press E) ----
+
+    function withEditMode(fn) {
+      if (!EditMode.on) EditMode.toggle();
+      try {
+        fn(document.getElementById("edit-panel"));
+      } finally {
+        if (EditMode.on) EditMode.toggle();
+      }
+    }
+
+    test("edit mode lists names and switches them", function () {
+      inRoom("living");
+      withEditMode(function (panel) {
+        var names = Array.prototype.map.call(panel.querySelectorAll("[data-shown]"), function (b) {
+          return b.getAttribute("data-shown");
+        });
+        ["cat-outside", "door-closed", "sister-awake", "blanket", "lamp-glow", "fridge"].forEach(function (n) {
+          ok(names.indexOf(n) >= 0, "the list has " + n);
+        });
+        var box = panel.querySelector('[data-shown="cat-outside"]');
+        eq(box.checked, false, "the cat starts outside the list of shown things");
+        box.click();
+        eq(Game.isShown("cat-outside"), true, "ticking it shows the cat");
+        ok(!document.getElementById("cat-outside").hidden, "and its button");
+      });
+    });
+
+    test("the readout gives the pointer's place in % of the picture", function () {
+      inRoom("living");
+      withEditMode(function (panel) {
+        var r = document.getElementById("living").getBoundingClientRect();
+        document.dispatchEvent(new PointerEvent("pointermove", {
+          clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, bubbles: true, pointerType: "mouse"
+        }));
+        eq(panel.querySelector("#edit-where").textContent, "left: 50.0%  top: 50.0%");
+      });
+    });
+
     test("circleHitsRect inside", function () {
       eq(View.circleHitsRect(50, 50, 10, box100), true);
     });

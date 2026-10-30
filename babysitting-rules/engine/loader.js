@@ -138,18 +138,21 @@ var Loader = (function () {
     return world;
   };
 
-  // The names of the drawing parts (engine/drawings/*.js) that start hidden: data-name="…" with data-hidden.
-  L.hiddenInDrawings = function () {
+  // The names of the drawing parts (engine/drawings/*.js), each once: data-name="…". With
+  // onlyHidden, just the parts that start hidden (data-hidden).
+  function drawingNames(onlyHidden) {
     var names = [];
     var drawings = typeof ROOMS !== "undefined" ? ROOMS : {};
     Object.keys(drawings).forEach(function (id) {
       (String(drawings[id]).match(/<[^>]+>/g) || []).forEach(function (t) {
         var m = /\sdata-name="([^"]+)"/.exec(t);
-        if (m && /\sdata-hidden[\s>\/=]/.test(t) && names.indexOf(m[1]) < 0) names.push(m[1]);
+        if (m && (!onlyHidden || /\sdata-hidden[\s>\/=]/.test(t)) && names.indexOf(m[1]) < 0) names.push(m[1]);
       });
     });
     return names;
-  };
+  }
+  L.drawingNames = function () { return drawingNames(false); };
+  L.hiddenInDrawings = function () { return drawingNames(true); };
 
   // ---- the drawings load themselves ----
 

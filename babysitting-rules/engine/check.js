@@ -201,12 +201,20 @@ var Check = (function () {
     return unknownCalls(fn, Toolbox.calls(fn)).map(function (c) { return { name: c.name, line: c.line }; });
   };
 
-  // The words a script hands to show, hide, isShown, playSound and endGame.
+  // The words a script hands to show, hide, isShown, playSound and endGame, also inside her own
+  // functions that it calls (each read once).
   C.scanNames = function (fn) {
     var out = { show: [], hide: [], isShown: [], playSound: [], endGame: [] };
-    Toolbox.calls(fn).forEach(function (c) {
-      if (!c.method && has(out, c.name)) c.words.forEach(function (w) { if (out[c.name].indexOf(w) < 0) out[c.name].push(w); });
-    });
+    var read = [];
+    (function scan(f) {
+      read.push(f);
+      Toolbox.calls(f).forEach(function (c) {
+        if (c.method || c.declared) return;
+        if (has(out, c.name)) c.words.forEach(function (w) { if (out[c.name].indexOf(w) < 0) out[c.name].push(w); });
+        var own = ownFunction(c.name);
+        if (own && read.indexOf(own) < 0) scan(own);
+      });
+    })(fn);
     return out;
   };
 
